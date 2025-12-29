@@ -1,0 +1,75 @@
+name: watchhub_app
+description: "WatchHub - Premium Watch Shopping Mobile Application"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.6.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # ============================================
+  # FIREBASE - Authentication & Database
+  # ============================================
+  firebase_core: ^2.24.2
+  firebase_auth: ^4.16.0
+  cloud_firestore: ^4.14.0
+
+  # ============================================
+  # SUPABASE - Image Storage
+  # ============================================
+  supabase_flutter: ^2.3.0
+
+  # ============================================
+  # STATE MANAGEMENT
+  # ============================================
+  provider: ^6.1.1
+
+  # ============================================
+  # UI COMPONENTS & STYLING
+  # ============================================
+  google_fonts: ^6.1.0
+  flutter_rating_bar: ^4.0.1
+  cached_network_image: ^3.3.1
+  shimmer: ^3.0.0
+  flutter_animate: ^4.3.0
+  glassmorphism: ^3.0.0
+  flutter_staggered_animations: ^1.1.1
+  lottie: ^3.1.0
+  
+  # ============================================
+  # UTILITIES
+  # ============================================
+  uuid: ^4.2.2
+  intl: ^0.19.0
+  image_picker: ^1.0.7
+  flutter_svg: ^2.0.9
+  url_launcher: ^6.2.2
+  
+  # ============================================
+  # ICONS
+  # ============================================
+  cupertino_icons: ^1.0.8
+  icons_plus: ^5.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+
+  # ============================================
+  # ASSETS - Add your assets here
+  # ============================================
+  # assets:
+  #   - assets/images/
+  #   - assets/icons/
+  #   - assets/animations/
+
+  # ============================================
+  # FONTS - Google Fonts handles this dynamically
+  # ============================================
