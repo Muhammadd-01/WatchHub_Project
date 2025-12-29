@@ -11,7 +11,7 @@ import '../../screens/auth/login_screen.dart';
 import '../../screens/auth/signup_screen.dart';
 import '../../screens/auth/forgot_password_screen.dart';
 import '../../screens/home/home_screen.dart';
-import '../../screens/home/main_navigation_screen.dart';
+import '../../screens/main_screen.dart';
 import '../../screens/product/product_details_screen.dart';
 import '../../screens/product/products_screen.dart';
 import '../../screens/cart/cart_screen.dart';
@@ -26,6 +26,9 @@ import '../../screens/reviews/write_review_screen.dart';
 import '../../screens/feedback/feedback_screen.dart';
 import '../../screens/home/search_screen.dart';
 import '../../screens/home/category_screen.dart';
+import '../../screens/notifications/notification_screen.dart';
+import '../../screens/profile/about_screen.dart';
+import '../../screens/profile/help_support_screen.dart';
 
 /// Application route names
 ///
@@ -67,6 +70,9 @@ class AppRoutes {
   static const String wishlist = '/wishlist';
   static const String orders = '/orders';
   static const String orderDetails = '/order-details';
+  static const String notifications = '/notifications';
+  static const String about = '/about';
+  static const String help = '/help';
 
   // ===========================================================================
   // REVIEWS & FEEDBACK
@@ -100,7 +106,7 @@ class AppRoutes {
 
       // Main routes
       case main:
-        return _buildRoute(const MainNavigationScreen(), settings);
+        return _buildRoute(const MainScreen(), settings);
 
       case home:
         return _buildRoute(const HomeScreen(), settings);
@@ -160,6 +166,15 @@ class AppRoutes {
       case orderDetails:
         final orderId = args as String;
         return _buildRoute(OrderDetailsScreen(orderId: orderId), settings);
+
+      case notifications:
+        return _buildRoute(const NotificationScreen(), settings);
+
+      case about:
+        return _buildRoute(const AboutScreen(), settings);
+
+      case help:
+        return _buildRoute(const HelpSupportScreen(), settings);
 
       // Reviews & Feedback
       case reviews:

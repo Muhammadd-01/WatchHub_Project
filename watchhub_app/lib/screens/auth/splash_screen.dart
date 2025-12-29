@@ -68,25 +68,32 @@ class _SplashScreenState extends State<SplashScreen> {
           children: [
             // Logo icon
             Container(
-                  width: 120,
-                  height: 120,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: AppColors.goldGradient,
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.primaryGold.withOpacity(0.3),
-                        blurRadius: 30,
-                        spreadRadius: 5,
-                      ),
-                    ],
+              width: 140,
+              height: 140,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: AppColors.goldGradient,
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primaryGold.withValues(alpha: 0.3),
+                    blurRadius: 30,
+                    spreadRadius: 5,
                   ),
-                  child: const Icon(
-                    Icons.watch_rounded,
-                    size: 64,
-                    color: AppColors.scaffoldBackground,
-                  ),
-                )
+                ],
+              ),
+              padding: const EdgeInsets.all(4), // Border width
+              child: Container(
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.black, // Inner background behind logo
+                ),
+                padding: const EdgeInsets.all(20),
+                child: Image.asset(
+                  'assets/images/app_icon.png',
+                  fit: BoxFit.contain,
+                ),
+              ),
+            )
                 .animate()
                 .scale(
                   begin: const Offset(0.5, 0.5),
@@ -99,12 +106,12 @@ class _SplashScreenState extends State<SplashScreen> {
 
             // App name
             Text(
-                  'WatchHub',
-                  style: AppTextStyles.displayMedium.copyWith(
-                    color: AppColors.textPrimary,
-                    letterSpacing: 4,
-                  ),
-                )
+              'WatchHub',
+              style: AppTextStyles.displayMedium.copyWith(
+                color: AppColors.textPrimary,
+                letterSpacing: 4,
+              ),
+            )
                 .animate()
                 .fadeIn(delay: 300.ms, duration: 500.ms)
                 .slideY(begin: 0.3, curve: Curves.easeOut),
@@ -113,12 +120,12 @@ class _SplashScreenState extends State<SplashScreen> {
 
             // Tagline
             Text(
-                  'LUXURY TIMEPIECES',
-                  style: AppTextStyles.labelMedium.copyWith(
-                    color: AppColors.primaryGold,
-                    letterSpacing: 6,
-                  ),
-                )
+              'LUXURY TIMEPIECES',
+              style: AppTextStyles.labelMedium.copyWith(
+                color: AppColors.primaryGold,
+                letterSpacing: 6,
+              ),
+            )
                 .animate()
                 .fadeIn(delay: 500.ms, duration: 500.ms)
                 .slideY(begin: 0.3, curve: Curves.easeOut),

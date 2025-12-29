@@ -74,16 +74,16 @@ class AppColors {
   // Semi-transparent colors for glass effect
 
   /// Glass background with low opacity
-  static Color glassBackground = Colors.white.withOpacity(0.05);
+  static Color glassBackground = Colors.white.withValues(alpha: 0.05);
 
   /// Glass border color
-  static Color glassBorder = Colors.white.withOpacity(0.1);
+  static Color glassBorder = Colors.white.withValues(alpha: 0.1);
 
   /// Glass shadow
-  static Color glassShadow = Colors.black.withOpacity(0.3);
+  static Color glassShadow = Colors.black.withValues(alpha: 0.3);
 
   /// Dark glass for overlays
-  static Color darkGlass = const Color(0xFF1A1A1A).withOpacity(0.7);
+  static Color darkGlass = const Color(0xFF1A1A1A).withValues(alpha: 0.7);
 
   // ===========================================================================
   // LIGHT THEME COLORS
@@ -157,7 +157,10 @@ class AppColors {
   static LinearGradient cardGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Colors.white.withOpacity(0.1), Colors.white.withOpacity(0.05)],
+    colors: [
+      Colors.white.withValues(alpha: 0.1),
+      Colors.white.withValues(alpha: 0.05)
+    ],
   );
 
   /// Shimmer gradient for loading states
@@ -172,7 +175,7 @@ class AppColors {
   // ===========================================================================
 
   /// Subtle border for cards
-  static Color cardBorder = Colors.white.withOpacity(0.08);
+  static Color cardBorder = Colors.white.withValues(alpha: 0.08);
 
   /// Input field border
   static const Color inputBorder = Color(0xFF3A3A3A);

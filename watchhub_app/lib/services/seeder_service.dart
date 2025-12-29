@@ -45,9 +45,8 @@ class SeederService {
     final batch = _firestore.batch();
 
     for (final product in products) {
-      final docRef = _firestore
-          .collection(AppConstants.productsCollection)
-          .doc();
+      final docRef =
+          _firestore.collection(AppConstants.productsCollection).doc();
       batch.set(docRef, {
         ...product.toFirestore(),
         'createdAt': FieldValue.serverTimestamp(),
@@ -70,7 +69,7 @@ class SeederService {
             'The Oyster Perpetual Submariner Date in Oystersteel with a Cerachrom bezel insert in black ceramic and a black dial with large luminescent hour markers. The reference among divers\' watches, the Submariner was born in 1953. It was the first wristwatch waterproof to a depth of 100 metres (330 feet).',
         price: 14550.00,
         imageUrl:
-            'https://images.unsplash.com/photo-1587836374828-4dbafa94cf0e?w=800',
+            'https://images.unsplash.com/photo-1524592094714-0f0654e20314?w=800',
         category: 'Diving',
         stock: 5,
         specifications: {
@@ -454,9 +453,8 @@ class SeederService {
 
   /// Clears all products (use with caution!)
   Future<void> clearProducts() async {
-    final snapshot = await _firestore
-        .collection(AppConstants.productsCollection)
-        .get();
+    final snapshot =
+        await _firestore.collection(AppConstants.productsCollection).get();
 
     final batch = _firestore.batch();
     for (final doc in snapshot.docs) {

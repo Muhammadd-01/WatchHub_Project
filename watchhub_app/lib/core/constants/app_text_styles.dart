@@ -38,7 +38,6 @@ class AppTextStyles {
   static TextStyle displayLarge = GoogleFonts.playfairDisplay(
     fontSize: 57,
     fontWeight: FontWeight.bold,
-    color: AppColors.textPrimary,
     letterSpacing: -0.25,
   );
 
@@ -46,7 +45,6 @@ class AppTextStyles {
   static TextStyle displayMedium = GoogleFonts.playfairDisplay(
     fontSize: 45,
     fontWeight: FontWeight.bold,
-    color: AppColors.textPrimary,
     letterSpacing: 0,
   );
 
@@ -54,7 +52,6 @@ class AppTextStyles {
   static TextStyle displaySmall = GoogleFonts.playfairDisplay(
     fontSize: 36,
     fontWeight: FontWeight.w600,
-    color: AppColors.textPrimary,
     letterSpacing: 0,
   );
 
@@ -66,7 +63,6 @@ class AppTextStyles {
   static TextStyle headlineLarge = GoogleFonts.playfairDisplay(
     fontSize: 32,
     fontWeight: FontWeight.w600,
-    color: AppColors.textPrimary,
     letterSpacing: 0,
   );
 
@@ -74,7 +70,6 @@ class AppTextStyles {
   static TextStyle headlineMedium = GoogleFonts.playfairDisplay(
     fontSize: 28,
     fontWeight: FontWeight.w600,
-    color: AppColors.textPrimary,
     letterSpacing: 0,
   );
 
@@ -82,7 +77,6 @@ class AppTextStyles {
   static TextStyle headlineSmall = GoogleFonts.playfairDisplay(
     fontSize: 24,
     fontWeight: FontWeight.w500,
-    color: AppColors.textPrimary,
     letterSpacing: 0,
   );
 
@@ -94,7 +88,6 @@ class AppTextStyles {
   static TextStyle titleLarge = GoogleFonts.inter(
     fontSize: 22,
     fontWeight: FontWeight.w600,
-    color: AppColors.textPrimary,
     letterSpacing: 0,
   );
 
@@ -102,7 +95,6 @@ class AppTextStyles {
   static TextStyle titleMedium = GoogleFonts.inter(
     fontSize: 16,
     fontWeight: FontWeight.w600,
-    color: AppColors.textPrimary,
     letterSpacing: 0.15,
   );
 
@@ -110,7 +102,6 @@ class AppTextStyles {
   static TextStyle titleSmall = GoogleFonts.inter(
     fontSize: 14,
     fontWeight: FontWeight.w600,
-    color: AppColors.textPrimary,
     letterSpacing: 0.1,
   );
 
@@ -122,7 +113,6 @@ class AppTextStyles {
   static TextStyle bodyLarge = GoogleFonts.inter(
     fontSize: 16,
     fontWeight: FontWeight.w400,
-    color: AppColors.textPrimary,
     letterSpacing: 0.5,
     height: 1.5,
   );
@@ -131,7 +121,6 @@ class AppTextStyles {
   static TextStyle bodyMedium = GoogleFonts.inter(
     fontSize: 14,
     fontWeight: FontWeight.w400,
-    color: AppColors.textSecondary,
     letterSpacing: 0.25,
     height: 1.5,
   );
@@ -140,7 +129,6 @@ class AppTextStyles {
   static TextStyle bodySmall = GoogleFonts.inter(
     fontSize: 12,
     fontWeight: FontWeight.w400,
-    color: AppColors.textTertiary,
     letterSpacing: 0.4,
     height: 1.4,
   );
@@ -153,7 +141,6 @@ class AppTextStyles {
   static TextStyle labelLarge = GoogleFonts.inter(
     fontSize: 14,
     fontWeight: FontWeight.w600,
-    color: AppColors.textPrimary,
     letterSpacing: 0.1,
   );
 
@@ -161,7 +148,6 @@ class AppTextStyles {
   static TextStyle labelMedium = GoogleFonts.inter(
     fontSize: 12,
     fontWeight: FontWeight.w600,
-    color: AppColors.textPrimary,
     letterSpacing: 0.5,
   );
 
@@ -169,7 +155,6 @@ class AppTextStyles {
   static TextStyle labelSmall = GoogleFonts.inter(
     fontSize: 11,
     fontWeight: FontWeight.w600,
-    color: AppColors.textSecondary,
     letterSpacing: 0.5,
   );
 
@@ -204,14 +189,12 @@ class AppTextStyles {
   static TextStyle productName = GoogleFonts.playfairDisplay(
     fontSize: 20,
     fontWeight: FontWeight.w600,
-    color: AppColors.textPrimary,
   );
 
   /// App bar title
   static TextStyle appBarTitle = GoogleFonts.playfairDisplay(
     fontSize: 20,
     fontWeight: FontWeight.w600,
-    color: AppColors.textPrimary,
     letterSpacing: 1,
   );
 

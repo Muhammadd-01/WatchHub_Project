@@ -38,13 +38,18 @@ class GlassContainer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final glassColor = isDark ? Colors.white : Colors.black;
+    final defaultBgColor = glassColor.withValues(alpha: opacity);
+    final defaultBorderColor = glassColor.withValues(alpha: 0.1);
+
     return Container(
       margin: margin,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(borderRadius),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.2),
+            color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.1),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -53,14 +58,14 @@ class GlassContainer extends StatelessWidget {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(borderRadius),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
+          filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
           child: Container(
             padding: padding,
             decoration: BoxDecoration(
-              color: backgroundColor ?? Colors.white.withOpacity(opacity),
+              color: backgroundColor ?? defaultBgColor,
               borderRadius: BorderRadius.circular(borderRadius),
               border: Border.all(
-                color: borderColor ?? Colors.white.withOpacity(0.1),
+                color: borderColor ?? defaultBorderColor,
                 width: borderWidth,
               ),
             ),
@@ -97,17 +102,17 @@ class GoldGlassContainer extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            AppColors.primaryGold.withOpacity(0.1),
-            Colors.white.withOpacity(0.05),
+            AppColors.primaryGold.withValues(alpha: 0.1),
+            Colors.white.withValues(alpha: 0.05),
           ],
         ),
         border: Border.all(
-          color: AppColors.primaryGold.withOpacity(0.3),
+          color: AppColors.primaryGold.withValues(alpha: 0.3),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primaryGold.withOpacity(0.1),
+            color: AppColors.primaryGold.withValues(alpha: 0.1),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -116,7 +121,7 @@ class GoldGlassContainer extends StatelessWidget {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(borderRadius),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
           child: Container(padding: padding, child: child),
         ),
       ),

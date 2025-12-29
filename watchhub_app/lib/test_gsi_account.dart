@@ -1,0 +1,13 @@
+import 'package:google_sign_in/google_sign_in.dart';
+
+void main() async {
+  final g = GoogleSignIn();
+  final user = await g.signIn();
+  if (user != null) {
+    final auth = await user.authentication;
+    print(auth.idToken);
+    print(auth.accessToken);
+  } else {
+    print('Sign in cancelled');
+  }
+}

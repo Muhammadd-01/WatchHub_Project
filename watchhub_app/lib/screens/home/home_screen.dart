@@ -12,10 +12,8 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/routes/app_routes.dart';
-import '../../core/utils/helpers.dart';
 import '../../providers/product_provider.dart';
-import '../../providers/auth_provider.dart';
-import '../../models/product_model.dart';
+import '../../providers/category_provider.dart';
 import '../../widgets/common/glass_container.dart';
 import '../../widgets/home/product_card.dart';
 import '../../widgets/home/category_chip.dart';
@@ -29,6 +27,18 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   @override
+  void initState() {
+    super.initState();
+    // Fetch data on screen load
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<ProductProvider>().refresh();
+        context.read<CategoryProvider>().refresh();
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
@@ -37,12 +47,17 @@ class _HomeScreenState extends State<HomeScreen> {
         color: AppColors.primaryGold,
         backgroundColor: theme.cardTheme.color,
         onRefresh: () async {
-          await context.read<ProductProvider>().refresh();
+          await Future.wait([
+            context.read<ProductProvider>().refresh(),
+            context.read<CategoryProvider>().refresh(),
+          ]);
         },
         child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
             _buildAppBar(),
             SliverToBoxAdapter(child: _buildHeroBanner()),
+            const SliverToBoxAdapter(child: _ErrorBanner()),
             SliverToBoxAdapter(child: _buildCategories()),
             SliverToBoxAdapter(child: _buildFeaturedSection()),
             SliverToBoxAdapter(child: _buildNewArrivalsSection()),
@@ -86,139 +101,223 @@ class _HomeScreenState extends State<HomeScreen> {
         IconButton(
           icon:
               Icon(Icons.notifications_outlined, color: theme.iconTheme.color),
-          onPressed: () {},
+          onPressed: () {
+            Navigator.pushNamed(context, AppRoutes.notifications);
+          },
         ),
       ],
     );
   }
 
   Widget _buildHeroBanner() {
-    return Container(
-      margin: const EdgeInsets.all(16),
-      height: 200,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [AppColors.cardBackground, AppColors.surfaceColor],
-        ),
-        border: Border.all(
-          color: AppColors.primaryGold.withOpacity(0.3),
-          width: 1,
-        ),
-      ),
-      child: Stack(
-        children: [
-          // Background pattern
-          Positioned.fill(
-            child: Opacity(
-              opacity: 0.05,
-              child: Container(
-                decoration: const BoxDecoration(
-                  image: DecorationImage(
-                    image: NetworkImage(
-                      'https://images.unsplash.com/photo-1587836374828-4dbafa94cf0e?w=800',
-                    ),
-                    fit: BoxFit.cover,
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: GoldGlassContainer(
+        borderRadius: 24,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 220),
+          child: Stack(
+            children: [
+              // Background image with overlay
+              Positioned.fill(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(24),
+                  child: Stack(
+                    children: [
+                      CachedNetworkImage(
+                        imageUrl:
+                            'https://images.unsplash.com/photo-1524592094714-0f0654e20314?w=800',
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        height: double.infinity,
+                        placeholder: (context, url) => Container(
+                          color: theme.cardTheme.color,
+                        ),
+                      ),
+                      Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.centerLeft,
+                            end: Alignment.centerRight,
+                            colors: [
+                              Colors.black.withOpacity(0.8),
+                              Colors.black.withOpacity(0.2),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-            ),
+              // Content
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min, // Allow dynamic height
+                  children: [
+                    Text(
+                      'PREMIUM EDITION',
+                      style: AppTextStyles.labelMedium.copyWith(
+                        color: AppColors.primaryGold,
+                        letterSpacing: 4,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 10,
+                      ),
+                    )
+                        .animate()
+                        .fadeIn(delay: 400.ms, duration: 600.ms)
+                        .slideX(begin: -0.2),
+                    const SizedBox(height: 8),
+                    // Use FittedBox to prevent text level overflow and wrapping issues
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        'Exclusive',
+                        style: AppTextStyles.displaySmall.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    )
+                        .animate()
+                        .fadeIn(delay: 500.ms, duration: 600.ms)
+                        .slideX(begin: -0.2),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        'Timepieces',
+                        style: AppTextStyles.displaySmall.copyWith(
+                          color: AppColors.primaryGold,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    )
+                        .animate()
+                        .fadeIn(delay: 600.ms, duration: 600.ms)
+                        .slideX(begin: -0.2),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.pushNamed(
+                          context,
+                          AppRoutes.products,
+                          arguments: {'title': 'All Watches'},
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryGold,
+                        foregroundColor: Colors.black,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 28,
+                          vertical: 12,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        elevation: 5,
+                        shadowColor: AppColors.primaryGold.withOpacity(0.5),
+                      ),
+                      child: const Text('EXPLORE COLLECTION'),
+                    ).animate().fadeIn(delay: 800.ms, duration: 600.ms).scale(
+                        begin: const Offset(0.8, 0.8),
+                        curve: Curves.easeOutBack),
+                  ],
+                ),
+              ),
+            ],
           ),
-          // Content
-          Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  'LUXURY',
-                  style: AppTextStyles.labelMedium.copyWith(
-                    color: AppColors.primaryGold,
-                    letterSpacing: 4,
-                  ),
-                ).animate().fadeIn(delay: 200.ms).slideX(begin: -0.2),
-                const SizedBox(height: 8),
-                Text(
-                  'Timepieces',
-                  style: AppTextStyles.displaySmall,
-                ).animate().fadeIn(delay: 300.ms).slideX(begin: -0.2),
-                const SizedBox(height: 4),
-                Text(
-                  'Collection',
-                  style: AppTextStyles.displaySmall.copyWith(
-                    color: AppColors.primaryGold,
-                  ),
-                ).animate().fadeIn(delay: 400.ms).slideX(begin: -0.2),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.pushNamed(
-                      context,
-                      AppRoutes.products,
-                      arguments: {'title': 'All Watches'},
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 12,
-                    ),
-                  ),
-                  child: const Text('Explore Now'),
-                ).animate().fadeIn(delay: 500.ms).slideY(begin: 0.3),
-              ],
-            ),
-          ),
-        ],
+        ),
       ),
-    ).animate().fadeIn().slideY(begin: 0.1);
+    )
+        .animate()
+        .fadeIn(duration: 800.ms)
+        .slideY(begin: 0.1, curve: Curves.easeOutCubic);
   }
 
   Widget _buildCategories() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Text('Categories', style: AppTextStyles.titleLarge),
-        ),
-        const SizedBox(height: 12),
-        SizedBox(
-          height: 40,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            itemCount: AppConstants.watchCategories.length,
-            itemBuilder: (context, index) {
-              final category = AppConstants.watchCategories[index];
-              return Padding(
-                padding: const EdgeInsets.only(right: 12),
-                child: CategoryChip(
-                  label: category,
-                  onTap: () {
-                    Navigator.pushNamed(
-                      context,
-                      AppRoutes.products,
-                      arguments: {'title': category, 'category': category},
-                    );
-                  },
+    return Consumer<CategoryProvider>(
+      builder: (context, categoryProvider, _) {
+        final categories = categoryProvider.categories;
+
+        if (categoryProvider.isLoading && categories.isEmpty) {
+          return const SizedBox(
+            height: 100,
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        if (categories.isEmpty) {
+          return const SizedBox.shrink();
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                'Experience Elegance',
+                style: AppTextStyles.titleMedium.copyWith(
+                  color: AppColors.primaryGold,
+                  letterSpacing: 2,
                 ),
-              );
-            },
-          ),
-        ),
-        const SizedBox(height: 24),
-      ],
-    ).animate().fadeIn(delay: 200.ms);
+              ),
+            ),
+            const SizedBox(height: 4),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text('Curated Categories',
+                  style: AppTextStyles.headlineSmall),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 42,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                itemCount: categories.length,
+                itemBuilder: (context, index) {
+                  final category = categories[index];
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 12),
+                    child: CategoryChip(
+                      label: category.name,
+                      onTap: () {
+                        Navigator.pushNamed(
+                          context,
+                          AppRoutes.products,
+                          arguments: {
+                            'title': category.name,
+                            'category': category.name
+                          },
+                        );
+                      },
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 32),
+          ],
+        ).animate().fadeIn(delay: 200.ms, duration: 600.ms).slideY(begin: 0.1);
+      },
+    );
   }
 
   Widget _buildFeaturedSection() {
     return Consumer<ProductProvider>(
       builder: (context, productProvider, _) {
         final featured = productProvider.featuredProducts;
+        final isLoading = productProvider.isFeaturedLoading;
+
+        if (isLoading && featured.isEmpty) {
+          return _buildSectionLoading('Featured');
+        }
 
         if (featured.isEmpty) {
           return const SizedBox.shrink();
@@ -253,7 +352,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: 12),
             SizedBox(
-              height: 280,
+              height: 320,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -283,6 +382,11 @@ class _HomeScreenState extends State<HomeScreen> {
     return Consumer<ProductProvider>(
       builder: (context, productProvider, _) {
         final newArrivals = productProvider.newArrivals;
+        final isLoading = productProvider.isNewArrivalsLoading;
+
+        if (isLoading && newArrivals.isEmpty) {
+          return _buildSectionLoading('New Arrivals');
+        }
 
         if (newArrivals.isEmpty) {
           return const SizedBox.shrink();
@@ -339,7 +443,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: 12),
             SizedBox(
-              height: 280,
+              height: 320,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -365,15 +469,46 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Widget _buildSectionLoading(String title) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Text(title, style: AppTextStyles.titleLarge),
+        ),
+        const SizedBox(
+          height: 280,
+          child: Center(
+            child: CircularProgressIndicator(color: AppColors.primaryGold),
+          ),
+        ),
+        const SizedBox(height: 24),
+      ],
+    );
+  }
+
   Widget _buildBrandsSection() {
+    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Text('Premium Brands', style: AppTextStyles.titleLarge),
+          child: Text(
+            'World Renowned',
+            style: AppTextStyles.titleMedium.copyWith(
+              color: AppColors.primaryGold,
+              letterSpacing: 2,
+            ),
+          ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 4),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Text('Premium Brands', style: AppTextStyles.headlineSmall),
+        ),
+        const SizedBox(height: 20),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Wrap(
@@ -381,9 +516,11 @@ class _HomeScreenState extends State<HomeScreen> {
             runSpacing: 12,
             children: AppConstants.watchBrands.map((brand) {
               return GlassContainer(
+                borderRadius: 12,
+                opacity: 0.05,
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
+                  horizontal: 20,
+                  vertical: 14,
                 ),
                 child: InkWell(
                   onTap: () {
@@ -396,7 +533,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Text(
                     brand,
                     style: AppTextStyles.labelLarge.copyWith(
-                      color: AppColors.primaryGold,
+                      color:
+                          theme.textTheme.titleMedium?.color?.withOpacity(0.9),
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
@@ -405,6 +544,79 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ],
-    ).animate().fadeIn(delay: 400.ms);
+    ).animate().fadeIn(delay: 400.ms, duration: 600.ms).slideY(begin: 0.1);
+  }
+}
+
+class _ErrorBanner extends StatelessWidget {
+  const _ErrorBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Consumer2<ProductProvider, CategoryProvider>(
+      builder: (context, productProvider, categoryProvider, _) {
+        final error =
+            productProvider.errorMessage ?? categoryProvider.errorMessage;
+        if (error == null) return const SizedBox.shrink();
+
+        final isIndexError =
+            error.contains('index') || error.contains('FAILED_PRECONDITION');
+
+        return Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.errorContainer.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: theme.colorScheme.error.withOpacity(0.3)),
+          ),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    isIndexError
+                        ? Icons.settings_input_component
+                        : Icons.error_outline,
+                    color: theme.colorScheme.error,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      isIndexError
+                          ? 'Action Required: Enable Indexes'
+                          : 'Loading Error',
+                      style: AppTextStyles.labelLarge
+                          .copyWith(color: theme.colorScheme.error),
+                    ),
+                  ),
+                ],
+              ),
+              if (isIndexError) ...[
+                const SizedBox(height: 8),
+                Text(
+                  'Your products are hidden because Firestore indexes are still building. This usually takes 3-5 minutes after you click the links in Firebase.',
+                  style: AppTextStyles.bodySmall,
+                ),
+              ],
+              const SizedBox(height: 12),
+              ElevatedButton(
+                onPressed: () {
+                  context.read<ProductProvider>().refresh();
+                  context.read<CategoryProvider>().refresh();
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: theme.colorScheme.error.withOpacity(0.1),
+                  foregroundColor: theme.colorScheme.error,
+                  elevation: 0,
+                ),
+                child: const Text('Retry Loading Data'),
+              ),
+            ],
+          ),
+        ).animate().fadeIn().shake(hz: 4, duration: 500.ms);
+      },
+    );
   }
 }

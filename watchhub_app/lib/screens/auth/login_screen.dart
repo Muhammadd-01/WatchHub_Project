@@ -212,8 +212,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: AppColors.scaffoldBackground,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -239,6 +240,46 @@ class _LoginScreenState extends State<LoginScreen> {
 
               // Login button
               _buildLoginButton(),
+
+              const SizedBox(height: 16),
+
+              // OR divider
+              Row(
+                children: [
+                  Expanded(child: Divider(color: theme.dividerColor)),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Text('OR', style: AppTextStyles.labelSmall),
+                  ),
+                  Expanded(child: Divider(color: theme.dividerColor)),
+                ],
+              ).animate().fadeIn(delay: 650.ms),
+
+              const SizedBox(height: 16),
+
+              // Google Sign In Button
+              OutlinedButton.icon(
+                onPressed: () async {
+                  final authProvider = context.read<AuthProvider>();
+                  final success = await authProvider.signInWithGoogle();
+                  if (success && mounted) {
+                    Navigator.of(context).pushReplacementNamed(AppRoutes.main);
+                  }
+                },
+                icon: Image.asset('assets/images/google_logo.png',
+                    height: 24,
+                    width: 24,
+                    errorBuilder: (context, error, stackTrace) =>
+                        const Icon(Icons.g_mobiledata, size: 24)),
+                label: const Text('Continue with Google'),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  side: BorderSide(color: theme.dividerColor),
+                  foregroundColor: theme.textTheme.bodyLarge?.color,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ),
+              ).animate().fadeIn(delay: 700.ms),
 
               const SizedBox(height: 24),
 

@@ -18,6 +18,7 @@ import '../models/wishlist_model.dart';
 import '../models/order_model.dart';
 import '../models/review_model.dart';
 import '../models/feedback_model.dart';
+import '../models/category_model.dart';
 
 /// Centralized Firestore CRUD Service
 ///
@@ -194,27 +195,40 @@ class FirestoreCrudService {
         query = query.where('isNewArrival', isEqualTo: isNewArrival);
       }
 
-      // Apply sorting
-      switch (sortBy) {
-        case 'price_asc':
-          query = query.orderBy('price', descending: false);
-          break;
-        case 'price_desc':
-          query = query.orderBy('price', descending: true);
-          break;
-        case 'rating':
-          query = query.orderBy('rating', descending: true);
-          break;
-        case 'newest':
-          query = query.orderBy('createdAt', descending: true);
-          break;
-        default:
-          query = query.orderBy('createdAt', descending: true);
+      // Check if we need to perform client-side sorting/limiting to avoid index issues
+      // Firestore requires composite indexes for equality filter + range sort (orderBy)
+      // If filtering by isFeatured/isNewArrival and sorting by createdAt (newest),
+      // we need an index. To handle this gracefully without forcing user to create indexes,
+      // we'll fetch all matches and sort/limit client-side for these specific cases.
+      bool performClientSideSort = false;
+      if ((isFeatured != null || isNewArrival != null) &&
+          (sortBy == 'newest' || sortBy == null)) {
+        performClientSideSort = true;
       }
 
-      // Apply limit
-      if (limit != null) {
-        query = query.limit(limit);
+      // Apply sorting in Firestore if NOT doing it client-side
+      if (!performClientSideSort) {
+        switch (sortBy) {
+          case 'price_asc':
+            query = query.orderBy('price', descending: false);
+            break;
+          case 'price_desc':
+            query = query.orderBy('price', descending: true);
+            break;
+          case 'rating':
+            query = query.orderBy('rating', descending: true);
+            break;
+          case 'newest':
+            query = query.orderBy('createdAt', descending: true);
+            break;
+          default:
+            query = query.orderBy('createdAt', descending: true);
+        }
+
+        // Apply limit in Firestore if NOT doing it client-side
+        if (limit != null) {
+          query = query.limit(limit);
+        }
       }
 
       final snapshot = await query.get();
@@ -222,12 +236,23 @@ class FirestoreCrudService {
       List<ProductModel> products =
           snapshot.docs.map((doc) => ProductModel.fromFirestore(doc)).toList();
 
-      // Apply price filter in memory (Firestore doesn't support range on multiple fields)
+      // Apply price filter (always memory)
       if (minPrice != null) {
         products = products.where((p) => p.price >= minPrice).toList();
       }
       if (maxPrice != null && maxPrice != double.infinity) {
         products = products.where((p) => p.price <= maxPrice).toList();
+      }
+
+      // Apply client-side sorting and limiting if needed
+      if (performClientSideSort) {
+        // Sort by newest (createdAt)
+        products.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+        // Apply limit
+        if (limit != null && products.length > limit) {
+          products = products.take(limit).toList();
+        }
       }
 
       return products;
@@ -798,9 +823,64 @@ class FirestoreCrudService {
       if (data.containsKey('rating')) {
         await _updateProductRating(productId);
       }
+      debugPrint('FirestoreCrudService: Review updated');
     } catch (e) {
       debugPrint('FirestoreCrudService: Error updating review - $e');
       rethrow;
+    }
+  }
+
+  // ===========================================================================
+  // CATEGORY OPERATIONS
+  // ===========================================================================
+
+  /// Gets all categories with multiple ordering fallbacks
+  Future<List<CategoryModel>> getCategories() async {
+    try {
+      // 1. Try ordering by 'order' (Best for custom UI sorting)
+      final snapshot = await _firestore
+          .collection(AppConstants.categoriesCollection)
+          .orderBy('order')
+          .get();
+
+      if (snapshot.docs.isNotEmpty) {
+        return snapshot.docs
+            .map((doc) => CategoryModel.fromFirestore(doc))
+            .toList();
+      }
+
+      // 2. Try ordering by 'name' (Good default)
+      final nameSnapshot = await _firestore
+          .collection(AppConstants.categoriesCollection)
+          .orderBy('name')
+          .get();
+
+      if (nameSnapshot.docs.isNotEmpty) {
+        return nameSnapshot.docs
+            .map((doc) => CategoryModel.fromFirestore(doc))
+            .toList();
+      }
+
+      // 3. Last resort: Get all without ordering (Slow if thousands, but safe for categories)
+      final allSnapshot =
+          await _firestore.collection(AppConstants.categoriesCollection).get();
+      return allSnapshot.docs
+          .map((doc) => CategoryModel.fromFirestore(doc))
+          .toList();
+    } catch (e) {
+      debugPrint('FirestoreCrudService: Error getting categories - $e');
+      // If any of the above fail (e.g. index error or access denied), try absolute simplest
+      try {
+        final simpleSnapshot = await _firestore
+            .collection(AppConstants.categoriesCollection)
+            .get();
+        return simpleSnapshot.docs
+            .map((doc) => CategoryModel.fromFirestore(doc))
+            .toList();
+      } catch (e2) {
+        debugPrint('FirestoreCrudService: Fatal categories error - $e2');
+        rethrow;
+      }
     }
   }
 

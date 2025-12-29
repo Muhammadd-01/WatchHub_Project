@@ -12,7 +12,12 @@
           "package_name": "com.watchhub.watchhub_app"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "495177119332-aunegajpr53ui14isqbh785j8gfll1ir.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyD5HO8KowTgN_XrCDEJKqAE8ujKarL96I4"
@@ -20,7 +25,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "495177119332-aunegajpr53ui14isqbh785j8gfll1ir.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "495177119332-1v1kiko0kohsu7ammip639klso8v2cbh.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.watchhub.watchhubApp"
+              }
+            }
+          ]
         }
       }
     }

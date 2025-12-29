@@ -139,6 +139,15 @@ class ProfileScreen extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(user.phone!, style: AppTextStyles.bodySmall),
                 ],
+                if (user?.address != null && user!.address!.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    user.address!,
+                    style: AppTextStyles.bodySmall,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
               ],
             ),
           ),
@@ -184,13 +193,13 @@ class ProfileScreen extends StatelessWidget {
         'icon': Icons.help_outline,
         'title': 'Help & Support',
         'subtitle': 'Contact us',
-        'route': null,
+        'route': AppRoutes.help,
       },
       {
         'icon': Icons.info_outline,
         'title': 'About WatchHub',
         'subtitle': 'App info & policies',
-        'route': null,
+        'route': AppRoutes.about,
       },
     ];
 

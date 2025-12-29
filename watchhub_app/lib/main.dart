@@ -19,6 +19,7 @@ import 'core/constants/app_constants.dart';
 // Providers
 import 'providers/auth_provider.dart';
 import 'providers/product_provider.dart';
+import 'providers/category_provider.dart'; // Added this import
 import 'providers/cart_provider.dart';
 import 'providers/wishlist_provider.dart';
 import 'providers/theme_provider.dart';
@@ -26,6 +27,12 @@ import 'providers/theme_provider.dart';
 // Services
 import 'services/supabase_service.dart';
 import 'services/seeder_service.dart';
+
+// Screens
+// Screens
+import 'screens/main_screen.dart';
+import 'screens/auth/login_screen.dart';
+import 'screens/auth/splash_screen.dart';
 
 /// Main entry point
 void main() async {
@@ -63,6 +70,7 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => ProductProvider()),
+        ChangeNotifierProvider(create: (_) => CategoryProvider()),
         ChangeNotifierProvider(create: (_) => CartProvider()),
         ChangeNotifierProvider(create: (_) => WishlistProvider()),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
@@ -91,7 +99,8 @@ class WatchHubApp extends StatelessWidget {
           darkTheme: AppTheme.darkTheme,
 
           // Routing
-          initialRoute: AppRoutes.splash,
+          // Removed initialRoute to use home with AuthWrapper
+          home: const AuthWrapper(),
           onGenerateRoute: AppRoutes.generateRoute,
 
           // Global scroll behavior
@@ -99,6 +108,27 @@ class WatchHubApp extends StatelessWidget {
             physics: const BouncingScrollPhysics(),
           ),
         );
+      },
+    );
+  }
+}
+
+class AuthWrapper extends StatelessWidget {
+  const AuthWrapper({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<AuthProvider>(
+      builder: (context, auth, _) {
+        switch (auth.state) {
+          case AuthState.authenticated:
+            return const MainScreen();
+          case AuthState.unauthenticated:
+            return const LoginScreen();
+          case AuthState.initial:
+          default:
+            return const SplashScreen();
+        }
       },
     );
   }

@@ -29,6 +29,7 @@ class ProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return GestureDetector(
       onTap: () {
         Navigator.pushNamed(
@@ -40,9 +41,19 @@ class ProductCard extends StatelessWidget {
       child: Container(
         width: width ?? 180,
         decoration: BoxDecoration(
-          color: AppColors.cardBackground,
+          color: theme.cardTheme.color ?? theme.cardColor,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.cardBorder),
+          border: Border.all(
+            color: theme.dividerColor.withValues(alpha: 0.1),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(
+                  theme.brightness == Brightness.dark ? 0.3 : 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -134,16 +145,24 @@ class ProductCard extends StatelessWidget {
               imageUrl: product.imageUrl,
               fit: BoxFit.cover,
               placeholder: (context, url) => Shimmer.fromColors(
-                baseColor: AppColors.cardBackground,
-                highlightColor: AppColors.surfaceColor,
-                child: Container(color: AppColors.cardBackground),
+                baseColor: Theme.of(context).cardTheme.color ??
+                    AppColors.cardBackground,
+                highlightColor: Theme.of(context).brightness == Brightness.dark
+                    ? AppColors.surfaceColor
+                    : Colors.grey[200]!,
+                child: Container(color: Colors.white),
               ),
               errorWidget: (context, url, error) => Container(
-                color: AppColors.cardBackground,
-                child: const Icon(
+                color: Theme.of(context).cardTheme.color ??
+                    AppColors.cardBackground,
+                child: Icon(
                   Icons.watch_rounded,
                   size: 48,
-                  color: AppColors.textTertiary,
+                  color: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.color
+                      ?.withValues(alpha: 0.3),
                 ),
               ),
             ),
@@ -196,7 +215,7 @@ class ProductCard extends StatelessWidget {
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.6),
+                color: Colors.black.withValues(alpha: 0.6),
                 borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(16),
                 ),
@@ -243,9 +262,9 @@ class ProductListCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return GestureDetector(
-      onTap:
-          onTap ??
+      onTap: onTap ??
           () {
             Navigator.pushNamed(
               context,
@@ -256,9 +275,11 @@ class ProductListCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: AppColors.cardBackground,
+          color: theme.cardTheme.color ?? theme.cardColor,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.cardBorder),
+          border: Border.all(
+            color: theme.dividerColor.withValues(alpha: 0.1),
+          ),
         ),
         child: Row(
           children: [

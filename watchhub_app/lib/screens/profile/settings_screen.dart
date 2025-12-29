@@ -42,6 +42,7 @@ class SettingsScreen extends StatelessWidget {
             _buildSectionHeader(context, 'Notifications'),
             _buildNotificationCard(context, cardColor, textColor),
             const SizedBox(height: 24),
+            const SizedBox(height: 24),
             _buildSectionHeader(context, 'About'),
             _buildAboutCard(context, cardColor, textColor),
           ],

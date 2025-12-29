@@ -14,6 +14,15 @@ import '../services/firestore_crud_service.dart';
 
 /// Authentication state provider
 ///
+/// PURPOSE:
+/// Manages the application-wide authentication state. It acts as the bridge
+/// between the UI (screens) and the backend services (AuthService, Firestore).
+///
+/// CALLED FROM:
+/// - main.dart (AuthWrapper listens to state to switch between Login/Main screens)
+/// - LoginScreen, SignupScreen (calls signIn, signUp, signInWithGoogle)
+/// - ProfileScreen (calls signOut)
+///
 /// This provider:
 /// - Manages authentication state (loading, authenticated, unauthenticated)
 /// - Provides current user data from Firestore
@@ -175,6 +184,31 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  /// Signs in with Google
+  Future<bool> signInWithGoogle() async {
+    try {
+      _setLoading(true);
+      _clearError();
+
+      final userModel = await _authService.signInWithGoogle();
+
+      _user = userModel;
+      _state = AuthState.authenticated;
+
+      notifyListeners();
+      return true;
+    } on AuthException catch (e) {
+      _setError(e.message);
+      return false;
+    } catch (e) {
+      debugPrint('AuthProvider: Google sign in error - $e');
+      _setError('Failed to sign in with Google');
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
   // ===========================================================================
   // SIGN OUT
   // ===========================================================================
@@ -235,6 +269,7 @@ class AuthProvider extends ChangeNotifier {
   Future<bool> updateProfile({
     String? name,
     String? phone,
+    String? address,
     String? profileImageUrl,
   }) async {
     if (_user == null) return false;
@@ -254,6 +289,10 @@ class AuthProvider extends ChangeNotifier {
         updates['phone'] = phone;
       }
 
+      if (address != null) {
+        updates['address'] = address;
+      }
+
       if (profileImageUrl != null) {
         updates['profileImageUrl'] = profileImageUrl;
       }
@@ -265,6 +304,7 @@ class AuthProvider extends ChangeNotifier {
         _user = _user!.copyWith(
           name: name ?? _user!.name,
           phone: phone ?? _user!.phone,
+          address: address ?? _user!.address,
           profileImageUrl: profileImageUrl ?? _user!.profileImageUrl,
           updatedAt: DateTime.now(),
         );
@@ -321,9 +361,8 @@ class AuthProvider extends ChangeNotifier {
   void _clearError() {
     _errorMessage = null;
     if (_state == AuthState.error) {
-      _state = _user != null
-          ? AuthState.authenticated
-          : AuthState.unauthenticated;
+      _state =
+          _user != null ? AuthState.authenticated : AuthState.unauthenticated;
     }
   }
 

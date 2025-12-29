@@ -66,8 +66,9 @@ class _SignupScreenState extends State<SignupScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: AppColors.scaffoldBackground,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         leading: IconButton(
@@ -96,6 +97,46 @@ class _SignupScreenState extends State<SignupScreen> {
               // Sign up button
               _buildSignupButton(),
 
+              const SizedBox(height: 16),
+
+              // OR divider
+              Row(
+                children: [
+                  Expanded(child: Divider(color: theme.dividerColor)),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Text('OR', style: AppTextStyles.labelSmall),
+                  ),
+                  Expanded(child: Divider(color: theme.dividerColor)),
+                ],
+              ).animate().fadeIn(delay: 350.ms),
+
+              const SizedBox(height: 16),
+
+              // Google Sign In Button
+              OutlinedButton.icon(
+                onPressed: () async {
+                  final authProvider = context.read<AuthProvider>();
+                  final success = await authProvider.signInWithGoogle();
+                  if (success && mounted) {
+                    Navigator.of(context).pushReplacementNamed(AppRoutes.main);
+                  }
+                },
+                icon: Image.asset('assets/images/google_logo.png',
+                    height: 24,
+                    width: 24,
+                    errorBuilder: (context, error, stackTrace) =>
+                        const Icon(Icons.g_mobiledata, size: 24)),
+                label: const Text('Continue with Google'),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  side: BorderSide(color: theme.dividerColor),
+                  foregroundColor: theme.textTheme.bodyLarge?.color,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ),
+              ).animate().fadeIn(delay: 400.ms),
+
               const SizedBox(height: 24),
 
               // Login link
@@ -116,9 +157,7 @@ class _SignupScreenState extends State<SignupScreen> {
           'Create Account',
           style: AppTextStyles.headlineLarge,
         ).animate().fadeIn().slideY(begin: 0.2),
-
         const SizedBox(height: 8),
-
         Text(
           'Join WatchHub and discover luxury timepieces',
           style: AppTextStyles.bodyMedium,

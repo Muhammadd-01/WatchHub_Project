@@ -33,6 +33,9 @@ class UserModel {
   /// User's phone number (optional)
   final String? phone;
 
+  /// User's address (optional)
+  final String? address;
+
   /// Supabase URL for profile image (optional)
   /// This is a public URL pointing to the image in Supabase Storage
   final String? profileImageUrl;
@@ -49,6 +52,7 @@ class UserModel {
     required this.name,
     required this.email,
     this.phone,
+    this.address,
     this.profileImageUrl,
     required this.createdAt,
     this.updatedAt,
@@ -71,6 +75,7 @@ class UserModel {
       name: data['name'] ?? '',
       email: data['email'] ?? '',
       phone: data['phone'],
+      address: data['address'],
       profileImageUrl: data['profileImageUrl'],
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       updatedAt: (data['updatedAt'] as Timestamp?)?.toDate(),
@@ -84,6 +89,7 @@ class UserModel {
       name: map['name'] ?? '',
       email: map['email'] ?? '',
       phone: map['phone'],
+      address: map['address'],
       profileImageUrl: map['profileImageUrl'],
       createdAt: map['createdAt'] is Timestamp
           ? (map['createdAt'] as Timestamp).toDate()
@@ -104,6 +110,7 @@ class UserModel {
       'name': name,
       'email': email,
       'phone': phone,
+      'address': address,
       'profileImageUrl': profileImageUrl,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': updatedAt != null ? Timestamp.fromDate(updatedAt!) : null,
@@ -117,6 +124,7 @@ class UserModel {
       'name': name,
       'email': email,
       'phone': phone,
+      'address': address,
       'profileImageUrl': profileImageUrl,
       'createdAt': createdAt,
       'updatedAt': updatedAt,
@@ -135,6 +143,7 @@ class UserModel {
     String? name,
     String? email,
     String? phone,
+    String? address,
     String? profileImageUrl,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -144,6 +153,7 @@ class UserModel {
       name: name ?? this.name,
       email: email ?? this.email,
       phone: phone ?? this.phone,
+      address: address ?? this.address,
       profileImageUrl: profileImageUrl ?? this.profileImageUrl,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,

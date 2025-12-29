@@ -9,6 +9,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../core/utils/validators.dart';
@@ -30,12 +32,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
   late TextEditingController _phoneController;
+  late TextEditingController _addressController;
 
   // Image picking
   final _imagePicker = ImagePicker();
   File? _imageFile;
   final _supabaseService = SupabaseService();
   bool _isUploadingImage = false;
+  bool _isGettingLocation = false;
 
   @override
   void initState() {
@@ -43,12 +47,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final user = context.read<AuthProvider>().user;
     _nameController = TextEditingController(text: user?.name ?? '');
     _phoneController = TextEditingController(text: user?.phone ?? '');
+    _addressController = TextEditingController(text: user?.address ?? '');
   }
 
   @override
   void dispose() {
     _nameController.dispose();
     _phoneController.dispose();
+    _addressController.dispose();
     super.dispose();
   }
 
@@ -74,6 +80,54 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
+  Future<void> _getCurrentLocation() async {
+    setState(() => _isGettingLocation = true);
+    try {
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          if (mounted)
+            Helpers.showErrorSnackbar(context, 'Location permission denied');
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        if (mounted)
+          Helpers.showErrorSnackbar(
+              context, 'Location permission permanently denied');
+        return;
+      }
+
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      final placemarks = await placemarkFromCoordinates(
+        position.latitude,
+        position.longitude,
+      );
+
+      if (placemarks.isNotEmpty && mounted) {
+        final place = placemarks.first;
+        final address =
+            '${place.street}, ${place.subLocality}, ${place.locality}, ${place.country}';
+
+        setState(() {
+          _addressController.text = address;
+        });
+
+        Helpers.showSuccessSnackbar(context, 'Location updated');
+      }
+    } catch (e) {
+      debugPrint('Error getting location: $e');
+      if (mounted) Helpers.showErrorSnackbar(context, 'Failed to get location');
+    } finally {
+      if (mounted) setState(() => _isGettingLocation = false);
+    }
+  }
+
   Future<void> _saveProfile() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -84,9 +138,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     // Check if anything changed
     final nameChanged = _nameController.text.trim() != user.name;
     final phoneChanged = _phoneController.text.trim() != (user.phone ?? '');
+    final addressChanged =
+        _addressController.text.trim() != (user.address ?? '');
     final imageChanged = _imageFile != null;
 
-    if (!nameChanged && !phoneChanged && !imageChanged) {
+    if (!nameChanged && !phoneChanged && !addressChanged && !imageChanged) {
       Navigator.pop(context);
       return;
     }
@@ -114,6 +170,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final success = await authProvider.updateProfile(
       name: _nameController.text.trim(),
       phone: _phoneController.text.trim(),
+      address: _addressController.text.trim(),
       profileImageUrl: newImageUrl,
     );
 
@@ -125,11 +182,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: AppColors.scaffoldBackground,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.scaffoldBackground,
-        title: Text('Edit Profile', style: AppTextStyles.appBarTitle),
+        backgroundColor: theme.scaffoldBackgroundColor,
+        title: Text('Edit Profile',
+            style: AppTextStyles.appBarTitle
+                .copyWith(color: theme.textTheme.titleLarge?.color)),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -161,6 +221,29 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       keyboardType: TextInputType.phone,
                       prefixIcon: Icons.phone_outlined,
                       validator: Validators.validatePhoneOptional,
+                    ),
+                    const SizedBox(height: 20),
+                    CustomTextField(
+                      controller: _addressController,
+                      label: 'Address',
+                      hint: 'Enter your delivery address',
+                      keyboardType: TextInputType.streetAddress,
+                      prefixIcon: Icons.location_on_outlined,
+                      maxLines: 2,
+                      suffixIcon: IconButton(
+                        icon: _isGettingLocation
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Icon(Icons.my_location,
+                                color: AppColors.primaryGold),
+                        onPressed:
+                            _isGettingLocation ? null : _getCurrentLocation,
+                        tooltip: 'Use my current location',
+                      ),
                     ),
                   ],
                 ),

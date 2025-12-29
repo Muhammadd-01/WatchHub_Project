@@ -603,3 +603,57 @@ flutter run
 | `flutter pub get` | Install dependencies |
 | `cd ios && pod install` | Install iOS pods |
 | `flutter run` | Run the app |
+
+---
+
+## Part 11: Google Sign-In Setup
+
+To enable Google Sign-In for your Flutter app, you need to configure it in the Firebase Console and add your Android app's SHA-1 key.
+
+### Step 11.1: Enable Google Provider in Firebase Console
+
+1.  Go to the [Firebase Console](https://console.firebase.google.com/).
+2.  Select your project (**WatchHub**).
+3.  In the left sidebar, click on **Authentication**.
+4.  Go to the **Sign-in method** tab.
+5.  Click on **Add new provider** and select **Google**.
+6.  Click the **Enable** toggle.
+7.  Select a **Support email for project** from the dropdown.
+8.  Click **Save**.
+
+### Step 11.2: Add SHA-1 and SHA-256 Keys for Android
+
+Google Sign-In on Android requires you to register your app's SHA-1 certificate fingerprint in Firebase.
+
+#### 1. Generate the SHA-1 Key
+Run the following command in your terminal (Windows):
+
+```powershell
+cd android
+./gradlew signingReport
+cd ..
+```
+
+Wait for the process to finish. It will output keys for different build variants (debug, release, etc.). Look for the section labeled **Task :app:signingReport** and find the **Variant: debug**.
+
+Copy the **SHA1** and **SHA-256** keys. They look like `AA:BB:CC:...`.
+
+#### 2. Add Key to Firebase
+1.  In Firebase Console, click the **Settings (gear icon)** > **Project settings**.
+2.  Scroll down to the **Your apps** section.
+3.  Select your **Android app** (com.example.watchhub_app).
+4.  Click **Add fingerprint**.
+5.  Paste the **SHA-1** key you copied and click **Save**.
+6.  (Optional but recommended) Add the **SHA-256** key as well.
+
+#### 3. Update google-services.json
+1.  After adding the fingerprint, download the updated `google-services.json` file.
+2.  Replace the existing file in `android/app/google-services.json` with this new one.
+
+### Step 11.3: Enable Developer Mode (Windows)
+
+Note: If you encountered errors running commands or plugins, ensure **Developer Mode** is enabled on Windows.
+1.  Open **Settings** > **Privacy & security** > **For developers**.
+2.  Toggle **Developer Mode** to **On**.
+
+

@@ -29,6 +29,8 @@ class ProductProvider extends ChangeNotifier {
   ProductModel? _selectedProduct;
 
   bool _isLoading = false;
+  bool _isFeaturedLoading = false;
+  bool _isNewArrivalsLoading = false;
   String? _errorMessage;
 
   // Filters
@@ -49,6 +51,8 @@ class ProductProvider extends ChangeNotifier {
   ProductModel? get selectedProduct => _selectedProduct;
 
   bool get isLoading => _isLoading;
+  bool get isFeaturedLoading => _isFeaturedLoading;
+  bool get isNewArrivalsLoading => _isNewArrivalsLoading;
   String? get errorMessage => _errorMessage;
   bool get hasProducts => _products.isNotEmpty;
   bool get hasFilters =>
@@ -72,7 +76,6 @@ class ProductProvider extends ChangeNotifier {
     try {
       _setLoading(true);
       _clearError();
-
       _products = await _firestoreService.getProducts(sortBy: _sortBy);
 
       // Apply any existing filters
@@ -83,7 +86,7 @@ class ProductProvider extends ChangeNotifier {
       notifyListeners();
     } catch (e) {
       debugPrint('ProductProvider: Error loading products - $e');
-      _setError('Failed to load products');
+      _setError('Failed to load products. Check network or Firestore indexes.');
     } finally {
       _setLoading(false);
     }
@@ -92,6 +95,10 @@ class ProductProvider extends ChangeNotifier {
   /// Loads featured products
   Future<void> loadFeaturedProducts() async {
     try {
+      _isFeaturedLoading = true;
+      _clearError();
+      notifyListeners();
+
       _featuredProducts = await _firestoreService.getProducts(
         isFeatured: true,
         limit: 6,
@@ -99,12 +106,20 @@ class ProductProvider extends ChangeNotifier {
       notifyListeners();
     } catch (e) {
       debugPrint('ProductProvider: Error loading featured products - $e');
+      _setError('Featured products error: $e');
+    } finally {
+      _isFeaturedLoading = false;
+      notifyListeners();
     }
   }
 
   /// Loads new arrival products
   Future<void> loadNewArrivals() async {
     try {
+      _isNewArrivalsLoading = true;
+      _clearError();
+      notifyListeners();
+
       _newArrivals = await _firestoreService.getProducts(
         isNewArrival: true,
         sortBy: 'newest',
@@ -113,6 +128,10 @@ class ProductProvider extends ChangeNotifier {
       notifyListeners();
     } catch (e) {
       debugPrint('ProductProvider: Error loading new arrivals - $e');
+      _setError('New Arrivals error: $e');
+    } finally {
+      _isNewArrivalsLoading = false;
+      notifyListeners();
     }
   }
 
@@ -291,9 +310,8 @@ class ProductProvider extends ChangeNotifier {
 
     // Apply brand filter
     if (_selectedBrand != null && _selectedBrand!.isNotEmpty) {
-      _filteredProducts = _filteredProducts
-          .where((p) => p.brand == _selectedBrand)
-          .toList();
+      _filteredProducts =
+          _filteredProducts.where((p) => p.brand == _selectedBrand).toList();
     }
 
     // Apply category filter
@@ -305,16 +323,14 @@ class ProductProvider extends ChangeNotifier {
 
     // Apply min price filter
     if (_minPrice != null) {
-      _filteredProducts = _filteredProducts
-          .where((p) => p.price >= _minPrice!)
-          .toList();
+      _filteredProducts =
+          _filteredProducts.where((p) => p.price >= _minPrice!).toList();
     }
 
     // Apply max price filter
     if (_maxPrice != null && _maxPrice != double.infinity) {
-      _filteredProducts = _filteredProducts
-          .where((p) => p.price <= _maxPrice!)
-          .toList();
+      _filteredProducts =
+          _filteredProducts.where((p) => p.price <= _maxPrice!).toList();
     }
 
     // Apply sorting
@@ -394,12 +410,60 @@ class ProductProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Refreshes all product data
+  /// Refreshes all product data with a single notification
   Future<void> refresh() async {
-    await Future.wait([
-      loadProducts(),
-      loadFeaturedProducts(),
-      loadNewArrivals(),
-    ]);
+    try {
+      _setLoading(true);
+      _clearError();
+      notifyListeners();
+
+      // Run all fetches in parallel without notifying intermediate states if possible
+      // We still update individual sections so they show spinners if empty
+      await Future.wait([
+        _loadProductsNoNotify(),
+        _loadFeaturedProductsNoNotify(),
+        _loadNewArrivalsNoNotify(),
+      ]);
+
+      debugPrint('ProductProvider: Refresh complete');
+    } catch (e) {
+      debugPrint('ProductProvider: Refresh error - $e');
+    } finally {
+      _setLoading(false);
+      notifyListeners();
+    }
+  }
+
+  Future<void> _loadProductsNoNotify() async {
+    try {
+      _products = await _firestoreService.getProducts(sortBy: _sortBy);
+      _applyFilters();
+    } catch (e) {
+      debugPrint('ProductProvider: Error loading products - $e');
+      _setError('Failed to load products. Check network or Firestore indexes.');
+    }
+  }
+
+  Future<void> _loadFeaturedProductsNoNotify() async {
+    try {
+      _featuredProducts = await _firestoreService.getProducts(
+        isFeatured: true,
+        limit: 6,
+      );
+    } catch (e) {
+      debugPrint('ProductProvider: Error loading featured products - $e');
+    }
+  }
+
+  Future<void> _loadNewArrivalsNoNotify() async {
+    try {
+      _newArrivals = await _firestoreService.getProducts(
+        isNewArrival: true,
+        sortBy: 'newest',
+        limit: 6,
+      );
+    } catch (e) {
+      debugPrint('ProductProvider: Error loading new arrivals - $e');
+    }
   }
 }
