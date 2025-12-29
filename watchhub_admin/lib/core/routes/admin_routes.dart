@@ -13,6 +13,7 @@ import '../../screens/users/users_list_screen.dart';
 import '../../screens/categories/categories_screen.dart';
 import '../../screens/feedback/feedback_screen.dart';
 import '../../screens/carts/active_carts_screen.dart';
+import '../../screens/settings/settings_screen.dart';
 
 /// Admin Panel Routes
 class AdminRoutes {
@@ -33,8 +34,8 @@ class AdminRoutes {
   static const String carts = '/carts';
   static const String settings = '/settings';
 
-  static Route<dynamic> generateRoute(RouteSettings settings) {
-    switch (settings.name) {
+  static Route<dynamic> generateRoute(RouteSettings routeSettings) {
+    switch (routeSettings.name) {
       case login:
         return MaterialPageRoute(builder: (_) => const AdminLoginScreen());
 
@@ -58,6 +59,9 @@ class AdminRoutes {
 
       case carts:
         return MaterialPageRoute(builder: (_) => const ActiveCartsScreen());
+
+      case settings:
+        return MaterialPageRoute(builder: (_) => const SettingsScreen());
 
       default:
         return MaterialPageRoute(

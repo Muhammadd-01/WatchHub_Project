@@ -14,6 +14,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/theme/admin_theme.dart';
 import 'core/routes/admin_routes.dart';
 
+// Screens
+import 'screens/auth/admin_login_screen.dart';
+import 'screens/dashboard/dashboard_screen.dart';
+
 // Providers
 import 'providers/admin_auth_provider.dart';
 import 'providers/admin_product_provider.dart';
@@ -63,9 +67,41 @@ class WatchHubAdminApp extends StatelessWidget {
         title: 'WatchHub Admin',
         debugShowCheckedModeBanner: false,
         theme: AdminTheme.darkTheme,
-        initialRoute: AdminRoutes.login,
+        // Remove initialRoute, use home with AuthWrapper
+        home: const AuthWrapper(),
         onGenerateRoute: AdminRoutes.generateRoute,
       ),
+    );
+  }
+}
+
+class AuthWrapper extends StatefulWidget {
+  const AuthWrapper({super.key});
+
+  @override
+  State<AuthWrapper> createState() => _AuthWrapperState();
+}
+
+class _AuthWrapperState extends State<AuthWrapper> {
+  @override
+  void initState() {
+    super.initState();
+    // Trigger an initial check or just rely on the listener internally
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<AdminAuthProvider>(
+      builder: (context, auth, _) {
+        // If we are still determining auth status (e.g. initial load)
+        // For now, we rely on the fact that Firebase emits an event quickly.
+        // real persistence might need a separate 'isInitialized' flag in provider.
+
+        if (auth.isAuthenticated) {
+          return const DashboardScreen();
+        }
+        return const AdminLoginScreen();
+      },
     );
   }
 }

@@ -50,4 +50,24 @@ class AdminHelpers {
       ),
     );
   }
+
+  static void showInfoSnackbar(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.info_outline, color: AppColors.scaffoldBackground),
+            const SizedBox(width: 12),
+            Expanded(
+                child: Text(message,
+                    style: const TextStyle(fontWeight: FontWeight.bold))),
+          ],
+        ),
+        backgroundColor: AppColors.info,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        margin: const EdgeInsets.all(16),
+      ),
+    );
+  }
 }
