@@ -6,10 +6,10 @@
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../core/routes/admin_routes.dart';
+import '../../core/utils/admin_helpers.dart';
 import '../../providers/admin_auth_provider.dart';
 
 class AdminLoginScreen extends StatefulWidget {
@@ -43,12 +43,8 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
       if (success && mounted) {
         Navigator.pushReplacementNamed(context, AdminRoutes.dashboard);
       } else if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(authProvider.errorMessage ?? 'Login failed'),
-            backgroundColor: AppColors.error,
-          ),
-        );
+        AdminHelpers.showErrorSnackbar(
+            context, authProvider.errorMessage ?? 'Login failed');
       }
     }
   }
@@ -189,21 +185,15 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                             final success = await auth.seedDefaultAdmin();
                             if (mounted) {
                               if (success) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                      content: Text(
-                                          'Super Created! Login with admin@watchhub.com / admin123')),
-                                );
+                                AdminHelpers.showSuccessSnackbar(context,
+                                    'Super Created! Login with admin@watchhub.com / admin123');
                                 // Auto login if successful (the provider might already handle auth state,
                                 // but we might need to push route if listen logic handles it)
                                 Navigator.pushReplacementNamed(
                                     context, AdminRoutes.dashboard);
                               } else {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                      content: Text(
-                                          'Admin user already exists or failed to create.')),
-                                );
+                                AdminHelpers.showErrorSnackbar(context,
+                                    'Admin user already exists or failed to create.');
                               }
                             }
                           },

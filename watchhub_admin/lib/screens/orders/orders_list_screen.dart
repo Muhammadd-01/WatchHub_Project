@@ -11,6 +11,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
+import '../../core/utils/admin_helpers.dart';
 import '../../widgets/admin_scaffold.dart';
 import '../../providers/admin_order_provider.dart';
 
@@ -170,9 +171,20 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
           TextButton(
             onPressed: () async {
               Navigator.pop(context);
-              await context
-                  .read<AdminOrderProvider>()
-                  .updateOrderStatus(order['id'], currentStatus);
+              try {
+                await context
+                    .read<AdminOrderProvider>()
+                    .updateOrderStatus(order['id'], currentStatus);
+                if (context.mounted) {
+                  AdminHelpers.showSuccessSnackbar(
+                      context, 'Order status updated');
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  AdminHelpers.showErrorSnackbar(
+                      context, 'Failed to update status');
+                }
+              }
             },
             child: const Text('Update'),
           ),

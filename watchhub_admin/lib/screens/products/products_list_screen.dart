@@ -11,10 +11,10 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/services.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
-import '../../core/routes/admin_routes.dart';
+import 'package:image_picker/image_picker.dart';
+import '../../core/utils/admin_helpers.dart';
 import '../../widgets/admin_scaffold.dart';
 import '../../providers/admin_product_provider.dart';
-import '../../providers/admin_auth_provider.dart';
 
 class ProductsListScreen extends StatefulWidget {
   const ProductsListScreen({super.key});
@@ -220,15 +220,15 @@ class _ProductsListScreenState extends State<ProductsListScreen> {
                   .read<AdminProductProvider>()
                   .deleteProduct(productId);
               if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(success
-                        ? 'Product deleted'
-                        : 'Failed to delete product'),
-                    backgroundColor:
-                        success ? AppColors.success : AppColors.error,
-                  ),
-                );
+                if (mounted) {
+                  if (success) {
+                    AdminHelpers.showSuccessSnackbar(
+                        context, 'Product deleted');
+                  } else {
+                    AdminHelpers.showErrorSnackbar(
+                        context, 'Failed to delete product');
+                  }
+                }
               }
             },
             style: TextButton.styleFrom(foregroundColor: AppColors.error),
@@ -296,6 +296,30 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
     super.dispose();
   }
 
+  final ImagePicker _picker = ImagePicker();
+  List<XFile> _selectedImages = [];
+  bool _isUploading = false;
+
+  Future<void> _pickImages() async {
+    try {
+      final List<XFile> images = await _picker.pickMultiImage();
+      if (images.isNotEmpty) {
+        setState(() {
+          _selectedImages.addAll(images);
+        });
+      }
+    } catch (e) {
+      if (mounted)
+        AdminHelpers.showErrorSnackbar(context, 'Error picking images: $e');
+    }
+  }
+
+  void _removeImage(int index) {
+    setState(() {
+      _selectedImages.removeAt(index);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final isEdit = widget.product != null;
@@ -304,111 +328,161 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
       padding: const EdgeInsets.all(24),
       child: Form(
         key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              isEdit ? 'Edit Product' : 'Add New Product',
-              style: AppTextStyles.headlineSmall,
-            ),
-            const SizedBox(height: 24),
-            Row(
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: _nameCtrl,
-                    decoration: const InputDecoration(
-                        labelText: 'Product Name',
-                        labelStyle: TextStyle(color: AppColors.textSecondary)),
-                    style: const TextStyle(color: AppColors.textPrimary),
-                    validator: (v) => v!.isEmpty ? 'Required' : null,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                isEdit ? 'Edit Product' : 'Add New Product',
+                style: AppTextStyles.headlineSmall,
+              ),
+              const SizedBox(height: 24),
+              // Image Picker UI
+              Text('Product Images', style: AppTextStyles.titleMedium),
+              const SizedBox(height: 8),
+              if (_selectedImages.isNotEmpty)
+                Container(
+                  height: 100,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: _selectedImages.length,
+                    separatorBuilder: (_, __) => const SizedBox(width: 8),
+                    itemBuilder: (context, index) {
+                      return Stack(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.network(
+                              _selectedImages[index]
+                                  .path, // For web/desktop this path works or use bytes
+                              width: 100,
+                              height: 100,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Container(
+                                  width: 100, height: 100, color: Colors.grey),
+                            ),
+                          ),
+                          Positioned(
+                            top: 0,
+                            right: 0,
+                            child: GestureDetector(
+                              onTap: () => _removeImage(index),
+                              child: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: const BoxDecoration(
+                                  color: Colors.red,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(Icons.close,
+                                    size: 16, color: Colors.white),
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
                   ),
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: TextFormField(
-                    controller: _brandCtrl,
-                    decoration: const InputDecoration(
-                        labelText: 'Brand',
-                        labelStyle: TextStyle(color: AppColors.textSecondary)),
-                    style: const TextStyle(color: AppColors.textPrimary),
-                    validator: (v) => v!.isEmpty ? 'Required' : null,
+              OutlinedButton.icon(
+                onPressed: _pickImages,
+                icon: const Icon(Icons.add_photo_alternate),
+                label: const Text('Add Images'),
+              ),
+              const SizedBox(height: 24),
+
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _nameCtrl,
+                      decoration:
+                          const InputDecoration(labelText: 'Product Name'),
+                      style: const TextStyle(color: AppColors.textPrimary),
+                      validator: (v) => v!.isEmpty ? 'Required' : null,
+                    ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: _priceCtrl,
-                    decoration: const InputDecoration(
-                        labelText: 'Price',
-                        prefixText: '\$ ',
-                        labelStyle: TextStyle(color: AppColors.textSecondary)),
-                    style: const TextStyle(color: AppColors.textPrimary),
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))
-                    ],
-                    validator: (v) => v!.isEmpty ? 'Required' : null,
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _brandCtrl,
+                      decoration: const InputDecoration(labelText: 'Brand'),
+                      style: const TextStyle(color: AppColors.textPrimary),
+                      validator: (v) => v!.isEmpty ? 'Required' : null,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: TextFormField(
-                    controller: _stockCtrl,
-                    decoration: const InputDecoration(
-                        labelText: 'Stock',
-                        labelStyle: TextStyle(color: AppColors.textSecondary)),
-                    style: const TextStyle(color: AppColors.textPrimary),
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                    validator: (v) => v!.isEmpty ? 'Required' : null,
+                ],
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _priceCtrl,
+                      decoration: const InputDecoration(
+                          labelText: 'Price', prefixText: '\$ '),
+                      style: const TextStyle(color: AppColors.textPrimary),
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))
+                      ],
+                      validator: (v) => v!.isEmpty ? 'Required' : null,
+                    ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            DropdownButtonFormField<String>(
-              value: _category,
-              dropdownColor: AppColors.surfaceColor,
-              decoration: const InputDecoration(
-                  labelText: 'Category',
-                  labelStyle: TextStyle(color: AppColors.textSecondary)),
-              style: const TextStyle(color: AppColors.textPrimary),
-              items: ['Men', 'Women', 'Unisex', 'Smart', 'Luxury']
-                  .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-                  .toList(),
-              onChanged: (v) => setState(() => _category = v!),
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _descCtrl,
-              decoration: const InputDecoration(
-                  labelText: 'Description',
-                  labelStyle: TextStyle(color: AppColors.textSecondary)),
-              style: const TextStyle(color: AppColors.textPrimary),
-              maxLines: 3,
-            ),
-            const SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Cancel'),
-                ),
-                const SizedBox(width: 16),
-                ElevatedButton(
-                  onPressed: _save,
-                  child: Text(isEdit ? 'Update' : 'Create'),
-                ),
-              ],
-            ),
-          ],
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _stockCtrl,
+                      decoration: const InputDecoration(labelText: 'Stock'),
+                      style: const TextStyle(color: AppColors.textPrimary),
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      validator: (v) => v!.isEmpty ? 'Required' : null,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                value: _category,
+                dropdownColor: AppColors.surfaceColor,
+                decoration: const InputDecoration(labelText: 'Category'),
+                style: const TextStyle(color: AppColors.textPrimary),
+                items: ['Men', 'Women', 'Unisex', 'Smart', 'Luxury']
+                    .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                    .toList(),
+                onChanged: (v) => setState(() => _category = v!),
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _descCtrl,
+                decoration: const InputDecoration(labelText: 'Description'),
+                style: const TextStyle(color: AppColors.textPrimary),
+                maxLines: 3,
+              ),
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Cancel'),
+                  ),
+                  const SizedBox(width: 16),
+                  ElevatedButton(
+                    onPressed: _isUploading ? null : _save,
+                    child: _isUploading
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2))
+                        : Text(isEdit ? 'Update' : 'Create'),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -417,8 +491,7 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
   void _save() async {
     if (!_formKey.currentState!.validate()) return;
 
-    // For now, simpler implementation without image uploading in this dialog check
-    // In real app, we need the Image Picker here.
+    setState(() => _isUploading = true);
 
     final provider = context.read<AdminProductProvider>();
     final name = _nameCtrl.text;
@@ -438,12 +511,8 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
         'description': desc,
         'category': _category,
       });
+      // Handle image updates separately if needed, but for now we focused on creating with images
     } else {
-      // Add - requires images argument strictly in provider, but for this step
-      // I'll make the dialog simplified. The provider expects images.
-      // I will fix provider to make images optional for now or mock it if strictly needed.
-      // Actually, let's just pass empty list for now to satisfy the call if strict,
-      // or modify provider to be lenient.
       success = await provider.addProduct(
         name: name,
         brand: brand,
@@ -451,13 +520,20 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
         stock: stock,
         description: desc,
         category: _category,
-        images: [], // TODO: Add Image Picker
+        images: _selectedImages,
         specs: {},
       );
     }
 
-    if (mounted && success) {
-      Navigator.pop(context);
+    if (mounted) {
+      setState(() => _isUploading = false);
+      if (success) {
+        Navigator.pop(context);
+        AdminHelpers.showSuccessSnackbar(context,
+            widget.product != null ? 'Product updated' : 'Product created');
+      } else {
+        AdminHelpers.showErrorSnackbar(context, 'Operation failed');
+      }
     }
   }
 }

@@ -20,68 +20,70 @@ class AdminCartProvider extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     try {
-      // 1. Get all cart documents (assuming top-level 'carts' collection where docId is UID)
-      final cartsSnapshot = await _firestore.collection('carts').get();
+      // Since parent 'carts/{uid}' docs might not exist, we query the subcollection 'items' directly
+      // Note: This requires an index if we add where clauses, but for basic get() it works.
+      // However, 'items' is also used by wishlists. We must filter.
+      final querySnapshot = await _firestore.collectionGroup('items').get();
 
-      List<Map<String, dynamic>> loadedCarts = [];
+      final Map<String, Map<String, dynamic>> cartGroups = {};
 
-      for (var doc in cartsSnapshot.docs) {
-        final uid = doc.id;
+      for (var doc in querySnapshot.docs) {
+        // Check if this item belongs to a 'carts' collection
+        // Path format: carts/{uid}/items/{productId}
+        final pathSegments = doc.reference.path.split('/');
 
-        // 2. Get items in the 'items' subcollection
-        final itemsSnapshot = await _firestore
-            .collection('carts')
-            .doc(uid)
-            .collection('items')
-            .get();
+        // Safety check for correct path depth
+        if (pathSegments.length >= 4 &&
+            pathSegments[0] == 'carts' &&
+            pathSegments[2] == 'items') {
+          final uid = pathSegments[1];
+          final productData = doc.data();
+          final productId = productData['productId'] ??
+              doc.id; // Use productId field or doc ID
 
-        if (itemsSnapshot.docs.isNotEmpty) {
-          // 3. Get User Details
-          final userDoc = await _firestore.collection('users').doc(uid).get();
-          final userData =
-              userDoc.data() ?? {'name': 'Unknown User', 'email': 'No Email'};
-
-          // 4. Resolve Product Details (Name only for summary)
-          List<Map<String, dynamic>> items = [];
-          for (var itemDoc in itemsSnapshot.docs) {
-            final itemData = itemDoc.data();
-            final productId =
-                itemData['productId']; // or doc.id if stored that way
-
-            // To be efficient, we might not fetch full product details for overview,
-            // but let's try to get product name if possible, or just show ID/Quantity.
-            // A meaningful view needs names.
-            DocumentSnapshot? productDoc;
-            try {
-              productDoc =
-                  await _firestore.collection('products').doc(productId).get();
-            } catch (_) {}
-
-            items.add({
-              'productId': productId,
-              'quantity': itemData['quantity'] ?? 0,
-              'productName': productDoc != null && productDoc.exists
-                  ? productDoc['name']
-                  : 'Unknown Product',
-              'price': productDoc != null && productDoc.exists
-                  ? (productDoc['price'] ?? 0)
-                  : 0,
-            });
-          }
-
-          if (items.isNotEmpty) {
-            loadedCarts.add({
+          if (!cartGroups.containsKey(uid)) {
+            cartGroups[uid] = {
               'uid': uid,
-              'userName': userData['name'],
-              'userEmail': userData['email'],
-              'items': items,
-              'itemCount': items.length,
-            });
+              'items': <Map<String, dynamic>>[],
+            };
           }
+
+          // Fetch product name separately (optimization: cache names)
+          DocumentSnapshot? productDoc;
+          try {
+            productDoc =
+                await _firestore.collection('products').doc(productId).get();
+          } catch (_) {}
+
+          cartGroups[uid]!['items'].add({
+            'productId': productId,
+            'quantity': productData['quantity'] ?? 0,
+            'productName': productDoc != null && productDoc.exists
+                ? productDoc['name']
+                : 'Product #$productId',
+            'price': productDoc != null && productDoc.exists
+                ? (productDoc['price'] ?? 0)
+                : 0,
+          });
         }
       }
 
-      _activeCarts = loadedCarts;
+      // Now enrich with User Names
+      List<Map<String, dynamic>> finalCarts = [];
+      for (var uid in cartGroups.keys) {
+        final userData = await _firestore.collection('users').doc(uid).get();
+        final userMap = userData.data() ?? {};
+
+        finalCarts.add({
+          'uid': uid,
+          'userName': userMap['name'] ?? 'Unknown User',
+          'userEmail': userMap['email'] ?? 'No Email',
+          'items': cartGroups[uid]!['items'],
+          'itemCount': (cartGroups[uid]!['items'] as List).length,
+        });
+      }
+
+      _activeCarts = finalCarts;
     } catch (e) {
       debugPrint('Error fetching carts: $e');
     } finally {

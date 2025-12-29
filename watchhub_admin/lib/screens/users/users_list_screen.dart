@@ -13,6 +13,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
+import '../../core/utils/admin_helpers.dart';
 import '../../widgets/admin_scaffold.dart';
 import '../../providers/admin_user_provider.dart';
 
@@ -218,7 +219,6 @@ class UsersListScreen extends StatelessWidget {
       ),
     );
   }
-  }
 
   void _showAddUserDialog(BuildContext context) {
     final emailController = TextEditingController();
@@ -230,115 +230,135 @@ class UsersListScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              backgroundColor: AppColors.cardBackground,
-              title: const Text('Add New User', style: TextStyle(color: AppColors.textPrimary)),
-              content: SizedBox(
-                width: 400,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextField(
-                      controller: nameController,
-                      style: const TextStyle(color: AppColors.textPrimary),
-                      decoration: const InputDecoration(labelText: 'Full Name'),
+        return StatefulBuilder(builder: (context, setState) {
+          return AlertDialog(
+            backgroundColor: AppColors.cardBackground,
+            title: const Text('Add New User',
+                style: TextStyle(color: AppColors.textPrimary)),
+            content: SizedBox(
+              width: 400,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: nameController,
+                    style: const TextStyle(color: AppColors.textPrimary),
+                    decoration: const InputDecoration(labelText: 'Full Name'),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: emailController,
+                    style: const TextStyle(color: AppColors.textPrimary),
+                    decoration: const InputDecoration(labelText: 'Email'),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: passwordController,
+                    obscureText: true,
+                    style: const TextStyle(color: AppColors.textPrimary),
+                    decoration: const InputDecoration(labelText: 'Password'),
+                  ),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<String>(
+                    value: selectedRole,
+                    dropdownColor: AppColors.cardBackground,
+                    items: const [
+                      DropdownMenuItem(
+                          value: 'customer',
+                          child: Text('Customer',
+                              style: TextStyle(color: AppColors.textPrimary))),
+                      DropdownMenuItem(
+                          value: 'admin',
+                          child: Text('Admin',
+                              style: TextStyle(color: AppColors.textPrimary))),
+                    ],
+                    onChanged: (val) => setState(() => selectedRole = val!),
+                    decoration: const InputDecoration(labelText: 'Role'),
+                  ),
+                  if (isLoading)
+                    const Padding(
+                      padding: EdgeInsets.only(top: 16.0),
+                      child: CircularProgressIndicator(),
                     ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: emailController,
-                      style: const TextStyle(color: AppColors.textPrimary),
-                      decoration: const InputDecoration(labelText: 'Email'),
-                    ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: passwordController,
-                      obscureText: true,
-                      style: const TextStyle(color: AppColors.textPrimary),
-                      decoration: const InputDecoration(labelText: 'Password'),
-                    ),
-                    const SizedBox(height: 16),
-                    DropdownButtonFormField<String>(
-                      value: selectedRole,
-                      dropdownColor: AppColors.cardBackground,
-                      items: const [
-                        DropdownMenuItem(value: 'customer', child: Text('Customer', style: TextStyle(color: AppColors.textPrimary))),
-                        DropdownMenuItem(value: 'admin', child: Text('Admin', style: TextStyle(color: AppColors.textPrimary))),
-                      ],
-                      onChanged: (val) => setState(() => selectedRole = val!),
-                      decoration: const InputDecoration(labelText: 'Role'),
-                    ),
-                    if (isLoading)
-                      const Padding(
-                        padding: EdgeInsets.only(top: 16.0),
-                        child: CircularProgressIndicator(),
-                      ),
-                  ],
-                ),
+                ],
               ),
-              actions: [
-                TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-                TextButton(
-                  onPressed: isLoading ? null : () async {
-                    if (emailController.text.isEmpty || passwordController.text.isEmpty || nameController.text.isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please fill all fields')));
-                      return;
-                    }
-
-                    setState(() => isLoading = true);
-
-                    // Create user via Secondary App
-                    try {
-                      FirebaseApp tempApp = await Firebase.initializeApp(
-                        name: 'tempApp',
-                        options: Firebase.app().options,
-                      );
-                      
-                      try {
-                        UserCredential cred = await FirebaseAuth.instanceFor(app: tempApp).createUserWithEmailAndPassword(
-                          email: emailController.text.trim(),
-                          password: passwordController.text.trim(),
-                        );
-                        
-                        // Create Firestore Doc (using main app instance)
-                        if (cred.user != null) {
-                          await FirebaseFirestore.instance.collection('users').doc(cred.user!.uid).set({
-                            'name': nameController.text.trim(),
-                            'email': emailController.text.trim(),
-                            'role': selectedRole,
-                            'createdAt': FieldValue.serverTimestamp(),
-                            'phone': '',
-                          });
+            ),
+            actions: [
+              TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel')),
+              TextButton(
+                onPressed: isLoading
+                    ? null
+                    : () async {
+                        if (emailController.text.isEmpty ||
+                            passwordController.text.isEmpty ||
+                            nameController.text.isEmpty) {
+                          AdminHelpers.showErrorSnackbar(
+                              context, 'Please fill all fields');
+                          return;
                         }
-                        
-                        await tempApp.delete();
-                        if (context.mounted) {
-                           Navigator.pop(context);
-                           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('User created successfully')));
+
+                        setState(() => isLoading = true);
+
+                        // Create user via Secondary App
+                        try {
+                          FirebaseApp tempApp = await Firebase.initializeApp(
+                            name: 'tempApp',
+                            options: Firebase.app().options,
+                          );
+
+                          try {
+                            UserCredential cred =
+                                await FirebaseAuth.instanceFor(app: tempApp)
+                                    .createUserWithEmailAndPassword(
+                              email: emailController.text.trim(),
+                              password: passwordController.text.trim(),
+                            );
+
+                            // Create Firestore Doc (using main app instance)
+                            if (cred.user != null) {
+                              await FirebaseFirestore.instance
+                                  .collection('users')
+                                  .doc(cred.user!.uid)
+                                  .set({
+                                'name': nameController.text.trim(),
+                                'email': emailController.text.trim(),
+                                'role': selectedRole,
+                                'createdAt': FieldValue.serverTimestamp(),
+                                'phone': '',
+                              });
+                            }
+
+                            await tempApp.delete();
+                            if (context.mounted) {
+                              Navigator.pop(context);
+                              AdminHelpers.showSuccessSnackbar(
+                                  context, 'User created successfully');
+                            }
+                          } on FirebaseAuthException catch (e) {
+                            if (context.mounted) {
+                              AdminHelpers.showErrorSnackbar(
+                                  context, 'Error: ${e.message}');
+                            }
+                            await tempApp.delete();
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            AdminHelpers.showErrorSnackbar(
+                                context, 'Error: $e');
+                          }
+                        } finally {
+                          if (context.mounted) {
+                            setState(() => isLoading = false);
+                          }
                         }
-                      } on FirebaseAuthException catch (e) {
-                         if (context.mounted) {
-                           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: ${e.message}')));
-                         }
-                         await tempApp.delete();
-                      }
-                    } catch (e) {
-                       if (context.mounted) {
-                           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
-                       }
-                    } finally {
-                       if (context.mounted) {
-                         setState(() => isLoading = false);
-                       }
-                    }
-                  },
-                  child: const Text('Create User'),
-                ),
-              ],
-            );
-          }
-        );
+                      },
+                child: const Text('Create User'),
+              ),
+            ],
+          );
+        });
       },
     );
   }
