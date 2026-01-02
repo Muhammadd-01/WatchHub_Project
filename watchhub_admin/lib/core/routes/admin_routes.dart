@@ -6,14 +6,9 @@
 
 import 'package:flutter/material.dart';
 import '../../screens/auth/admin_login_screen.dart';
-import '../../screens/dashboard/dashboard_screen.dart';
-import '../../screens/products/products_list_screen.dart';
-import '../../screens/orders/orders_list_screen.dart';
-import '../../screens/users/users_list_screen.dart';
-import '../../screens/categories/categories_screen.dart';
-import '../../screens/feedback/feedback_screen.dart';
-import '../../screens/carts/active_carts_screen.dart';
-import '../../screens/settings/settings_screen.dart';
+import '../../screens/admin_main_screen.dart';
+// Sub-pages that are PUSHED on top of the shell:
+// (Currently none, as Add/Edit Product is a dialog. If we have Detail pages, import them here)
 
 /// Admin Panel Routes
 class AdminRoutes {
@@ -21,18 +16,12 @@ class AdminRoutes {
 
   // Route names
   static const String login = '/';
-  static const String dashboard = '/dashboard';
-  static const String products = '/products';
-  static const String addProduct = '/products/add';
-  static const String editProduct = '/products/edit';
-  static const String orders = '/orders';
-  static const String orderDetails = '/orders/details';
-  static const String users = '/users';
-  static const String userDetails = '/users/details';
-  static const String categories = '/categories';
-  static const String feedback = '/feedback';
-  static const String carts = '/carts';
-  static const String settings = '/settings';
+  static const String dashboard =
+      '/dashboard'; // Used for redirection after login
+
+  // These might be used for deeplinking later, or sub-pages.
+  // For now, the main tabs are inside AdminMainScreen and don't need named routes
+  // unless we implement deep linking logic in MainScreen.
 
   static Route<dynamic> generateRoute(RouteSettings routeSettings) {
     switch (routeSettings.name) {
@@ -40,30 +29,11 @@ class AdminRoutes {
         return MaterialPageRoute(builder: (_) => const AdminLoginScreen());
 
       case dashboard:
-        return MaterialPageRoute(builder: (_) => const DashboardScreen());
-
-      case products:
-        return MaterialPageRoute(builder: (_) => const ProductsListScreen());
-
-      case orders:
-        return MaterialPageRoute(builder: (_) => const OrdersListScreen());
-
-      case users:
-        return MaterialPageRoute(builder: (_) => const UsersListScreen());
-
-      case categories:
-        return MaterialPageRoute(builder: (_) => const CategoriesScreen());
-
-      case feedback:
-        return MaterialPageRoute(builder: (_) => const FeedbackScreen());
-
-      case carts:
-        return MaterialPageRoute(builder: (_) => const ActiveCartsScreen());
-
-      case settings:
-        return MaterialPageRoute(builder: (_) => const SettingsScreen());
+        // This is now the "Main App Shell"
+        return MaterialPageRoute(builder: (_) => const AdminMainScreen());
 
       default:
+        // Fallback
         return MaterialPageRoute(
           builder: (_) =>
               const Scaffold(body: Center(child: Text('Page not found'))),

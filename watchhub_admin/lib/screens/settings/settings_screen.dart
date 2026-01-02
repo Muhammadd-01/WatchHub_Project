@@ -11,6 +11,7 @@ import '../../core/constants/app_text_styles.dart';
 import '../../core/utils/admin_helpers.dart';
 import '../../widgets/admin_scaffold.dart';
 import '../../providers/admin_auth_provider.dart';
+import '../../providers/admin_theme_provider.dart';
 import '../../core/routes/admin_routes.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -27,17 +28,21 @@ class SettingsScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildSectionHeader('Appearance'),
-              _buildSettingItem(
-                title: 'Dark Mode',
-                subtitle: 'Toggle dark/light theme (Coming Soon)',
-                trailing: Switch(
-                  value: true, // Default to dark for now
-                  onChanged: (val) {
-                    AdminHelpers.showInfoSnackbar(
-                        context, 'Theme switching is coming soon!');
-                  },
-                  activeColor: AppColors.primaryGold,
-                ),
+              _buildSectionHeader('Appearance'),
+              Consumer<AdminThemeProvider>(
+                builder: (context, themeProvider, _) {
+                  return _buildSettingItem(
+                    title: 'Dark Mode',
+                    subtitle: 'Toggle dark/light theme',
+                    trailing: Switch(
+                      value: themeProvider.isDarkMode,
+                      onChanged: (val) {
+                        themeProvider.toggleTheme();
+                      },
+                      activeColor: AppColors.primaryGold,
+                    ),
+                  );
+                },
               ),
               const SizedBox(height: 32),
               _buildSectionHeader('Account'),

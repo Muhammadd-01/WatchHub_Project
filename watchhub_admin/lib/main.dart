@@ -15,8 +15,9 @@ import 'core/theme/admin_theme.dart';
 import 'core/routes/admin_routes.dart';
 
 // Screens
+// Screens
 import 'screens/auth/admin_login_screen.dart';
-import 'screens/dashboard/dashboard_screen.dart';
+import 'screens/admin_main_screen.dart';
 
 // Providers
 import 'providers/admin_auth_provider.dart';
@@ -26,6 +27,9 @@ import 'providers/admin_user_provider.dart';
 import 'providers/admin_category_provider.dart';
 import 'providers/admin_feedback_provider.dart';
 import 'providers/admin_cart_provider.dart';
+import 'providers/admin_dashboard_provider.dart';
+import 'providers/admin_navigation_provider.dart';
+import 'providers/admin_theme_provider.dart';
 
 import 'firebase_options.dart';
 
@@ -62,14 +66,23 @@ class WatchHubAdminApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AdminCategoryProvider()),
         ChangeNotifierProvider(create: (_) => AdminFeedbackProvider()),
         ChangeNotifierProvider(create: (_) => AdminCartProvider()),
+        ChangeNotifierProvider(create: (_) => AdminDashboardProvider()),
+        ChangeNotifierProvider(create: (_) => AdminNavigationProvider()),
+        ChangeNotifierProvider(create: (_) => AdminThemeProvider()),
       ],
-      child: MaterialApp(
-        title: 'WatchHub Admin',
-        debugShowCheckedModeBanner: false,
-        theme: AdminTheme.darkTheme,
-        // Remove initialRoute, use home with AuthWrapper
-        home: const AuthWrapper(),
-        onGenerateRoute: AdminRoutes.generateRoute,
+      child: Consumer<AdminThemeProvider>(
+        builder: (context, themeProvider, _) {
+          return MaterialApp(
+            title: 'WatchHub Admin',
+            debugShowCheckedModeBanner: false,
+            theme: AdminTheme.lightTheme,
+            darkTheme: AdminTheme.darkTheme,
+            themeMode: themeProvider.themeMode,
+            // Remove initialRoute, use home with AuthWrapper
+            home: const AuthWrapper(),
+            onGenerateRoute: AdminRoutes.generateRoute,
+          );
+        },
       ),
     );
   }
@@ -98,7 +111,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
         // real persistence might need a separate 'isInitialized' flag in provider.
 
         if (auth.isAuthenticated) {
-          return const DashboardScreen();
+          return const AdminMainScreen();
         }
         return const AdminLoginScreen();
       },
