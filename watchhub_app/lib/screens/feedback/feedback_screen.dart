@@ -6,7 +6,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../core/utils/helpers.dart';
 import '../../providers/auth_provider.dart';
@@ -79,7 +78,8 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
         type: _selectedType,
         subject: _subjectController.text.trim(),
         message: _messageController.text.trim(),
-        createdAt: DateTime.now(), userName: '',
+        createdAt: DateTime.now(),
+        userName: '',
       );
 
       await _firestoreService.submitFeedback(feedback);
@@ -104,10 +104,14 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.scaffoldBackground,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.scaffoldBackground,
-        title: Text('Send Feedback', style: AppTextStyles.appBarTitle),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        title: Text('Send Feedback',
+            style: AppTextStyles.appBarTitle.copyWith(
+              color: Theme.of(context).textTheme.titleLarge?.color,
+            )),
+        centerTitle: true,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -117,16 +121,24 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Intro text
-              Text('We value your feedback!', style: AppTextStyles.titleLarge),
+              Text('We value your feedback!',
+                  style: AppTextStyles.titleLarge.copyWith(
+                    color: Theme.of(context).textTheme.titleLarge?.color,
+                  )),
               const SizedBox(height: 8),
               Text(
                 'Help us improve WatchHub by sharing your thoughts, reporting issues, or suggesting new features.',
-                style: AppTextStyles.bodyMedium,
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: Theme.of(context).textTheme.bodyMedium?.color,
+                ),
               ),
               const SizedBox(height: 24),
 
               // Feedback type
-              Text('Feedback Type', style: AppTextStyles.titleMedium),
+              Text('Feedback Type',
+                  style: AppTextStyles.titleMedium.copyWith(
+                    color: Theme.of(context).textTheme.titleMedium?.color,
+                  )),
               const SizedBox(height: 12),
               Wrap(
                 spacing: 8,
@@ -142,13 +154,13 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                       ),
                       decoration: BoxDecoration(
                         color: isSelected
-                            ? AppColors.primaryGold.withOpacity(0.2)
-                            : AppColors.cardBackground,
+                            ? Theme.of(context).primaryColor.withOpacity(0.2)
+                            : Theme.of(context).cardColor,
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
                           color: isSelected
-                              ? AppColors.primaryGold
-                              : AppColors.cardBorder,
+                              ? Theme.of(context).primaryColor
+                              : Theme.of(context).dividerColor,
                         ),
                       ),
                       child: Row(
@@ -158,16 +170,19 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                             type['icon'] as IconData,
                             size: 18,
                             color: isSelected
-                                ? AppColors.primaryGold
-                                : AppColors.textSecondary,
+                                ? Theme.of(context).primaryColor
+                                : Theme.of(context).iconTheme.color,
                           ),
                           const SizedBox(width: 8),
                           Text(
                             type['label'] as String,
                             style: AppTextStyles.labelMedium.copyWith(
                               color: isSelected
-                                  ? AppColors.primaryGold
-                                  : AppColors.textSecondary,
+                                  ? Theme.of(context).primaryColor
+                                  : Theme.of(context)
+                                      .textTheme
+                                      .bodyMedium
+                                      ?.color,
                             ),
                           ),
                         ],

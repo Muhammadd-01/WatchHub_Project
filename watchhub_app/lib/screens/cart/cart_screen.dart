@@ -24,11 +24,15 @@ class CartScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.scaffoldBackground,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.scaffoldBackground,
-        title: Text('My Cart', style: AppTextStyles.appBarTitle),
-        automaticallyImplyLeading: false,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        title: Text('My Cart',
+            style: AppTextStyles.appBarTitle.copyWith(
+              color: Theme.of(context).textTheme.titleLarge?.color,
+            )),
+        centerTitle: true,
+        // automaticallyImplyLeading: true is default, ensuring back button appears if pushed
         actions: [
           Consumer<CartProvider>(
             builder: (context, cartProvider, _) {
@@ -89,14 +93,19 @@ class CartScreen extends StatelessWidget {
             Icon(
               Icons.shopping_bag_outlined,
               size: 80,
-              color: AppColors.textTertiary,
+              color: Theme.of(context).disabledColor,
             ),
             const SizedBox(height: 24),
-            Text('Sign in to view cart', style: AppTextStyles.titleLarge),
+            Text('Sign in to view cart',
+                style: AppTextStyles.titleLarge.copyWith(
+                  color: Theme.of(context).textTheme.titleLarge?.color,
+                )),
             const SizedBox(height: 8),
             Text(
               'Your cart items will be saved across devices',
-              style: AppTextStyles.bodyMedium,
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: Theme.of(context).textTheme.bodyMedium?.color,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 32),
@@ -121,14 +130,19 @@ class CartScreen extends StatelessWidget {
             Icon(
               Icons.shopping_bag_outlined,
               size: 80,
-              color: AppColors.textTertiary,
+              color: Theme.of(context).disabledColor,
             ),
             const SizedBox(height: 24),
-            Text('Your cart is empty', style: AppTextStyles.titleLarge),
+            Text('Your cart is empty',
+                style: AppTextStyles.titleLarge.copyWith(
+                  color: Theme.of(context).textTheme.titleLarge?.color,
+                )),
             const SizedBox(height: 8),
             Text(
               'Start adding luxury timepieces to your collection',
-              style: AppTextStyles.bodyMedium,
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: Theme.of(context).textTheme.bodyMedium?.color,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 32),
@@ -143,11 +157,11 @@ class CartScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.cardBackground,
-        border: Border(top: BorderSide(color: AppColors.divider)),
+        color: Theme.of(context).cardColor,
+        border: Border(top: BorderSide(color: Theme.of(context).dividerColor)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
             offset: const Offset(0, -5),
           ),
@@ -161,10 +175,15 @@ class CartScreen extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Subtotal', style: AppTextStyles.bodyMedium),
+                Text('Subtotal',
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: Theme.of(context).textTheme.bodyMedium?.color,
+                    )),
                 Text(
                   Helpers.formatCurrency(cartProvider.totalPrice),
-                  style: AppTextStyles.bodyMedium,
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: Theme.of(context).textTheme.bodyMedium?.color,
+                  ),
                 ),
               ],
             ),
@@ -172,7 +191,10 @@ class CartScreen extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Shipping', style: AppTextStyles.bodyMedium),
+                Text('Shipping',
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: Theme.of(context).textTheme.bodyMedium?.color,
+                    )),
                 Text(
                   'Free',
                   style: AppTextStyles.bodyMedium.copyWith(
@@ -185,7 +207,10 @@ class CartScreen extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Total', style: AppTextStyles.titleMedium),
+                Text('Total',
+                    style: AppTextStyles.titleMedium.copyWith(
+                      color: Theme.of(context).textTheme.titleMedium?.color,
+                    )),
                 Text(
                   Helpers.formatCurrency(cartProvider.totalPrice),
                   style: AppTextStyles.priceLarge,
@@ -198,10 +223,7 @@ class CartScreen extends StatelessWidget {
               onPressed: cartProvider.allItemsAvailable
                   ? () {
                       // Navigate to checkout
-                      Helpers.showInfoSnackbar(
-                        context,
-                        'Checkout coming soon!',
-                      );
+                      Navigator.pushNamed(context, AppRoutes.checkout);
                     }
                   : null,
               text: 'Proceed to Checkout',
@@ -217,11 +239,16 @@ class CartScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: AppColors.cardBackground,
-        title: Text('Clear Cart?', style: AppTextStyles.titleLarge),
+        backgroundColor: Theme.of(context).cardColor,
+        title: Text('Clear Cart?',
+            style: AppTextStyles.titleLarge.copyWith(
+              color: Theme.of(context).textTheme.titleLarge?.color,
+            )),
         content: Text(
           'Are you sure you want to remove all items from your cart?',
-          style: AppTextStyles.bodyMedium,
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: Theme.of(context).textTheme.bodyMedium?.color,
+          ),
         ),
         actions: [
           TextButton(
@@ -272,9 +299,9 @@ class _CartItemCard extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 16),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: AppColors.cardBackground,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.cardBorder),
+          border: Border.all(color: Theme.of(context).dividerColor),
         ),
         child: Row(
           children: [
@@ -289,12 +316,12 @@ class _CartItemCard extends StatelessWidget {
                 placeholder: (context, url) => Container(
                   width: 80,
                   height: 80,
-                  color: AppColors.surfaceColor,
+                  color: Theme.of(context).cardColor,
                 ),
                 errorWidget: (context, url, error) => Container(
                   width: 80,
                   height: 80,
-                  color: AppColors.surfaceColor,
+                  color: Theme.of(context).cardColor,
                   child: const Icon(Icons.watch_rounded),
                 ),
               ),
@@ -313,12 +340,17 @@ class _CartItemCard extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       product.name,
-                      style: AppTextStyles.titleSmall,
+                      style: AppTextStyles.titleSmall.copyWith(
+                        color: Theme.of(context).textTheme.titleSmall?.color,
+                      ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ] else ...[
-                    Text('Loading...', style: AppTextStyles.bodyMedium),
+                    Text('Loading...',
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: Theme.of(context).textTheme.bodyMedium?.color,
+                        )),
                   ],
                   const SizedBox(height: 8),
                   Text(
@@ -347,14 +379,17 @@ class _CartItemCard extends StatelessWidget {
                     }
                   },
                   style: IconButton.styleFrom(
-                    backgroundColor: AppColors.surfaceColor,
+                    backgroundColor: Theme.of(context).canvasColor,
+                    foregroundColor: Theme.of(context).iconTheme.color,
                   ),
                 ),
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 4),
                   child: Text(
                     '${item.quantity}',
-                    style: AppTextStyles.titleSmall,
+                    style: AppTextStyles.titleSmall.copyWith(
+                      color: Theme.of(context).textTheme.titleSmall?.color,
+                    ),
                   ),
                 ),
                 IconButton(
@@ -366,7 +401,8 @@ class _CartItemCard extends StatelessWidget {
                         );
                   },
                   style: IconButton.styleFrom(
-                    backgroundColor: AppColors.surfaceColor,
+                    backgroundColor: Theme.of(context).canvasColor,
+                    foregroundColor: Theme.of(context).iconTheme.color,
                   ),
                 ),
               ],

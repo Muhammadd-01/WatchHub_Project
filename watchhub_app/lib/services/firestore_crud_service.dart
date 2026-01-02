@@ -68,6 +68,9 @@ class FirestoreCrudService {
   CollectionReference<Map<String, dynamic>> get _feedbacksCollection =>
       _firestore.collection(AppConstants.feedbacksCollection);
 
+  /// Notifications collection (subcollection of users)
+  /// users/{uid}/notifications/{notificationId}
+
   // ===========================================================================
   // USER CRUD OPERATIONS
   // ===========================================================================
@@ -694,18 +697,43 @@ class FirestoreCrudService {
 
       return OrderModel.fromFirestore(doc);
     } catch (e) {
-      debugPrint('FirestoreCrudService: Error getting order - $e');
       rethrow;
     }
   }
 
-  /// Updates order status
+  /// Updates order status and notifies user
   Future<void> updateOrderStatus(String orderId, String status) async {
     try {
       await _ordersCollection.doc(orderId).update({
         'status': status,
         'updatedAt': FieldValue.serverTimestamp(),
       });
+
+      // Get order to find userId
+      final order = await getOrder(orderId);
+      if (order != null) {
+        String title = 'Order Update';
+        String message = 'Your order status has been updated to $status.';
+
+        if (status == 'approved') {
+          title = 'Order Approved';
+          message =
+              'Your order #${order.orderNumber} has been approved and is being processed.';
+        } else if (status == 'shipped') {
+          title = 'Order Shipped';
+          message = 'Your order #${order.orderNumber} is on its way!';
+        } else if (status == 'delivered') {
+          title = 'Order Delivered';
+          message =
+              'Your order #${order.orderNumber} has been delivered. Enjoy!';
+        } else if (status == 'cancelled') {
+          title = 'Order Cancelled';
+          message = 'Your order #${order.orderNumber} was cancelled.';
+        }
+
+        await sendNotification(order.userId, title, message);
+      }
+
       debugPrint(
         'FirestoreCrudService: Order status updated - $orderId: $status',
       );
@@ -713,6 +741,59 @@ class FirestoreCrudService {
       debugPrint('FirestoreCrudService: Error updating order status - $e');
       rethrow;
     }
+  }
+
+  // ===========================================================================
+  // NOTIFICATION OPERATIONS
+  // ===========================================================================
+
+  /// Sends a notification to a user
+  Future<void> sendNotification(
+      String uid, String title, String message) async {
+    try {
+      await _usersCollection
+          .doc(uid)
+          .collection('notifications') // Using literal 'notifications' for now
+          .add({
+        'title': title,
+        'message': message,
+        'read': false,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+      debugPrint('FirestoreCrudService: Notification sent to $uid');
+    } catch (e) {
+      debugPrint('FirestoreCrudService: Error sending notification - $e');
+      // Don't rethrow, notification failure shouldn't block main flow
+    }
+  }
+
+  /// Stream of user notifications
+  Stream<List<Map<String, dynamic>>> notificationsStream(String uid) {
+    return _usersCollection
+        .doc(uid)
+        .collection('notifications')
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs.map((doc) {
+        final data = doc.data();
+        data['id'] = doc.id;
+        // Convert Timestamp to DateTime
+        if (data['createdAt'] is Timestamp) {
+          data['createdAt'] = (data['createdAt'] as Timestamp).toDate();
+        }
+        return data;
+      }).toList();
+    });
+  }
+
+  /// Mark notification as read
+  Future<void> markNotificationRead(String uid, String notificationId) async {
+    await _usersCollection
+        .doc(uid)
+        .collection('notifications')
+        .doc(notificationId)
+        .update({'read': true});
   }
 
   /// Stream of user's orders
@@ -729,15 +810,17 @@ class FirestoreCrudService {
   }
 
   /// Generates a unique order number
+  /// Generates a unique order number
   Future<String> generateOrderNumber() async {
     final year = DateTime.now().year;
 
-    // Get count of orders this year
+    // Get count of orders this year efficiently
     final snapshot = await _ordersCollection
         .where('createdAt', isGreaterThanOrEqualTo: DateTime(year))
+        .count()
         .get();
 
-    final orderCount = snapshot.docs.length + 1;
+    final orderCount = (snapshot.count ?? 0) + 1;
 
     return 'WH-$year-${orderCount.toString().padLeft(6, '0')}';
   }

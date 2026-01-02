@@ -6,7 +6,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../core/routes/app_routes.dart';
 import '../../models/product_model.dart';
@@ -70,25 +69,27 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.scaffoldBackground,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.scaffoldBackground,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         title: TextField(
           controller: _searchController,
           autofocus: true,
-          style: AppTextStyles.bodyMedium,
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: Theme.of(context).textTheme.bodyMedium?.color,
+          ),
           decoration: InputDecoration(
             hintText: 'Search watches...',
             border: InputBorder.none,
             hintStyle: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.textTertiary,
+              color: Theme.of(context).hintColor,
             ),
           ),
           onChanged: _performSearch,
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.clear),
+            icon: Icon(Icons.clear, color: Theme.of(context).iconTheme.color),
             onPressed: () {
               _searchController.clear();
               _performSearch('');
@@ -104,7 +105,7 @@ class _SearchScreenState extends State<SearchScreen> {
     if (_isSearching) {
       return Center(
         child: CircularProgressIndicator(
-          color: AppColors.primaryGold,
+          color: Theme.of(context).primaryColor,
         ),
       );
     }
@@ -114,11 +115,14 @@ class _SearchScreenState extends State<SearchScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.search_off, size: 64, color: AppColors.textTertiary),
+            Icon(Icons.search_off,
+                size: 64, color: Theme.of(context).disabledColor),
             const SizedBox(height: 16),
             Text(
               'No results found for "${_searchController.text}"',
-              style: AppTextStyles.bodyMedium,
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: Theme.of(context).textTheme.bodyMedium?.color,
+              ),
             ),
           ],
         ),
@@ -130,11 +134,14 @@ class _SearchScreenState extends State<SearchScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.search, size: 64, color: AppColors.textTertiary),
+            Icon(Icons.search,
+                size: 64, color: Theme.of(context).disabledColor),
             const SizedBox(height: 16),
             Text(
               'Search for premium timepieces',
-              style: AppTextStyles.bodyMedium,
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: Theme.of(context).textTheme.bodyMedium?.color,
+              ),
             ),
           ],
         ),

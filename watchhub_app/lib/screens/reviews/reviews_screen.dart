@@ -13,8 +13,6 @@ import '../../core/routes/app_routes.dart';
 import '../../core/utils/helpers.dart';
 import '../../services/firestore_crud_service.dart';
 import '../../models/review_model.dart';
-import '../../widgets/common/glass_container.dart';
-import '../../widgets/common/loading_button.dart';
 
 class ReviewsScreen extends StatefulWidget {
   final String productId;
@@ -55,10 +53,14 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.scaffoldBackground,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.scaffoldBackground,
-        title: Text('Reviews', style: AppTextStyles.appBarTitle),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        title: Text('Reviews',
+            style: AppTextStyles.appBarTitle.copyWith(
+              color: Theme.of(context).textTheme.titleLarge?.color,
+            )),
+        leading: const BackButton(),
         actions: [
           PopupMenuButton<String>(
             icon: const Icon(Icons.sort_rounded),
@@ -85,24 +87,24 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
         ],
       ),
       body: _isLoading
-          ? const Center(
+          ? Center(
               child: CircularProgressIndicator(
                 valueColor: AlwaysStoppedAnimation<Color>(
-                  AppColors.primaryGold,
+                  Theme.of(context).primaryColor,
                 ),
               ),
             )
           : _reviews.isEmpty
-          ? _buildEmptyState()
-          : ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: _reviews.length,
-              itemBuilder: (context, index) {
-                return _ReviewCard(
-                  review: _reviews[index],
-                ).animate().fadeIn(delay: (50 * index).ms);
-              },
-            ),
+              ? _buildEmptyState()
+              : ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: _reviews.length,
+                  itemBuilder: (context, index) {
+                    return _ReviewCard(
+                      review: _reviews[index],
+                    ).animate().fadeIn(delay: (50 * index).ms);
+                  },
+                ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
           Navigator.pushNamed(
@@ -112,7 +114,8 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
           );
         },
         backgroundColor: AppColors.primaryGold,
-        foregroundColor: AppColors.scaffoldBackground,
+        foregroundColor: AppColors
+            .scaffoldBackground, // Keeping gold for FAB is standard usually, but can check theme
         icon: const Icon(Icons.rate_review_outlined),
         label: const Text('Write Review'),
       ),
@@ -127,14 +130,21 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
           Icon(
             Icons.rate_review_outlined,
             size: 64,
-            color: AppColors.textTertiary,
+            color: Theme.of(context).disabledColor,
           ),
           const SizedBox(height: 16),
-          Text('No reviews yet', style: AppTextStyles.titleLarge),
+          Text(
+            'No reviews yet',
+            style: AppTextStyles.titleLarge.copyWith(
+              color: Theme.of(context).textTheme.titleLarge?.color,
+            ),
+          ),
           const SizedBox(height: 8),
           Text(
             'Be the first to review this product',
-            style: AppTextStyles.bodyMedium,
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: Theme.of(context).textTheme.bodyMedium?.color,
+            ),
           ),
         ],
       ),
@@ -153,9 +163,9 @@ class _ReviewCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.cardBackground,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.cardBorder),
+        border: Border.all(color: Theme.of(context).dividerColor),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -187,10 +197,17 @@ class _ReviewCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(review.userName, style: AppTextStyles.titleSmall),
+                    Text(
+                      review.userName,
+                      style: AppTextStyles.titleSmall.copyWith(
+                        color: Theme.of(context).textTheme.titleMedium?.color,
+                      ),
+                    ),
                     Text(
                       Helpers.formatRelativeTime(review.createdAt),
-                      style: AppTextStyles.bodySmall,
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: Theme.of(context).textTheme.bodySmall?.color,
+                      ),
                     ),
                   ],
                 ),
@@ -229,12 +246,22 @@ class _ReviewCard extends StatelessWidget {
           // Title
           if (review.title.isNotEmpty) ...[
             const SizedBox(height: 12),
-            Text(review.title, style: AppTextStyles.titleSmall),
+            Text(
+              review.title,
+              style: AppTextStyles.titleSmall.copyWith(
+                color: Theme.of(context).textTheme.titleMedium?.color,
+              ),
+            ),
           ],
 
           // Comment
           const SizedBox(height: 8),
-          Text(review.comment, style: AppTextStyles.bodyMedium),
+          Text(
+            review.comment,
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: Theme.of(context).textTheme.bodyMedium?.color,
+            ),
+          ),
 
           // Helpful
           const SizedBox(height: 12),
@@ -247,7 +274,7 @@ class _ReviewCard extends StatelessWidget {
                 icon: const Icon(Icons.thumb_up_outlined, size: 16),
                 label: Text('Helpful (${review.helpfulCount})'),
                 style: TextButton.styleFrom(
-                  foregroundColor: AppColors.textSecondary,
+                  foregroundColor: Theme.of(context).textTheme.bodySmall?.color,
                 ),
               ),
             ],

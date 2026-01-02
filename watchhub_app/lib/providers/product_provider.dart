@@ -34,8 +34,8 @@ class ProductProvider extends ChangeNotifier {
   String? _errorMessage;
 
   // Filters
-  String? _selectedBrand;
-  String? _selectedCategory;
+  final List<String> _selectedBrands = [];
+  final List<String> _selectedCategories = [];
   double? _minPrice;
   double? _maxPrice;
   String _sortBy = 'newest';
@@ -56,13 +56,13 @@ class ProductProvider extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
   bool get hasProducts => _products.isNotEmpty;
   bool get hasFilters =>
-      _selectedBrand != null ||
-      _selectedCategory != null ||
+      _selectedBrands.isNotEmpty ||
+      _selectedCategories.isNotEmpty ||
       _minPrice != null ||
       _maxPrice != null;
 
-  String? get selectedBrand => _selectedBrand;
-  String? get selectedCategory => _selectedCategory;
+  List<String> get selectedBrands => List.unmodifiable(_selectedBrands);
+  List<String> get selectedCategories => List.unmodifiable(_selectedCategories);
   double? get minPrice => _minPrice;
   double? get maxPrice => _maxPrice;
   String get sortBy => _sortBy;
@@ -135,18 +135,20 @@ class ProductProvider extends ChangeNotifier {
     }
   }
 
-  /// Loads products by brand
+  /// Loads products by brand (Initial load helper, replaces current selection)
   Future<void> loadProductsByBrand(String brand) async {
     try {
       _setLoading(true);
-      _selectedBrand = brand;
+      _selectedBrands.clear();
+      _selectedBrands.add(brand);
 
+      // We still fetch ALL products and filter locally for multi-select support later
+      // But to be efficient if this is the entry point, we could just filter
       _products = await _firestoreService.getProducts(
-        brand: brand,
         sortBy: _sortBy,
       );
 
-      _filteredProducts = _products;
+      _applyFilters();
 
       notifyListeners();
     } catch (e) {
@@ -157,18 +159,18 @@ class ProductProvider extends ChangeNotifier {
     }
   }
 
-  /// Loads products by category
+  /// Loads products by category (Initial load helper, replaces current selection)
   Future<void> loadProductsByCategory(String category) async {
     try {
       _setLoading(true);
-      _selectedCategory = category;
+      _selectedCategories.clear();
+      _selectedCategories.add(category);
 
       _products = await _firestoreService.getProducts(
-        category: category,
         sortBy: _sortBy,
       );
 
-      _filteredProducts = _products;
+      _applyFilters();
 
       notifyListeners();
     } catch (e) {
@@ -275,16 +277,24 @@ class ProductProvider extends ChangeNotifier {
   // FILTERING
   // ===========================================================================
 
-  /// Sets the brand filter
-  void setBrandFilter(String? brand) {
-    _selectedBrand = brand;
+  /// Toggles a brand filter
+  void toggleBrand(String brand) {
+    if (_selectedBrands.contains(brand)) {
+      _selectedBrands.remove(brand);
+    } else {
+      _selectedBrands.add(brand);
+    }
     _applyFilters();
     notifyListeners();
   }
 
-  /// Sets the category filter
-  void setCategoryFilter(String? category) {
-    _selectedCategory = category;
+  /// Toggles a category filter
+  void toggleCategory(String category) {
+    if (_selectedCategories.contains(category)) {
+      _selectedCategories.remove(category);
+    } else {
+      _selectedCategories.add(category);
+    }
     _applyFilters();
     notifyListeners();
   }
@@ -309,15 +319,16 @@ class ProductProvider extends ChangeNotifier {
     _filteredProducts = List.from(_products);
 
     // Apply brand filter
-    if (_selectedBrand != null && _selectedBrand!.isNotEmpty) {
-      _filteredProducts =
-          _filteredProducts.where((p) => p.brand == _selectedBrand).toList();
+    if (_selectedBrands.isNotEmpty) {
+      _filteredProducts = _filteredProducts
+          .where((p) => _selectedBrands.contains(p.brand))
+          .toList();
     }
 
     // Apply category filter
-    if (_selectedCategory != null && _selectedCategory!.isNotEmpty) {
+    if (_selectedCategories.isNotEmpty) {
       _filteredProducts = _filteredProducts
-          .where((p) => p.category == _selectedCategory)
+          .where((p) => _selectedCategories.contains(p.category))
           .toList();
     }
 
@@ -355,12 +366,12 @@ class ProductProvider extends ChangeNotifier {
 
   /// Clears all filters
   void clearFilters() {
-    _selectedBrand = null;
-    _selectedCategory = null;
+    _selectedBrands.clear();
+    _selectedCategories.clear();
     _minPrice = null;
     _maxPrice = null;
     _sortBy = 'newest';
-    _filteredProducts = [];
+    _applyFilters(); // Re-apply to reset list
     notifyListeners();
   }
 

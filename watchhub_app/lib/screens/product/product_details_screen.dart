@@ -91,7 +91,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.scaffoldBackground,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Consumer<ProductProvider>(
         builder: (context, provider, _) {
           final product = provider.selectedProduct;
@@ -131,7 +131,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     return SliverAppBar(
       expandedHeight: 400,
       pinned: true,
-      backgroundColor: AppColors.scaffoldBackground,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       flexibleSpace: FlexibleSpaceBar(
         background: Stack(
           fit: StackFit.expand,
@@ -142,10 +142,11 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                 imageUrl: product.imageUrl,
                 fit: BoxFit.cover,
                 placeholder: (context, url) =>
-                    Container(color: AppColors.cardBackground),
+                    Container(color: Theme.of(context).cardColor),
                 errorWidget: (context, url, error) => Container(
-                  color: AppColors.cardBackground,
-                  child: const Icon(Icons.watch_rounded, size: 64),
+                  color: Theme.of(context).cardColor,
+                  child: Icon(Icons.watch_rounded,
+                      size: 64, color: Theme.of(context).disabledColor),
                 ),
               ),
             ),
@@ -160,7 +161,10 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: [Colors.transparent, AppColors.scaffoldBackground],
+                    colors: [
+                      Colors.transparent,
+                      Theme.of(context).scaffoldBackgroundColor
+                    ],
                   ),
                 ),
               ),
@@ -168,24 +172,52 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
           ],
         ),
       ),
+      leading: Container(
+        margin: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: Theme.of(context).canvasColor.withOpacity(0.5),
+          shape: BoxShape.circle,
+        ),
+        child: BackButton(
+          color: Theme.of(context).iconTheme.color,
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
       actions: [
         Consumer<WishlistProvider>(
           builder: (context, wishlistProvider, _) {
             final isInWishlist = wishlistProvider.isInWishlist(product.id);
-            return IconButton(
-              icon: Icon(
-                isInWishlist ? Icons.favorite : Icons.favorite_outline,
-                color: isInWishlist ? AppColors.error : null,
+            return Container(
+              margin: const EdgeInsets.symmetric(vertical: 8),
+              decoration: BoxDecoration(
+                color: Theme.of(context).canvasColor.withOpacity(0.5),
+                shape: BoxShape.circle,
               ),
-              onPressed: () => _toggleWishlist(product),
+              child: IconButton(
+                icon: Icon(
+                  isInWishlist ? Icons.favorite : Icons.favorite_outline,
+                  color: isInWishlist
+                      ? AppColors.error
+                      : Theme.of(context).iconTheme.color,
+                ),
+                onPressed: () => _toggleWishlist(product),
+              ),
             );
           },
         ),
-        IconButton(
-          icon: const Icon(Icons.share_outlined),
-          onPressed: () {
-            // Share functionality
-          },
+        Container(
+          margin: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Theme.of(context).canvasColor.withOpacity(0.5),
+            shape: BoxShape.circle,
+          ),
+          child: IconButton(
+            icon: Icon(Icons.share_outlined,
+                color: Theme.of(context).iconTheme.color),
+            onPressed: () {
+              // Share functionality
+            },
+          ),
         ),
       ],
     );
@@ -200,7 +232,9 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
           // Brand
           Text(
             product.brand.toUpperCase(),
-            style: AppTextStyles.brandName,
+            style: AppTextStyles.brandName.copyWith(
+              color: Theme.of(context).primaryColor,
+            ),
           ).animate().fadeIn().slideX(begin: -0.1),
 
           const SizedBox(height: 8),
@@ -208,7 +242,9 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
           // Name
           Text(
             product.name,
-            style: AppTextStyles.headlineMedium,
+            style: AppTextStyles.headlineMedium.copyWith(
+              color: Theme.of(context).textTheme.headlineMedium?.color,
+            ),
           ).animate().fadeIn(delay: 100.ms).slideX(begin: -0.1),
 
           const SizedBox(height: 16),
@@ -233,7 +269,9 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
               const SizedBox(width: 8),
               Text(
                 '${product.rating} (${product.reviewCount} reviews)',
-                style: AppTextStyles.bodyMedium,
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: Theme.of(context).textTheme.bodyMedium?.color,
+                ),
               ),
             ],
           ).animate().fadeIn(delay: 200.ms),
@@ -245,7 +283,9 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
             children: [
               Text(
                 Helpers.formatCurrency(product.price),
-                style: AppTextStyles.priceLarge,
+                style: AppTextStyles.priceLarge.copyWith(
+                  color: Theme.of(context).textTheme.titleLarge?.color,
+                ),
               ),
               if (product.isOnSale) ...[
                 const SizedBox(width: 12),
@@ -253,7 +293,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                   Helpers.formatCurrency(product.originalPrice!),
                   style: AppTextStyles.bodyLarge.copyWith(
                     decoration: TextDecoration.lineThrough,
-                    color: AppColors.textTertiary,
+                    color: Theme.of(context).disabledColor,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -305,9 +345,15 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
           const SizedBox(height: 24),
 
           // Description
-          Text('Description', style: AppTextStyles.titleMedium),
+          Text('Description',
+              style: AppTextStyles.titleMedium.copyWith(
+                color: Theme.of(context).textTheme.titleMedium?.color,
+              )),
           const SizedBox(height: 8),
-          Text(product.description, style: AppTextStyles.bodyMedium),
+          Text(product.description,
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: Theme.of(context).textTheme.bodyMedium?.color,
+              )),
         ],
       ),
     );
@@ -321,7 +367,10 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Specifications', style: AppTextStyles.titleMedium),
+          Text('Specifications',
+              style: AppTextStyles.titleMedium.copyWith(
+                color: Theme.of(context).textTheme.titleMedium?.color,
+              )),
           const SizedBox(height: 12),
           GlassContainer(
             padding: const EdgeInsets.all(16),
@@ -335,13 +384,14 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                       Text(
                         entry.key,
                         style: AppTextStyles.bodyMedium.copyWith(
-                          color: AppColors.textSecondary,
+                          color: Theme.of(context).textTheme.bodyMedium?.color,
                         ),
                       ),
                       Text(
                         entry.value.toString(),
                         style: AppTextStyles.bodyMedium.copyWith(
                           fontWeight: FontWeight.w600,
+                          color: Theme.of(context).textTheme.bodyMedium?.color,
                         ),
                       ),
                     ],
@@ -364,7 +414,10 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Reviews', style: AppTextStyles.titleMedium),
+              Text('Reviews',
+                  style: AppTextStyles.titleMedium.copyWith(
+                    color: Theme.of(context).textTheme.titleMedium?.color,
+                  )),
               TextButton(
                 onPressed: () {
                   Navigator.pushNamed(
@@ -376,7 +429,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                 child: Text(
                   'See All',
                   style: AppTextStyles.labelMedium.copyWith(
-                    color: AppColors.primaryGold,
+                    color: Theme.of(context).primaryColor,
                   ),
                 ),
               ),
@@ -392,7 +445,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                     Text(
                       product.rating.toStringAsFixed(1),
                       style: AppTextStyles.displaySmall.copyWith(
-                        color: AppColors.primaryGold,
+                        color: Theme.of(context).primaryColor,
                       ),
                     ),
                     Row(
@@ -408,7 +461,9 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                     ),
                     Text(
                       '${product.reviewCount} reviews',
-                      style: AppTextStyles.bodySmall,
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: Theme.of(context).textTheme.bodySmall?.color,
+                      ),
                     ),
                   ],
                 ),
@@ -440,12 +495,12 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                 Navigator.pushNamed(context, AppRoutes.writeReview,
                     arguments: product.id);
               },
-              icon: const Icon(Icons.rate_review_outlined,
-                  color: AppColors.primaryGold),
-              label: const Text('Write a Review',
-                  style: TextStyle(color: AppColors.primaryGold)),
+              icon: Icon(Icons.rate_review_outlined,
+                  color: Theme.of(context).primaryColor),
+              label: Text('Write a Review',
+                  style: TextStyle(color: Theme.of(context).primaryColor)),
               style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: AppColors.primaryGold),
+                side: BorderSide(color: Theme.of(context).primaryColor),
                 padding: const EdgeInsets.symmetric(vertical: 12),
               ),
             ),
@@ -460,16 +515,20 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
         children: [
-          Text(rating, style: AppTextStyles.bodySmall),
+          Text(rating,
+              style: AppTextStyles.bodySmall.copyWith(
+                color: Theme.of(context).textTheme.bodySmall?.color,
+              )),
           const SizedBox(width: 8),
           Expanded(
             child: ClipRRect(
               borderRadius: BorderRadius.circular(2),
               child: LinearProgressIndicator(
                 value: percentage,
-                backgroundColor: AppColors.cardBackground,
-                valueColor: const AlwaysStoppedAnimation<Color>(
-                  AppColors.primaryGold,
+                backgroundColor:
+                    Theme.of(context).disabledColor.withOpacity(0.3),
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  Theme.of(context).primaryColor,
                 ),
                 minHeight: 6,
               ),
@@ -484,8 +543,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.cardBackground,
-        border: Border(top: BorderSide(color: AppColors.divider)),
+        color: Theme.of(context).cardColor,
+        border: Border(top: BorderSide(color: Theme.of(context).dividerColor)),
       ),
       child: SafeArea(
         child: Row(
@@ -493,19 +552,24 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
             // Quantity selector
             Container(
               decoration: BoxDecoration(
-                border: Border.all(color: AppColors.cardBorder),
+                border: Border.all(color: Theme.of(context).dividerColor),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.remove),
+                    icon: Icon(Icons.remove,
+                        color: Theme.of(context).iconTheme.color),
                     onPressed: _decrementQuantity,
                     iconSize: 20,
                   ),
-                  Text('$_quantity', style: AppTextStyles.titleMedium),
+                  Text('$_quantity',
+                      style: AppTextStyles.titleMedium.copyWith(
+                        color: Theme.of(context).textTheme.titleMedium?.color,
+                      )),
                   IconButton(
-                    icon: const Icon(Icons.add),
+                    icon: Icon(Icons.add,
+                        color: Theme.of(context).iconTheme.color),
                     onPressed: () => _incrementQuantity(product),
                     iconSize: 20,
                   ),

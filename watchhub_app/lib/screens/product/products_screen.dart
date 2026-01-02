@@ -47,10 +47,12 @@ class _ProductsScreenState extends State<ProductsScreen> {
     final provider = context.read<ProductProvider>();
 
     if (widget.brand != null) {
-      provider.setBrandFilter(widget.brand);
+      await provider.loadProductsByBrand(widget.brand!);
+      return;
     }
     if (widget.category != null) {
-      provider.setCategoryFilter(widget.category);
+      await provider.loadProductsByCategory(widget.category!);
+      return;
     }
 
     await provider.loadProducts();
@@ -82,13 +84,18 @@ class _ProductsScreenState extends State<ProductsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.scaffoldBackground,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.scaffoldBackground,
-        title: Text(widget.title, style: AppTextStyles.appBarTitle),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        title: Text(widget.title,
+            style: AppTextStyles.appBarTitle.copyWith(
+              color: Theme.of(context).textTheme.titleLarge?.color,
+            )),
+        centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.filter_list_rounded),
+            icon: Icon(Icons.filter_list_rounded,
+                color: Theme.of(context).iconTheme.color),
             onPressed: _showFilterSheet,
           ),
         ],
@@ -103,10 +110,10 @@ class _ProductsScreenState extends State<ProductsScreen> {
             child: Consumer<ProductProvider>(
               builder: (context, provider, _) {
                 if (provider.isLoading) {
-                  return const Center(
+                  return Center(
                     child: CircularProgressIndicator(
                       valueColor: AlwaysStoppedAnimation<Color>(
-                        AppColors.primaryGold,
+                        Theme.of(context).primaryColor,
                       ),
                     ),
                   );
@@ -117,7 +124,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
                 }
 
                 return RefreshIndicator(
-                  color: AppColors.primaryGold,
+                  color: Theme.of(context).primaryColor,
                   onRefresh: _loadProducts,
                   child: GridView.builder(
                     padding: const EdgeInsets.all(16),
@@ -154,15 +161,16 @@ class _ProductsScreenState extends State<ProductsScreen> {
             children: [
               Text(
                 '${provider.products.length} watches',
-                style: AppTextStyles.bodySmall,
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: Theme.of(context).textTheme.bodySmall?.color,
+                ),
               ),
               TextButton.icon(
                 onPressed: _showSortSheet,
-                icon: const Icon(Icons.sort_rounded, size: 18),
-                label: Text(_getSortLabel(_sortBy)),
-                style: TextButton.styleFrom(
-                  foregroundColor: AppColors.primaryGold,
-                ),
+                icon: Icon(Icons.sort_rounded,
+                    size: 18, color: Theme.of(context).primaryColor),
+                label: Text(_getSortLabel(_sortBy),
+                    style: TextStyle(color: Theme.of(context).primaryColor)),
               ),
             ],
           ),
@@ -180,13 +188,17 @@ class _ProductsScreenState extends State<ProductsScreen> {
       {'value': 'name', 'label': 'Name A-Z'},
     ];
 
-    return Padding(
+    return Container(
+      color: Theme.of(context).cardColor,
       padding: const EdgeInsets.all(24),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Sort By', style: AppTextStyles.titleLarge),
+          Text('Sort By',
+              style: AppTextStyles.titleLarge.copyWith(
+                color: Theme.of(context).textTheme.titleLarge?.color,
+              )),
           const SizedBox(height: 16),
           ...sortOptions.map((option) {
             final isSelected = _sortBy == option['value'];
@@ -194,13 +206,15 @@ class _ProductsScreenState extends State<ProductsScreen> {
               title: Text(
                 option['label']!,
                 style: AppTextStyles.bodyLarge.copyWith(
-                  color: isSelected ? AppColors.primaryGold : null,
+                  color: isSelected
+                      ? Theme.of(context).primaryColor
+                      : Theme.of(context).textTheme.bodyLarge?.color,
                 ),
               ),
               trailing: isSelected
-                  ? const Icon(
+                  ? Icon(
                       Icons.check_rounded,
-                      color: AppColors.primaryGold,
+                      color: Theme.of(context).primaryColor,
                     )
                   : null,
               onTap: () {
@@ -224,7 +238,8 @@ class _ProductsScreenState extends State<ProductsScreen> {
       builder: (context, scrollController) {
         return Consumer<ProductProvider>(
           builder: (context, provider, _) {
-            return Padding(
+            return Container(
+              color: Theme.of(context).cardColor,
               padding: const EdgeInsets.all(24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -232,36 +247,47 @@ class _ProductsScreenState extends State<ProductsScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Filters', style: AppTextStyles.titleLarge),
+                      Text('Filters',
+                          style: AppTextStyles.titleLarge.copyWith(
+                            color:
+                                Theme.of(context).textTheme.titleLarge?.color,
+                          )),
                       TextButton(
                         onPressed: () {
                           provider.clearFilters();
                           Navigator.pop(context);
                         },
-                        child: const Text('Clear All'),
+                        child: Text('Clear All',
+                            style: TextStyle(
+                                color: Theme.of(context).primaryColor)),
                       ),
                     ],
                   ),
-                  const Divider(),
+                  Divider(color: Theme.of(context).dividerColor),
                   Expanded(
                     child: ListView(
                       controller: scrollController,
                       children: [
                         // Brands
-                        Text('Brands', style: AppTextStyles.titleMedium),
+                        Text('Brands',
+                            style: AppTextStyles.titleMedium.copyWith(
+                              color: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.color,
+                            )),
                         const SizedBox(height: 12),
                         Wrap(
                           spacing: 8,
                           runSpacing: 8,
                           children: AppConstants.watchBrands.map((brand) {
-                            final isSelected = provider.selectedBrand == brand;
+                            final isSelected =
+                                provider.selectedBrands.contains(brand);
                             return CategoryChip(
                               label: brand,
                               isSelected: isSelected,
                               onTap: () {
-                                provider.setBrandFilter(
-                                  isSelected ? null : brand,
-                                );
+                                provider.toggleBrand(brand);
                               },
                             );
                           }).toList(),
@@ -270,20 +296,25 @@ class _ProductsScreenState extends State<ProductsScreen> {
                         const SizedBox(height: 24),
 
                         // Categories
-                        Text('Categories', style: AppTextStyles.titleMedium),
+                        Text('Categories',
+                            style: AppTextStyles.titleMedium.copyWith(
+                              color: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.color,
+                            )),
                         const SizedBox(height: 12),
                         Wrap(
                           spacing: 8,
                           runSpacing: 8,
                           children: AppConstants.watchCategories.map((cat) {
-                            final isSelected = provider.selectedCategory == cat;
+                            final isSelected =
+                                provider.selectedCategories.contains(cat);
                             return CategoryChip(
                               label: cat,
                               isSelected: isSelected,
                               onTap: () {
-                                provider.setCategoryFilter(
-                                  isSelected ? null : cat,
-                                );
+                                provider.toggleCategory(cat);
                               },
                             );
                           }).toList(),
@@ -316,19 +347,26 @@ class _ProductsScreenState extends State<ProductsScreen> {
           Icon(
             Icons.watch_off_outlined,
             size: 64,
-            color: AppColors.textTertiary,
+            color: Theme.of(context).disabledColor,
           ),
           const SizedBox(height: 16),
-          Text('No watches found', style: AppTextStyles.titleMedium),
+          Text('No watches found',
+              style: AppTextStyles.titleMedium.copyWith(
+                color: Theme.of(context).textTheme.titleMedium?.color,
+              )),
           const SizedBox(height: 8),
-          Text('Try adjusting your filters', style: AppTextStyles.bodyMedium),
+          Text('Try adjusting your filters',
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: Theme.of(context).textTheme.bodyMedium?.color,
+              )),
           const SizedBox(height: 24),
           TextButton(
             onPressed: () {
               context.read<ProductProvider>().clearFilters();
               _loadProducts();
             },
-            child: const Text('Clear Filters'),
+            child: Text('Clear Filters',
+                style: TextStyle(color: Theme.of(context).primaryColor)),
           ),
         ],
       ),

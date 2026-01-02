@@ -7,7 +7,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../core/routes/app_routes.dart';
 import '../../core/utils/helpers.dart';
@@ -52,34 +51,41 @@ class _OrdersScreenState extends State<OrdersScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.scaffoldBackground,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.scaffoldBackground,
-        title: Text('My Orders', style: AppTextStyles.appBarTitle),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        title: Text('My Orders',
+            style: AppTextStyles.appBarTitle.copyWith(
+              color: Theme.of(context).textTheme.titleLarge?.color,
+            )),
+        centerTitle: true,
       ),
       body: _isLoading
-          ? const Center(
+          ? Center(
               child: CircularProgressIndicator(
                 valueColor: AlwaysStoppedAnimation<Color>(
-                  AppColors.primaryGold,
+                  Theme.of(context).primaryColor,
                 ),
               ),
             )
           : _orders.isEmpty
-          ? _buildEmptyState()
-          : RefreshIndicator(
-              color: AppColors.primaryGold,
-              onRefresh: _loadOrders,
-              child: ListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: _orders.length,
-                itemBuilder: (context, index) {
-                  return _OrderCard(
-                    order: _orders[index],
-                  ).animate().fadeIn(delay: (50 * index).ms).slideY(begin: 0.1);
-                },
-              ),
-            ),
+              ? _buildEmptyState()
+              : RefreshIndicator(
+                  color: Theme.of(context).primaryColor,
+                  onRefresh: _loadOrders,
+                  child: ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: _orders.length,
+                    itemBuilder: (context, index) {
+                      return _OrderCard(
+                        order: _orders[index],
+                      )
+                          .animate()
+                          .fadeIn(delay: (50 * index).ms)
+                          .slideY(begin: 0.1);
+                    },
+                  ),
+                ),
     );
   }
 
@@ -91,12 +97,18 @@ class _OrdersScreenState extends State<OrdersScreen> {
           Icon(
             Icons.shopping_bag_outlined,
             size: 80,
-            color: AppColors.textTertiary,
+            color: Theme.of(context).disabledColor,
           ),
           const SizedBox(height: 24),
-          Text('No orders yet', style: AppTextStyles.titleLarge),
+          Text('No orders yet',
+              style: AppTextStyles.titleLarge.copyWith(
+                color: Theme.of(context).textTheme.titleLarge?.color,
+              )),
           const SizedBox(height: 8),
-          Text('Your orders will appear here', style: AppTextStyles.bodyMedium),
+          Text('Your orders will appear here',
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: Theme.of(context).textTheme.bodyMedium?.color,
+              )),
         ],
       ),
     );
@@ -121,9 +133,9 @@ class _OrderCard extends StatelessWidget {
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),
         decoration: BoxDecoration(
-          color: AppColors.cardBackground,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.cardBorder),
+          border: Border.all(color: Theme.of(context).dividerColor),
         ),
         child: Column(
           children: [
@@ -131,7 +143,7 @@ class _OrderCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppColors.surfaceColor,
+                color: Theme.of(context).canvasColor,
                 borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(12),
                 ),
@@ -139,7 +151,10 @@ class _OrderCard extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(order.orderNumber, style: AppTextStyles.titleSmall),
+                  Text(order.orderNumber,
+                      style: AppTextStyles.titleSmall.copyWith(
+                        color: Theme.of(context).textTheme.titleSmall?.color,
+                      )),
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 12,
@@ -171,10 +186,15 @@ class _OrderCard extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Date', style: AppTextStyles.bodySmall),
+                      Text('Date',
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: Theme.of(context).textTheme.bodySmall?.color,
+                          )),
                       Text(
                         Helpers.formatDate(order.createdAt),
-                        style: AppTextStyles.bodyMedium,
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: Theme.of(context).textTheme.bodyMedium?.color,
+                        ),
                       ),
                     ],
                   ),
@@ -182,10 +202,15 @@ class _OrderCard extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Items', style: AppTextStyles.bodySmall),
+                      Text('Items',
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: Theme.of(context).textTheme.bodySmall?.color,
+                          )),
                       Text(
                         '${order.items.length} item${order.items.length > 1 ? 's' : ''}',
-                        style: AppTextStyles.bodyMedium,
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: Theme.of(context).textTheme.bodyMedium?.color,
+                        ),
                       ),
                     ],
                   ),
@@ -193,7 +218,10 @@ class _OrderCard extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Total', style: AppTextStyles.bodySmall),
+                      Text('Total',
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: Theme.of(context).textTheme.bodySmall?.color,
+                          )),
                       Text(
                         Helpers.formatCurrency(order.total),
                         style: AppTextStyles.priceSmall,

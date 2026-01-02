@@ -62,11 +62,12 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.scaffoldBackground,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios),
+          color: Theme.of(context).iconTheme.color,
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
@@ -96,24 +97,28 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           height: 80,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: AppColors.cardBackground,
-            border: Border.all(color: AppColors.primaryGold, width: 2),
+            color: Theme.of(context).cardColor,
+            border: Border.all(color: Theme.of(context).primaryColor, width: 2),
           ),
-          child: const Icon(
+          child: Icon(
             Icons.lock_reset_rounded,
             size: 40,
-            color: AppColors.primaryGold,
+            color: Theme.of(context).primaryColor,
           ),
         ).animate().scale(duration: 400.ms, curve: Curves.elasticOut).fadeIn(),
         const SizedBox(height: 24),
         Text(
           'Reset Password',
-          style: AppTextStyles.headlineLarge,
+          style: AppTextStyles.headlineLarge.copyWith(
+            color: Theme.of(context).textTheme.headlineLarge?.color,
+          ),
         ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.2),
         const SizedBox(height: 8),
         Text(
           'Enter your email and we\'ll send you a link to reset your password',
-          style: AppTextStyles.bodyMedium,
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: Theme.of(context).textTheme.bodyMedium?.color,
+          ),
           textAlign: TextAlign.center,
         ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.2),
       ],
@@ -170,11 +175,16 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             ),
           ),
           const SizedBox(height: 24),
-          Text('Email Sent!', style: AppTextStyles.headlineSmall),
+          Text('Email Sent!',
+              style: AppTextStyles.headlineSmall.copyWith(
+                color: Theme.of(context).textTheme.headlineSmall?.color,
+              )),
           const SizedBox(height: 8),
           Text(
             'Check your inbox for a password reset link. If you don\'t see it, check your spam folder.',
-            style: AppTextStyles.bodyMedium,
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: Theme.of(context).textTheme.bodyMedium?.color,
+            ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 24),
@@ -183,7 +193,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             child: Text(
               'Back to Login',
               style: AppTextStyles.labelLarge.copyWith(
-                color: AppColors.primaryGold,
+                color: Theme.of(context).primaryColor,
               ),
             ),
           ),

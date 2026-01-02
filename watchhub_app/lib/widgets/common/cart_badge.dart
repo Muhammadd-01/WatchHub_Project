@@ -14,7 +14,8 @@ class CartBadge extends StatelessWidget {
       alignment: Alignment.center,
       children: [
         IconButton(
-          icon: const Icon(Icons.shopping_cart_outlined),
+          icon: Icon(Icons.shopping_cart_outlined,
+              color: Theme.of(context).iconTheme.color),
           onPressed: () {
             Navigator.pushNamed(context, AppRoutes.cart);
           },

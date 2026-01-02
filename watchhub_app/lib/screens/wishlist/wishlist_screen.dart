@@ -23,11 +23,14 @@ class WishlistScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.scaffoldBackground,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.scaffoldBackground,
-        title: Text('Wishlist', style: AppTextStyles.appBarTitle),
-        automaticallyImplyLeading: false,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        title: Text('Wishlist',
+            style: AppTextStyles.appBarTitle.copyWith(
+              color: Theme.of(context).textTheme.titleLarge?.color,
+            )),
+        centerTitle: true,
       ),
       body: Consumer2<WishlistProvider, AuthProvider>(
         builder: (context, wishlistProvider, authProvider, _) {
@@ -65,14 +68,19 @@ class WishlistScreen extends StatelessWidget {
             Icon(
               Icons.favorite_outline,
               size: 80,
-              color: AppColors.textTertiary,
+              color: Theme.of(context).disabledColor,
             ),
             const SizedBox(height: 24),
-            Text('Sign in to view wishlist', style: AppTextStyles.titleLarge),
+            Text('Sign in to view wishlist',
+                style: AppTextStyles.titleLarge.copyWith(
+                  color: Theme.of(context).textTheme.titleLarge?.color,
+                )),
             const SizedBox(height: 8),
             Text(
               'Save your favorite watches for later',
-              style: AppTextStyles.bodyMedium,
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: Theme.of(context).textTheme.bodyMedium?.color,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 32),
@@ -97,14 +105,19 @@ class WishlistScreen extends StatelessWidget {
             Icon(
               Icons.favorite_outline,
               size: 80,
-              color: AppColors.textTertiary,
+              color: Theme.of(context).disabledColor,
             ),
             const SizedBox(height: 24),
-            Text('Your wishlist is empty', style: AppTextStyles.titleLarge),
+            Text('Your wishlist is empty',
+                style: AppTextStyles.titleLarge.copyWith(
+                  color: Theme.of(context).textTheme.titleLarge?.color,
+                )),
             const SizedBox(height: 8),
             Text(
               'Save watches you love by tapping the heart icon',
-              style: AppTextStyles.bodyMedium,
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: Theme.of(context).textTheme.bodyMedium?.color,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 32),
@@ -140,9 +153,9 @@ class _WishlistItemCard extends StatelessWidget {
       ),
       onDismissed: (_) {
         context.read<WishlistProvider>().removeFromWishlist(
-          uid,
-          item.productId,
-        );
+              uid,
+              item.productId,
+            );
       },
       child: GestureDetector(
         onTap: () {
@@ -156,9 +169,9 @@ class _WishlistItemCard extends StatelessWidget {
           margin: const EdgeInsets.only(bottom: 16),
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: AppColors.cardBackground,
+            color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.cardBorder),
+            border: Border.all(color: Theme.of(context).dividerColor),
           ),
           child: Row(
             children: [
@@ -173,12 +186,12 @@ class _WishlistItemCard extends StatelessWidget {
                   placeholder: (context, url) => Container(
                     width: 80,
                     height: 80,
-                    color: AppColors.surfaceColor,
+                    color: Theme.of(context).cardColor,
                   ),
                   errorWidget: (context, url, error) => Container(
                     width: 80,
                     height: 80,
-                    color: AppColors.surfaceColor,
+                    color: Theme.of(context).cardColor,
                     child: const Icon(Icons.watch_rounded),
                   ),
                 ),
@@ -197,7 +210,9 @@ class _WishlistItemCard extends StatelessWidget {
                       const SizedBox(height: 2),
                       Text(
                         product.name,
-                        style: AppTextStyles.titleSmall,
+                        style: AppTextStyles.titleSmall.copyWith(
+                          color: Theme.of(context).textTheme.titleSmall?.color,
+                        ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -207,7 +222,11 @@ class _WishlistItemCard extends StatelessWidget {
                         style: AppTextStyles.priceSmall,
                       ),
                     ] else ...[
-                      Text('Loading...', style: AppTextStyles.bodyMedium),
+                      Text('Loading...',
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color:
+                                Theme.of(context).textTheme.bodyMedium?.color,
+                          )),
                     ],
                   ],
                 ),
@@ -236,9 +255,9 @@ class _WishlistItemCard extends StatelessWidget {
                     icon: const Icon(Icons.delete_outline, size: 20),
                     onPressed: () {
                       context.read<WishlistProvider>().removeFromWishlist(
-                        uid,
-                        item.productId,
-                      );
+                            uid,
+                            item.productId,
+                          );
                     },
                     tooltip: 'Remove',
                     style: IconButton.styleFrom(

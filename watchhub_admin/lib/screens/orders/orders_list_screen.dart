@@ -93,12 +93,32 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
                         '${(order['items'] as List?)?.length ?? 0} items',
                         style: AppTextStyles.bodyMedium)),
                     DataCell(
-                      IconButton(
-                        icon:
-                            const Icon(Icons.edit_note, color: AppColors.info),
-                        onPressed: () =>
-                            _showUpdateStatusDialog(context, order),
-                      ),
+                      (order['status'] ?? 'pending') == 'pending'
+                          ? Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.check_circle_outline,
+                                      color: AppColors.success),
+                                  tooltip: 'Approve',
+                                  onPressed: () => _confirmUpdateStatus(
+                                      context, order, 'approved'),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.cancel_outlined,
+                                      color: AppColors.error),
+                                  tooltip: 'Decline',
+                                  onPressed: () => _confirmUpdateStatus(
+                                      context, order, 'cancelled'),
+                                ),
+                              ],
+                            )
+                          : IconButton(
+                              icon: const Icon(Icons.edit_note,
+                                  color: AppColors.info),
+                              onPressed: () =>
+                                  _showUpdateStatusDialog(context, order),
+                            ),
                     ),
                   ],
                 );
@@ -142,6 +162,52 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
     );
   }
 
+  void _confirmUpdateStatus(
+      BuildContext context, Map<String, dynamic> order, String newStatus) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.cardBackground,
+        title: Text('${newStatus.toUpperCase()} Order?',
+            style: const TextStyle(color: AppColors.textPrimary)),
+        content: Text(
+            'Are you sure you want to mark order #${order['id'].toString().substring(0, 6)} as $newStatus?',
+            style: const TextStyle(color: AppColors.textSecondary)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              try {
+                await context.read<AdminOrderProvider>().updateOrderStatus(
+                    order['id'], newStatus,
+                    userId: order['userId']);
+                if (context.mounted) {
+                  AdminHelpers.showSuccessSnackbar(
+                      context, 'Order marked as $newStatus');
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  AdminHelpers.showErrorSnackbar(
+                      context, 'Failed to update status');
+                }
+              }
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: newStatus == 'cancelled'
+                  ? AppColors.error
+                  : AppColors.success,
+            ),
+            child: Text(newStatus == 'cancelled' ? 'Decline' : 'Approve'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showUpdateStatusDialog(
       BuildContext context, Map<String, dynamic> order) {
     String currentStatus = order['status'] ?? 'pending';
@@ -172,9 +238,9 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
             onPressed: () async {
               Navigator.pop(context);
               try {
-                await context
-                    .read<AdminOrderProvider>()
-                    .updateOrderStatus(order['id'], currentStatus);
+                await context.read<AdminOrderProvider>().updateOrderStatus(
+                    order['id'], currentStatus,
+                    userId: order['userId']);
                 if (context.mounted) {
                   AdminHelpers.showSuccessSnackbar(
                       context, 'Order status updated');

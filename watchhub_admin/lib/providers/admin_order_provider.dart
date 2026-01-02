@@ -41,7 +41,8 @@ class AdminOrderProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> updateOrderStatus(String orderId, String newStatus) async {
+  Future<bool> updateOrderStatus(String orderId, String newStatus,
+      {String? userId}) async {
     _isLoading = true;
     notifyListeners();
 
@@ -57,6 +58,29 @@ class AdminOrderProvider extends ChangeNotifier {
         _orders[index]['status'] = newStatus;
       }
 
+      // Send Notification
+      if (userId != null) {
+        String title = 'Order Update';
+        String message = 'Your order status has been updated to $newStatus.';
+
+        if (newStatus == 'approved') {
+          title = 'Order Approved';
+          message = 'Your order has been approved and is being processed.';
+        } else if (newStatus == 'shipped') {
+          title = 'Order Shipped';
+          message = 'Your order is on its way!';
+        } else if (newStatus == 'delivered') {
+          title = 'Order Delivered';
+          message = 'Your order has been delivered. Enjoy!';
+        } else if (newStatus == 'cancelled') {
+          title = 'Order Cancelled';
+          message = 'Your order was cancelled.';
+        }
+
+        await _sendNotification(userId, title, message);
+        await _sendEmail(userId, title, message);
+      }
+
       return true;
     } catch (e) {
       _errorMessage = 'Failed to update order status: $e';
@@ -64,6 +88,53 @@ class AdminOrderProvider extends ChangeNotifier {
     } finally {
       _isLoading = false;
       notifyListeners();
+    }
+  }
+
+  /// Sends a notification to a user
+  Future<void> _sendNotification(
+      String uid, String title, String message) async {
+    try {
+      await _firestore
+          .collection('users')
+          .doc(uid)
+          .collection('notifications')
+          .add({
+        'title': title,
+        'message': message,
+        'read': false,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+      debugPrint('AdminOrderProvider: Notification sent to $uid');
+    } catch (e) {
+      debugPrint('AdminOrderProvider: Error sending notification - $e');
+    }
+  }
+
+  /// Sends an email via Firebase Extension (mail collection)
+  Future<void> _sendEmail(String uid, String title, String message) async {
+    try {
+      // 1. Get user email
+      final userDoc = await _firestore.collection('users').doc(uid).get();
+      final userEmail = userDoc.data()?['email'];
+
+      if (userEmail == null) {
+        debugPrint('AdminOrderProvider: User email not found for $uid');
+        return;
+      }
+
+      // 2. Add to mail collection
+      await _firestore.collection('mail').add({
+        'to': [userEmail],
+        'message': {
+          'subject': title,
+          'text': message,
+          'html': '<p>$message</p>', // Simple HTML
+        },
+      });
+      debugPrint('AdminOrderProvider: Email queued for $userEmail');
+    } catch (e) {
+      debugPrint('AdminOrderProvider: Error sending email - $e');
     }
   }
 }
