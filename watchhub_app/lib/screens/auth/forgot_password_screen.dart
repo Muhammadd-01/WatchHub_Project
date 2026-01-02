@@ -43,12 +43,19 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       _emailController.text.trim(),
     );
 
-    if (success && mounted) {
-      setState(() => _emailSent = true);
-      Helpers.showSuccessSnackbar(
-        context,
-        'Password reset email sent successfully!',
-      );
+    if (mounted) {
+      if (success) {
+        setState(() => _emailSent = true);
+        Helpers.showSuccessSnackbar(
+          context,
+          'Password reset email sent successfully!',
+        );
+      } else {
+        Helpers.showErrorSnackbar(
+          context,
+          authProvider.errorMessage ?? 'Failed to send reset email',
+        );
+      }
     }
   }
 

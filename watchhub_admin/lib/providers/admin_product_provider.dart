@@ -171,4 +171,28 @@ class AdminProductProvider extends ChangeNotifier {
     }
     return urls;
   }
+
+  // Fetch Reviews
+  Future<List<Map<String, dynamic>>> fetchReviews(String productId) async {
+    try {
+      final snapshot = await _productCollection
+          .doc(productId)
+          .collection('reviews')
+          .orderBy('createdAt', descending: true)
+          .get();
+
+      return snapshot.docs.map((doc) {
+        final data = doc.data();
+        data['id'] = doc.id;
+        // Ensure createdAt is a DateTime
+        if (data['createdAt'] is Timestamp) {
+          data['createdAt'] = (data['createdAt'] as Timestamp).toDate();
+        }
+        return data;
+      }).toList();
+    } catch (e) {
+      debugPrint('Error fetching reviews: $e');
+      return [];
+    }
+  }
 }

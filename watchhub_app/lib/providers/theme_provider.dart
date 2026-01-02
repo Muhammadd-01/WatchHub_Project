@@ -6,38 +6,52 @@
 // =============================================================================
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import '../core/theme/app_theme.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ThemeProvider extends ChangeNotifier {
-  ThemeMode _themeMode = ThemeMode.system;
+  ThemeMode _themeMode = ThemeMode.light;
+  static const String _themeKey = 'theme_mode';
 
   ThemeMode get themeMode => _themeMode;
 
   bool get isDarkMode {
     if (_themeMode == ThemeMode.system) {
-      // In a real app with context access, we'd check platform brightness.
-      // For now, default system to dark as it's the primary design.
-      return true;
+      // Default to light if system is ambiguous
+      return false;
     }
     return _themeMode == ThemeMode.dark;
   }
 
-  void toggleTheme(bool isDark) {
+  ThemeProvider() {
+    _loadTheme();
+  }
+
+  Future<void> _loadTheme() async {
+    final prefs = await SharedPreferences.getInstance();
+    final isDark = prefs.getBool(_themeKey);
+    if (isDark != null) {
+      _themeMode = isDark ? ThemeMode.dark : ThemeMode.light;
+      notifyListeners();
+    }
+  }
+
+  Future<void> toggleTheme(bool isDark) async {
     _themeMode = isDark ? ThemeMode.dark : ThemeMode.light;
-    _updateSystemOverlay();
     notifyListeners();
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_themeKey, isDark);
   }
 
-  void setThemeMode(ThemeMode mode) {
+  Future<void> setThemeMode(ThemeMode mode) async {
     _themeMode = mode;
-    _updateSystemOverlay();
     notifyListeners();
-  }
 
-  void _updateSystemOverlay() {
-    // We can explicitly set overlay styles if needed,
-    // but usually AppTheme properties handle this automatically.
-    // This is a hook for future customization.
+    final prefs = await SharedPreferences.getInstance();
+    if (mode == ThemeMode.system) {
+      await prefs.remove(_themeKey);
+    } else {
+      await prefs.setBool(_themeKey, mode == ThemeMode.dark);
+    }
   }
 }

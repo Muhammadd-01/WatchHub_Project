@@ -15,6 +15,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../core/utils/admin_helpers.dart';
 import '../../widgets/admin_scaffold.dart';
 import '../../providers/admin_product_provider.dart';
+import '../../widgets/reviews_dialog.dart';
 
 class ProductsListScreen extends StatefulWidget {
   const ProductsListScreen({super.key});
@@ -177,6 +178,16 @@ class _ProductsListScreenState extends State<ProductsListScreen> {
                           ),
                           const SizedBox(width: 8),
                           IconButton(
+                            icon: const Icon(Icons.reviews_outlined,
+                                size: 20, color: AppColors.primaryGold),
+                            onPressed: () => _showReviewsDialog(context,
+                                product['id'], product['name'] ?? 'Product'),
+                            tooltip: 'Reviews',
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                          ),
+                          const SizedBox(width: 8),
+                          IconButton(
                             icon: const Icon(Icons.delete,
                                 size: 20, color: AppColors.error),
                             onPressed: () => _confirmDelete(
@@ -247,6 +258,17 @@ class _ProductsListScreenState extends State<ProductsListScreen> {
         backgroundColor: AppColors.cardBackground,
         insetPadding: const EdgeInsets.all(24),
         child: AddEditProductDialog(product: product),
+      ),
+    );
+  }
+
+  void _showReviewsDialog(
+      BuildContext context, String productId, String productName) {
+    showDialog(
+      context: context,
+      builder: (context) => ReviewsDialog(
+        productId: productId,
+        productName: productName,
       ),
     );
   }

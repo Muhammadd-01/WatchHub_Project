@@ -333,11 +333,18 @@ class _CartItemCard extends StatelessWidget {
               children: [
                 IconButton(
                   icon: const Icon(Icons.add, size: 20),
-                  onPressed: () {
-                    context.read<CartProvider>().incrementQuantity(
+                  onPressed: () async {
+                    final provider = context.read<CartProvider>();
+                    final success = await provider.incrementQuantity(
                       uid,
                       item.productId,
                     );
+                    if (!success && context.mounted) {
+                      Helpers.showErrorSnackbar(
+                        context,
+                        provider.errorMessage ?? 'Cannot increase quantity',
+                      );
+                    }
                   },
                   style: IconButton.styleFrom(
                     backgroundColor: AppColors.surfaceColor,
@@ -354,9 +361,9 @@ class _CartItemCard extends StatelessWidget {
                   icon: const Icon(Icons.remove, size: 20),
                   onPressed: () {
                     context.read<CartProvider>().decrementQuantity(
-                      uid,
-                      item.productId,
-                    );
+                          uid,
+                          item.productId,
+                        );
                   },
                   style: IconButton.styleFrom(
                     backgroundColor: AppColors.surfaceColor,

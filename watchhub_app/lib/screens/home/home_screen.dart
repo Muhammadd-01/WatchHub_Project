@@ -17,6 +17,7 @@ import '../../providers/category_provider.dart';
 import '../../widgets/common/glass_container.dart';
 import '../../widgets/home/product_card.dart';
 import '../../widgets/home/category_chip.dart';
+import '../../widgets/common/cart_badge.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -98,6 +99,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       actions: [
+        const CartBadge(),
         IconButton(
           icon:
               Icon(Icons.notifications_outlined, color: theme.iconTheme.color),

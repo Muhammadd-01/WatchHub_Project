@@ -427,6 +427,29 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
               ],
             ),
           ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () {
+                final authProvider = context.read<AuthProvider>();
+                if (!authProvider.isAuthenticated) {
+                  Navigator.pushNamed(context, AppRoutes.login);
+                  return;
+                }
+                Navigator.pushNamed(context, AppRoutes.writeReview,
+                    arguments: product.id);
+              },
+              icon: const Icon(Icons.rate_review_outlined,
+                  color: AppColors.primaryGold),
+              label: const Text('Write a Review',
+                  style: TextStyle(color: AppColors.primaryGold)),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: AppColors.primaryGold),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+            ),
+          ),
         ],
       ),
     ).animate().fadeIn(delay: 500.ms);

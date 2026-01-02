@@ -32,16 +32,19 @@ class ReviewModel {
   /// Rating (1-5 stars)
   final double rating;
 
-  /// Review comment/text
+  /// Review title
+  final String title;
+
+  /// Review comment
   final String comment;
 
-  /// Review creation timestamp
+  /// Creation date
   final DateTime createdAt;
 
   /// Whether the review has been edited
   final bool isEdited;
 
-  /// Last edit timestamp
+  /// Last edit date
   final DateTime? editedAt;
 
   /// Number of helpful votes
@@ -54,11 +57,12 @@ class ReviewModel {
     required this.userName,
     this.userImageUrl,
     required this.rating,
+    this.title = '',
     required this.comment,
     required this.createdAt,
     this.isEdited = false,
     this.editedAt,
-    this.helpfulCount = 0, required String title,
+    this.helpfulCount = 0,
   });
 
   // ===========================================================================
@@ -75,11 +79,12 @@ class ReviewModel {
       userName: data['userName'] ?? 'Anonymous',
       userImageUrl: data['userImageUrl'],
       rating: (data['rating'] ?? 0).toDouble(),
+      title: data['title'] ?? '',
       comment: data['comment'] ?? '',
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       isEdited: data['isEdited'] ?? false,
       editedAt: (data['editedAt'] as Timestamp?)?.toDate(),
-      helpfulCount: data['helpfulCount'] ?? 0, title: '',
+      helpfulCount: data['helpfulCount'] ?? 0,
     );
   }
 
@@ -91,6 +96,7 @@ class ReviewModel {
       userName: map['userName'] ?? 'Anonymous',
       userImageUrl: map['userImageUrl'],
       rating: (map['rating'] ?? 0).toDouble(),
+      title: map['title'] ?? '',
       comment: map['comment'] ?? '',
       createdAt: map['createdAt'] is Timestamp
           ? (map['createdAt'] as Timestamp).toDate()
@@ -99,7 +105,7 @@ class ReviewModel {
       editedAt: map['editedAt'] is Timestamp
           ? (map['editedAt'] as Timestamp).toDate()
           : map['editedAt'] as DateTime?,
-      helpfulCount: map['helpfulCount'] ?? 0, title: '',
+      helpfulCount: map['helpfulCount'] ?? 0,
     );
   }
 
@@ -109,6 +115,7 @@ class ReviewModel {
       'userName': userName,
       'userImageUrl': userImageUrl,
       'rating': rating,
+      'title': title,
       'comment': comment,
       'createdAt': Timestamp.fromDate(createdAt),
       'isEdited': isEdited,
@@ -125,6 +132,7 @@ class ReviewModel {
       'userName': userName,
       'userImageUrl': userImageUrl,
       'rating': rating,
+      'title': title,
       'comment': comment,
       'createdAt': createdAt,
       'isEdited': isEdited,
@@ -144,6 +152,7 @@ class ReviewModel {
     String? userName,
     String? userImageUrl,
     double? rating,
+    String? title,
     String? comment,
     DateTime? createdAt,
     bool? isEdited,
@@ -157,11 +166,12 @@ class ReviewModel {
       userName: userName ?? this.userName,
       userImageUrl: userImageUrl ?? this.userImageUrl,
       rating: rating ?? this.rating,
+      title: title ?? this.title,
       comment: comment ?? this.comment,
       createdAt: createdAt ?? this.createdAt,
       isEdited: isEdited ?? this.isEdited,
       editedAt: editedAt ?? this.editedAt,
-      helpfulCount: helpfulCount ?? this.helpfulCount, title: '',
+      helpfulCount: helpfulCount ?? this.helpfulCount,
     );
   }
 
@@ -195,6 +205,9 @@ class ReviewModel {
     return 'Poor';
   }
 
+  /// Whether the user purchased the product (placeholder)
+  bool get isVerifiedPurchase => false; // Implement Logic later
+
   // ===========================================================================
   // EQUALITY & STRING
   // ===========================================================================
@@ -207,10 +220,6 @@ class ReviewModel {
 
   @override
   int get hashCode => id.hashCode;
-
-  get isVerifiedPurchase => null;
-
-  get title => null;
 
   @override
   String toString() {

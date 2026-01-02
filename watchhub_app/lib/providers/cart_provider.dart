@@ -72,27 +72,25 @@ class CartProvider extends ChangeNotifier {
   void _startCartStream(String uid) {
     _cartSubscription?.cancel();
 
-    _cartSubscription = _firestoreService
-        .cartStream(uid)
-        .listen(
-          (items) async {
-            // Populate product details
-            final populatedItems = <CartItemModel>[];
+    _cartSubscription = _firestoreService.cartStream(uid).listen(
+      (items) async {
+        // Populate product details
+        final populatedItems = <CartItemModel>[];
 
-            for (final item in items) {
-              final product = await _firestoreService.getProduct(
-                item.productId,
-              );
-              populatedItems.add(item.copyWith(product: product));
-            }
+        for (final item in items) {
+          final product = await _firestoreService.getProduct(
+            item.productId,
+          );
+          populatedItems.add(item.copyWith(product: product));
+        }
 
-            _items = populatedItems;
-            notifyListeners();
-          },
-          onError: (error) {
-            debugPrint('CartProvider: Cart stream error - $error');
-          },
-        );
+        _items = populatedItems;
+        notifyListeners();
+      },
+      onError: (error) {
+        debugPrint('CartProvider: Cart stream error - $error');
+      },
+    );
   }
 
   /// Clears cart state (on logout)
@@ -253,12 +251,24 @@ class CartProvider extends ChangeNotifier {
           CartItemModel(productId: '', quantity: 0, addedAt: DateTime.now()),
     );
 
-    if (item.productId.isEmpty) return false;
+    if (item.productId.isEmpty) {
+      debugPrint('CartProvider: Item not found for increment');
+      return false;
+    }
 
     // Check stock
-    if (item.product != null && item.quantity >= item.product!.stock) {
-      _setError('Maximum available stock reached');
-      return false;
+    if (item.product != null) {
+      if (item.quantity >= item.product!.stock) {
+        debugPrint(
+            'CartProvider: Max stock reached. Qty: ${item.quantity}, Stock: ${item.product!.stock}');
+        _setError(
+            'Maximum available stock reached (${item.product!.stock} items)');
+        return false;
+      }
+    } else {
+      // If product details aren't loaded, we might want to allow it or fetch it.
+      // For now, let's allow it but log warning.
+      debugPrint('CartProvider: Product details missing, skipping stock check');
     }
 
     return updateQuantity(uid, productId, item.quantity + 1);
