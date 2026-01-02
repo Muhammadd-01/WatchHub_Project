@@ -35,6 +35,14 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
   Widget build(BuildContext context) {
     return AdminScaffold(
       title: 'Orders',
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.refresh, color: AppColors.primaryGold),
+          onPressed: () {
+            context.read<AdminOrderProvider>().fetchOrders();
+          },
+        ),
+      ],
       body: Consumer<AdminOrderProvider>(
         builder: (context, provider, _) {
           if (provider.isLoading) {
@@ -223,7 +231,14 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
           dropdownColor: AppColors.surfaceColor,
           style: const TextStyle(color: AppColors.textPrimary),
           decoration: const InputDecoration(labelText: 'Status'),
-          items: ['pending', 'processing', 'shipped', 'delivered', 'cancelled']
+          items: [
+            'pending',
+            'approved',
+            'processing',
+            'shipped',
+            'delivered',
+            'cancelled'
+          ]
               .map((s) =>
                   DropdownMenuItem(value: s, child: Text(s.toUpperCase())))
               .toList(),

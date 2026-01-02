@@ -674,14 +674,20 @@ class FirestoreCrudService {
   }
 
   /// Gets orders for a user
+  ///
+  /// NOTE: Sorted in memory to avoid needing a composite index immediately.
   Future<List<OrderModel>> getOrders(String uid) async {
     try {
-      final snapshot = await _ordersCollection
-          .where('userId', isEqualTo: uid)
-          .orderBy('createdAt', descending: true)
-          .get();
+      final snapshot =
+          await _ordersCollection.where('userId', isEqualTo: uid).get();
 
-      return snapshot.docs.map((doc) => OrderModel.fromFirestore(doc)).toList();
+      final orders =
+          snapshot.docs.map((doc) => OrderModel.fromFirestore(doc)).toList();
+
+      // Sort in memory by createdAt (descending)
+      orders.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+      return orders;
     } catch (e) {
       debugPrint('FirestoreCrudService: Error getting orders - $e');
       rethrow;
