@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/routes/app_routes.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
 
@@ -72,10 +73,23 @@ class AboutScreen extends StatelessWidget {
             ),
             const SizedBox(height: 32),
             _buildInfoTile(
-                context, 'Terms of Service', Icons.description_outlined),
+              context,
+              'Terms of Service',
+              Icons.description_outlined,
+              onTap: () => Navigator.pushNamed(context, AppRoutes.terms),
+            ),
             _buildInfoTile(
-                context, 'Privacy Policy', Icons.privacy_tip_outlined),
-            _buildInfoTile(context, 'Licenses', Icons.receipt_long_outlined),
+              context,
+              'Privacy Policy',
+              Icons.privacy_tip_outlined,
+              onTap: () => Navigator.pushNamed(context, AppRoutes.privacy),
+            ),
+            _buildInfoTile(
+              context,
+              'Licenses',
+              Icons.receipt_long_outlined,
+              onTap: () => Navigator.pushNamed(context, AppRoutes.licenses),
+            ),
             const SizedBox(height: 48),
             Text(
               '© 2024 WatchHub. All rights reserved.',
@@ -89,7 +103,8 @@ class AboutScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoTile(BuildContext context, String title, IconData icon) {
+  Widget _buildInfoTile(BuildContext context, String title, IconData icon,
+      {VoidCallback? onTap}) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -109,7 +124,7 @@ class AboutScreen extends StatelessWidget {
             style: AppTextStyles.bodyLarge
                 .copyWith(color: theme.textTheme.bodyLarge?.color)),
         trailing: Icon(Icons.chevron_right, color: theme.disabledColor),
-        onTap: () {},
+        onTap: onTap,
       ),
     );
   }

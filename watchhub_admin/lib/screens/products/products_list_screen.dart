@@ -292,6 +292,7 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
   late TextEditingController _priceCtrl;
   late TextEditingController _descCtrl;
   late TextEditingController _stockCtrl;
+  late TextEditingController _specsCtrl;
   String _category = 'Men'; // Default
 
   // TODO: Add Image Picker logic in the dialog for full implementation
@@ -305,6 +306,13 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
     _priceCtrl = TextEditingController(text: p?['price']?.toString());
     _descCtrl = TextEditingController(text: p?['description']);
     _stockCtrl = TextEditingController(text: p?['stock']?.toString());
+    _specsCtrl = TextEditingController(
+        text: p?['specifications'] != null
+            ? (p!['specifications'] as Map)
+                .entries
+                .map((e) => '${e.key}: ${e.value}')
+                .join('\n')
+            : '');
     if (p != null) _category = p['category'] ?? 'Men';
   }
 
@@ -315,6 +323,7 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
     _priceCtrl.dispose();
     _descCtrl.dispose();
     _stockCtrl.dispose();
+    _specsCtrl.dispose();
     super.dispose();
   }
 
@@ -483,6 +492,18 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
                 style: const TextStyle(color: AppColors.textPrimary),
                 maxLines: 3,
               ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _specsCtrl,
+                decoration: const InputDecoration(
+                  labelText: 'Specifications',
+                  hintText:
+                      'Movement: Automatic\nCase Size: 42mm\nWater Resistance: 100m',
+                  hintStyle: TextStyle(fontSize: 12),
+                ),
+                style: const TextStyle(color: AppColors.textPrimary),
+                maxLines: 5,
+              ),
               const SizedBox(height: 24),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
@@ -522,6 +543,17 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
     final stock = int.tryParse(_stockCtrl.text) ?? 0;
     final desc = _descCtrl.text;
 
+    // Parse specifications from text input
+    final specsMap = <String, String>{};
+    if (_specsCtrl.text.isNotEmpty) {
+      for (var line in _specsCtrl.text.split('\n')) {
+        final parts = line.split(':');
+        if (parts.length == 2) {
+          specsMap[parts[0].trim()] = parts[1].trim();
+        }
+      }
+    }
+
     bool success;
     if (widget.product != null) {
       // Update
@@ -532,6 +564,7 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
         'stock': stock,
         'description': desc,
         'category': _category,
+        'specifications': specsMap,
       });
       // Handle image updates separately if needed, but for now we focused on creating with images
     } else {
@@ -543,7 +576,7 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
         description: desc,
         category: _category,
         images: _selectedImages,
-        specs: {},
+        specs: specsMap,
       );
     }
 

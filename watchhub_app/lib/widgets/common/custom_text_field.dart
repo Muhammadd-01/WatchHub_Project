@@ -54,6 +54,9 @@ class CustomTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return TextFormField(
       controller: controller,
       obscureText: obscureText,
@@ -67,28 +70,40 @@ class CustomTextField extends StatelessWidget {
       focusNode: focusNode,
       textInputAction: textInputAction,
       autofocus: autofocus,
-      style: const TextStyle(color: AppColors.textPrimary, fontSize: 16),
+      style: TextStyle(
+        color: theme.textTheme.bodyLarge?.color ??
+            (isDark ? AppColors.textPrimary : AppColors.textPrimaryLight),
+        fontSize: 16,
+      ),
       cursorColor: AppColors.primaryGold,
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
         prefixIcon: prefixIcon != null
-            ? Icon(prefixIcon, color: AppColors.iconSecondary)
+            ? Icon(prefixIcon,
+                color: isDark
+                    ? AppColors.iconSecondary
+                    : AppColors.iconSecondaryLight)
             : null,
         suffixIcon: suffixIcon,
         filled: true,
-        fillColor: AppColors.cardBackground,
+        fillColor:
+            isDark ? AppColors.cardBackground : AppColors.cardBackgroundLight,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 20,
           vertical: 18,
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.inputBorder),
+          borderSide: BorderSide(
+              color:
+                  isDark ? AppColors.inputBorder : AppColors.inputBorderLight),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.inputBorder),
+          borderSide: BorderSide(
+              color:
+                  isDark ? AppColors.inputBorder : AppColors.inputBorderLight),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -107,10 +122,18 @@ class CustomTextField extends StatelessWidget {
         ),
         disabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: AppColors.inputBorder.withOpacity(0.5)),
+          borderSide: BorderSide(
+              color:
+                  (isDark ? AppColors.inputBorder : AppColors.inputBorderLight)
+                      .withOpacity(0.5)),
         ),
-        labelStyle: TextStyle(color: AppColors.textSecondary, fontSize: 14),
-        hintStyle: TextStyle(color: AppColors.textHint, fontSize: 14),
+        labelStyle: TextStyle(
+            color:
+                isDark ? AppColors.textSecondary : AppColors.textSecondaryLight,
+            fontSize: 14),
+        hintStyle: TextStyle(
+            color: isDark ? AppColors.textHint : AppColors.textHintLight,
+            fontSize: 14),
         errorStyle: const TextStyle(color: AppColors.error, fontSize: 12),
       ),
     );
@@ -138,31 +161,46 @@ class SearchTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.cardBackground,
+        color:
+            isDark ? AppColors.cardBackground : AppColors.cardBackgroundLight,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.inputBorder),
+        border: Border.all(
+            color: isDark ? AppColors.inputBorder : AppColors.inputBorderLight),
       ),
       child: TextField(
         controller: controller,
         onChanged: onChanged,
         onSubmitted: onSubmitted,
         autofocus: autofocus,
-        style: const TextStyle(color: AppColors.textPrimary, fontSize: 16),
+        style: TextStyle(
+          color: theme.textTheme.bodyLarge?.color ??
+              (isDark ? AppColors.textPrimary : AppColors.textPrimaryLight),
+          fontSize: 16,
+        ),
         cursorColor: AppColors.primaryGold,
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle: TextStyle(color: AppColors.textHint, fontSize: 14),
-          prefixIcon: const Icon(
+          hintStyle: TextStyle(
+            color: isDark ? AppColors.textHint : AppColors.textHintLight,
+            fontSize: 14,
+          ),
+          prefixIcon: Icon(
             Icons.search_rounded,
-            color: AppColors.iconSecondary,
+            color:
+                isDark ? AppColors.iconSecondary : AppColors.iconSecondaryLight,
           ),
           suffixIcon: controller != null && controller!.text.isNotEmpty
               ? IconButton(
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.close_rounded,
-                    color: AppColors.iconSecondary,
+                    color: isDark
+                        ? AppColors.iconSecondary
+                        : AppColors.iconSecondaryLight,
                   ),
                   onPressed: () {
                     controller?.clear();

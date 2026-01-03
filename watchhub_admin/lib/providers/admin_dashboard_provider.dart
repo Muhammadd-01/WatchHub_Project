@@ -41,16 +41,14 @@ class AdminDashboardProvider extends ChangeNotifier {
       final userSnapshot = await _firestore.collection('users').count().get();
       _userCount = userSnapshot.count ?? 0;
 
-      // 4. Revenue (This is expensive to calculate precisely without aggregation,
-      // but we will do a simple fetch for now or use a dedicated stats doc if available.
-      // For now, let's just fetch all orders and sum. CAUTION: Expensive for large datasets.)
-      // Optimized approach: Only fetch 'totalAmount' field.
+      // 4. Revenue
       final revenueQuery = await _firestore.collection('orders').get();
       double sum = 0;
       for (var doc in revenueQuery.docs) {
         final data = doc.data();
-        if (data['totalAmount'] != null) {
-          // handle both int and double
+        if (data['total'] != null) {
+          sum += (data['total'] as num).toDouble();
+        } else if (data['totalAmount'] != null) {
           sum += (data['totalAmount'] as num).toDouble();
         }
       }

@@ -43,7 +43,7 @@ class ProductProvider extends ChangeNotifier {
 
   // Getters
   List<ProductModel> get products =>
-      _filteredProducts.isNotEmpty ? _filteredProducts : _products;
+      hasFilters || _searchQuery.isNotEmpty ? _filteredProducts : _products;
   List<ProductModel> get allProducts => _products;
   List<ProductModel> get featuredProducts => _featuredProducts;
   List<ProductModel> get newArrivals => _newArrivals;

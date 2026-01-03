@@ -11,6 +11,7 @@ import '../../core/constants/app_text_styles.dart';
 import '../../widgets/admin_scaffold.dart';
 import '../../providers/admin_dashboard_provider.dart';
 import '../../providers/admin_navigation_provider.dart';
+import '../../providers/admin_order_provider.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -25,6 +26,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<AdminDashboardProvider>().fetchStats();
+      context.read<AdminOrderProvider>().fetchOrders();
     });
   }
 
@@ -87,7 +89,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
                 const SizedBox(height: 32),
 
-                // Recent Activity Section (Placeholder logic for now, or could fetch recent orders similarly)
+                // Recent Activity Section
                 Text('Recent Orders', style: AppTextStyles.titleLarge),
                 const SizedBox(height: 16),
                 Container(
@@ -103,35 +105,60 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                     ],
                   ),
-                  child: Column(
-                    children: [
-                      // Placeholder items - in a real app, bind this to AdminOrderProvider.orders.take(5)
-                      _buildOrderListItem(context, 'ORD-001', 'John Doe',
-                          '\$250.00', 'Delivered', AppColors.success),
-                      const Divider(height: 1),
-                      _buildOrderListItem(context, 'ORD-002', 'Jane Smith',
-                          '\$120.50', 'Processing', AppColors.info),
-                      const Divider(height: 1),
-                      _buildOrderListItem(context, 'ORD-003', 'Mike Johnson',
-                          '\$450.00', 'Pending', AppColors.warning),
+                  child: Consumer<AdminOrderProvider>(
+                    builder: (context, orderProvider, _) {
+                      if (orderProvider.isLoading) {
+                        return const Padding(
+                          padding: EdgeInsets.all(24.0),
+                          child: Center(child: CircularProgressIndicator()),
+                        );
+                      }
+                      if (orderProvider.orders.isEmpty) {
+                        return const Padding(
+                          padding: EdgeInsets.all(24.0),
+                          child: Center(child: Text('No recent orders')),
+                        );
+                      }
 
-                      // improved "View All" button
-                      InkWell(
-                        onTap: () {
-                          // Switch to Orders Tab (Index 3)
-                          // Assuming Orders is at index 3.
-                          context.read<AdminNavigationProvider>().setIndex(3);
-                        },
-                        child: Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(16),
-                          alignment: Alignment.center,
-                          child: Text('View All Orders',
-                              style: AppTextStyles.labelLarge
-                                  .copyWith(color: AppColors.primaryGold)),
-                        ),
-                      ),
-                    ],
+                      final recentOrders =
+                          orderProvider.orders.take(5).toList();
+
+                      return Column(
+                        children: [
+                          ...recentOrders.map((order) {
+                            return Column(
+                              children: [
+                                _buildOrderListItem(
+                                  context,
+                                  '#${order['id'].toString().substring(0, 6)}',
+                                  order['userId'] ?? 'Guest',
+                                  '\$${(order['total'] ?? 0).toStringAsFixed(2)}',
+                                  order['status'] ?? 'pending',
+                                  _getStatusColor(order['status'] ?? 'pending'),
+                                ),
+                                const Divider(height: 1),
+                              ],
+                            );
+                          }),
+                          // improved "View All" button
+                          InkWell(
+                            onTap: () {
+                              context
+                                  .read<AdminNavigationProvider>()
+                                  .setIndex(3);
+                            },
+                            child: Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(16),
+                              alignment: Alignment.center,
+                              child: Text('View All Orders',
+                                  style: AppTextStyles.labelLarge
+                                      .copyWith(color: AppColors.primaryGold)),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
                   ),
                 ),
               ],
@@ -258,5 +285,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ],
       ),
     );
+  }
+
+  Color _getStatusColor(String status) {
+    status = status.toLowerCase();
+    if (status == 'approved' ||
+        status == 'completed' ||
+        status == 'delivered') {
+      return AppColors.success;
+    } else if (status == 'cancelled') {
+      return AppColors.error;
+    } else if (status == 'processing' || status == 'shipped') {
+      return AppColors.info;
+    }
+    return AppColors.warning;
   }
 }

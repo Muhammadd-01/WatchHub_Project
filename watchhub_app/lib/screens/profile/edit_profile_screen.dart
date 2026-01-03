@@ -269,6 +269,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Widget _buildProfilePicture() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final user = context.read<AuthProvider>().user;
     final currentImageUrl = user?.profileImageUrl;
 
@@ -303,7 +305,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               gradient: AppColors.goldGradient,
-              border: Border.all(color: AppColors.cardBorder, width: 2),
+              border: Border.all(
+                color:
+                    isDark ? AppColors.cardBorder : AppColors.cardBorderLight,
+                width: 2,
+              ),
             ),
             child: ClipOval(child: imageWidget),
           ),
@@ -314,7 +320,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               width: 36,
               height: 36,
               decoration: BoxDecoration(
-                color: AppColors.cardBackground,
+                color: isDark
+                    ? AppColors.cardBackground
+                    : AppColors.cardBackgroundLight,
                 shape: BoxShape.circle,
                 border: Border.all(color: AppColors.primaryGold),
               ),
@@ -332,8 +340,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Widget _buildInitials(user) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return Container(
-      color: AppColors.cardBackground,
+      color: isDark ? AppColors.cardBackground : AppColors.cardBackgroundLight,
       child: Center(
         child: Text(
           user?.initials ?? 'U',

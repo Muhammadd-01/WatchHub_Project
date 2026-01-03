@@ -14,6 +14,7 @@ import '../../core/constants/app_constants.dart';
 import '../../core/routes/app_routes.dart';
 import '../../providers/product_provider.dart';
 import '../../providers/category_provider.dart';
+import '../../providers/notification_provider.dart';
 import '../../widgets/common/glass_container.dart';
 import '../../widgets/home/product_card.dart';
 import '../../widgets/home/category_chip.dart';
@@ -101,11 +102,21 @@ class _HomeScreenState extends State<HomeScreen> {
       actions: [
         const CartBadge(),
         IconButton(
-          icon:
-              Icon(Icons.notifications_outlined, color: theme.iconTheme.color),
           onPressed: () {
             Navigator.pushNamed(context, AppRoutes.notifications);
           },
+          icon: Consumer<NotificationProvider>(
+            builder: (context, notifProvider, child) {
+              return Badge(
+                label: Text('${notifProvider.unreadCount}'),
+                isLabelVisible: notifProvider.unreadCount > 0,
+                backgroundColor: AppColors.primaryGold,
+                textColor: Colors.black,
+                child: Icon(Icons.notifications_outlined,
+                    color: theme.iconTheme.color),
+              );
+            },
+          ),
         ),
       ],
     );

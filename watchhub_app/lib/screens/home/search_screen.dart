@@ -1,7 +1,7 @@
 // =============================================================================
 // FILE: search_screen.dart
-// PURPOSE: Search screen for WatchHub
-// DESCRIPTION: Premium search UI with real-time search and results.
+// PURPOSE: Search screen for WatchHub with magnifier icon and recent searches
+// DESCRIPTION: Premium search UI with expandable search bar and search history.
 // =============================================================================
 
 import 'package:flutter/material.dart';
@@ -12,7 +12,7 @@ import '../../core/constants/app_text_styles.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/routes/app_routes.dart';
 import '../../providers/product_provider.dart';
-import '../../widgets/common/custom_text_field.dart';
+import '../../providers/search_provider.dart';
 import '../../widgets/home/product_card.dart';
 
 class SearchScreen extends StatefulWidget {
@@ -34,68 +34,213 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   void _onSearch(String query) {
-    context.read<ProductProvider>().searchProducts(query);
+    if (query.trim().isNotEmpty) {
+      context.read<SearchProvider>().addSearch(query);
+      context.read<ProductProvider>().searchProducts(query);
+    }
   }
 
   void _clearSearch() {
     _searchController.clear();
     context.read<ProductProvider>().clearSearch();
+    context.read<SearchProvider>().setSearchExpanded(false);
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
-      backgroundColor: AppColors.scaffoldBackground,
-      appBar: AppBar(
-        backgroundColor: AppColors.scaffoldBackground,
-        title: Text('Search', style: AppTextStyles.appBarTitle),
-        automaticallyImplyLeading: false,
-      ),
-      body: Column(
-        children: [
-          // Search bar
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: SearchTextField(
-              controller: _searchController,
-              hint: 'Search luxury watches...',
-              onChanged: _onSearch,
-              onClear: _clearSearch,
-              autofocus: false,
-            ),
-          ),
+      backgroundColor: theme.scaffoldBackgroundColor,
+      body: SafeArea(
+        child: Consumer<SearchProvider>(
+          builder: (context, searchProvider, _) {
+            return Column(
+              children: [
+                // Header with magnifier/search bar
+                _buildSearchHeader(theme, searchProvider),
 
-          // Content
-          Expanded(
-            child: Consumer<ProductProvider>(
-              builder: (context, provider, _) {
-                if (_searchController.text.isEmpty) {
-                  return _buildSuggestions();
-                }
+                // Content
+                Expanded(
+                  child: Consumer<ProductProvider>(
+                    builder: (context, productProvider, _) {
+                      if (_searchController.text.isEmpty) {
+                        return _buildRecentSearches(searchProvider);
+                      }
 
-                if (provider.isLoading) {
-                  return _buildLoading();
-                }
+                      if (productProvider.isLoading) {
+                        return _buildLoading();
+                      }
 
-                if (provider.searchResults.isEmpty) {
-                  return _buildNoResults();
-                }
+                      if (productProvider.searchResults.isEmpty) {
+                        return _buildNoResults();
+                      }
 
-                return _buildResults(provider);
-              },
-            ),
-          ),
-        ],
+                      return _buildResults(productProvider);
+                    },
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
 
-  Widget _buildSuggestions() {
+  Widget _buildSearchHeader(ThemeData theme, SearchProvider searchProvider) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 300),
+        transitionBuilder: (child, animation) {
+          return FadeTransition(
+            opacity: animation,
+            child: SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(0.1, 0),
+                end: Offset.zero,
+              ).animate(animation),
+              child: child,
+            ),
+          );
+        },
+        child: searchProvider.isSearchExpanded
+            ? _buildExpandedSearchBar(theme, searchProvider)
+            : _buildCollapsedSearchBar(theme, searchProvider),
+      ),
+    );
+  }
+
+  Widget _buildCollapsedSearchBar(
+      ThemeData theme, SearchProvider searchProvider) {
+    return Row(
+      key: const ValueKey('collapsed'),
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          'Search Watches',
+          style: AppTextStyles.titleLarge.copyWith(
+            color: theme.textTheme.titleLarge?.color,
+          ),
+        ),
+        IconButton(
+          icon: Icon(
+            Icons.search,
+            color: AppColors.primaryGold,
+            size: 28,
+          ),
+          onPressed: () {
+            searchProvider.setSearchExpanded(true);
+            _focusNode.requestFocus();
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildExpandedSearchBar(
+      ThemeData theme, SearchProvider searchProvider) {
+    return Row(
+      key: const ValueKey('expanded'),
+      children: [
+        Expanded(
+          child: TextField(
+            controller: _searchController,
+            focusNode: _focusNode,
+            style: theme.textTheme.bodyLarge,
+            decoration: InputDecoration(
+              hintText: 'Search luxury watches...',
+              hintStyle: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.textTheme.bodyMedium?.color?.withOpacity(0.5),
+              ),
+              filled: true,
+              fillColor: theme.cardColor,
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              prefixIcon:
+                  const Icon(Icons.search, color: AppColors.primaryGold),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: theme.dividerColor),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: theme.dividerColor),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide:
+                    const BorderSide(color: AppColors.primaryGold, width: 2),
+              ),
+            ),
+            onChanged: _onSearch,
+            onSubmitted: _onSearch,
+          ),
+        ),
+        const SizedBox(width: 8),
+        IconButton(
+          icon: const Icon(Icons.close, color: AppColors.textSecondary),
+          onPressed: _clearSearch,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRecentSearches(SearchProvider searchProvider) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if (searchProvider.recentSearches.isNotEmpty) ...[
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Recent Searches', style: AppTextStyles.titleMedium),
+                TextButton(
+                  onPressed: () => searchProvider.clearHistory(),
+                  child: Text(
+                    'Clear All',
+                    style: AppTextStyles.labelMedium.copyWith(
+                      color: AppColors.error,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            ...searchProvider.recentSearches.map((search) {
+              return ListTile(
+                leading: const Icon(
+                  Icons.history,
+                  color: AppColors.textSecondary,
+                ),
+                title: Text(search, style: AppTextStyles.bodyMedium),
+                trailing: IconButton(
+                  icon: const Icon(Icons.close, size: 20),
+                  onPressed: () => searchProvider.removeSearch(search),
+                ),
+                onTap: () {
+                  _searchController.text = search;
+                  _onSearch(search);
+                },
+                contentPadding: EdgeInsets.zero,
+              );
+            }),
+            const SizedBox(height: 32),
+          ],
+
           // Popular brands
           Text('Popular Brands', style: AppTextStyles.titleMedium),
           const SizedBox(height: 12),
@@ -108,7 +253,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 labelStyle: AppTextStyles.labelMedium.copyWith(
                   color: AppColors.primaryGold,
                 ),
-                backgroundColor: AppColors.cardBackground,
+                backgroundColor: Theme.of(context).cardColor,
                 side: BorderSide(color: AppColors.primaryGold.withOpacity(0.3)),
                 onPressed: () {
                   _searchController.text = brand;
@@ -130,8 +275,8 @@ class _SearchScreenState extends State<SearchScreen> {
               return ActionChip(
                 label: Text(category),
                 labelStyle: AppTextStyles.labelMedium,
-                backgroundColor: AppColors.cardBackground,
-                side: BorderSide(color: AppColors.cardBorder),
+                backgroundColor: Theme.of(context).cardColor,
+                side: BorderSide(color: Theme.of(context).dividerColor),
                 onPressed: () {
                   Navigator.pushNamed(
                     context,
@@ -141,26 +286,6 @@ class _SearchScreenState extends State<SearchScreen> {
                 },
               );
             }).toList(),
-          ),
-
-          const SizedBox(height: 32),
-
-          // Recent searches placeholder
-          Text('Trending Searches', style: AppTextStyles.titleMedium),
-          const SizedBox(height: 12),
-          ...['Submariner', 'Speedmaster', 'Nautilus', 'Royal Oak'].map(
-            (term) => ListTile(
-              leading: const Icon(
-                Icons.trending_up_rounded,
-                color: AppColors.primaryGold,
-              ),
-              title: Text(term, style: AppTextStyles.bodyMedium),
-              onTap: () {
-                _searchController.text = term;
-                _onSearch(term);
-              },
-              contentPadding: EdgeInsets.zero,
-            ),
           ),
         ],
       ),

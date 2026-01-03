@@ -1,6 +1,7 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Service to handle Firebase Cloud Messaging (Push Notifications)
 class PushNotificationService {
@@ -9,7 +10,7 @@ class PushNotificationService {
       FlutterLocalNotificationsPlugin();
 
   /// Initialize Push Notifications
-  Future<void> initialize() async {
+  Future<void> initialize(GlobalKey<NavigatorState> navigatorKey) async {
     // 1. Request Permission
     NotificationSettings settings = await _firebaseMessaging.requestPermission(
       alert: true,
@@ -42,7 +43,12 @@ class PushNotificationService {
       iOS: initializationSettingsDarwin,
     );
 
-    await _localNotifications.initialize(initializationSettings);
+    await _localNotifications.initialize(
+      initializationSettings,
+      onDidReceiveNotificationResponse: (details) {
+        navigatorKey.currentState?.pushNamed('/orders');
+      },
+    );
 
     // 3. Handle Foreground Messages
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
@@ -59,8 +65,14 @@ class PushNotificationService {
     // 4. Handle Background/Terminated Click
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
       debugPrint('A new onMessageOpenedApp event was published!');
-      // Navigate to creating screen if needed
+      navigatorKey.currentState?.pushNamed('/orders');
     });
+
+    // 5. Check Initial Message (Terminated state)
+    final initialMessage = await _firebaseMessaging.getInitialMessage();
+    if (initialMessage != null) {
+      navigatorKey.currentState?.pushNamed('/orders');
+    }
 
     // 5. Get Token (for testing/backend)
     final token = await _firebaseMessaging.getToken();
@@ -70,6 +82,15 @@ class PushNotificationService {
 
   /// Show a local notification when app is in foreground
   Future<void> _showLocalNotification(RemoteMessage message) async {
+    // Check if push notifications are enabled in settings
+    final prefs = await SharedPreferences.getInstance();
+    final isPushEnabled = prefs.getBool('push_notifications_enabled') ?? true;
+
+    if (!isPushEnabled) {
+      debugPrint('Push notifications are disabled in settings. Skipping.');
+      return;
+    }
+
     final notification = message.notification;
     final android = message.notification?.android;
 

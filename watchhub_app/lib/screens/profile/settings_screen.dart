@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../providers/theme_provider.dart';
+import '../../providers/notification_provider.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -116,35 +117,43 @@ class SettingsScreen extends StatelessWidget {
           color: isDark ? AppColors.cardBorder : AppColors.cardBorderLight,
         ),
       ),
-      child: Column(
-        children: [
-          SwitchListTile(
-            title: Text(
-              'Push Notifications',
-              style: AppTextStyles.bodyLarge.copyWith(color: textColor),
-            ),
-            value: true, // Placeholder
-            onChanged: (val) {},
-            activeColor: AppColors.primaryGold,
-            secondary: Icon(Icons.notifications_outlined,
-                color: Theme.of(context).primaryColor),
-          ),
-          Divider(
-            color: isDark ? AppColors.divider : AppColors.dividerLight,
-            height: 1,
-          ),
-          SwitchListTile(
-            title: Text(
-              'Order Updates',
-              style: AppTextStyles.bodyLarge.copyWith(color: textColor),
-            ),
-            value: true,
-            onChanged: (val) {},
-            activeColor: AppColors.primaryGold,
-            secondary: Icon(Icons.local_shipping_outlined,
-                color: Theme.of(context).primaryColor),
-          ),
-        ],
+      child: Consumer<NotificationProvider>(
+        builder: (context, notificationProvider, _) {
+          return Column(
+            children: [
+              SwitchListTile(
+                title: Text(
+                  'Push Notifications',
+                  style: AppTextStyles.bodyLarge.copyWith(color: textColor),
+                ),
+                value: notificationProvider.isPushEnabled,
+                onChanged: (val) {
+                  notificationProvider.setPushEnabled(val);
+                },
+                activeColor: AppColors.primaryGold,
+                secondary: Icon(Icons.notifications_outlined,
+                    color: Theme.of(context).primaryColor),
+              ),
+              Divider(
+                color: isDark ? AppColors.divider : AppColors.dividerLight,
+                height: 1,
+              ),
+              SwitchListTile(
+                title: Text(
+                  'Order Updates',
+                  style: AppTextStyles.bodyLarge.copyWith(color: textColor),
+                ),
+                value: notificationProvider.isOrderEnabled,
+                onChanged: (val) {
+                  notificationProvider.setOrderEnabled(val);
+                },
+                activeColor: AppColors.primaryGold,
+                secondary: Icon(Icons.local_shipping_outlined,
+                    color: Theme.of(context).primaryColor),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

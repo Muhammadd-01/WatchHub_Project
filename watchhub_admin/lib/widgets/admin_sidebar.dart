@@ -63,12 +63,6 @@ class AdminSidebar extends StatelessWidget {
             ],
           ),
         ),
-
-        // User Profile / Logout
-        Container(
-          padding: const EdgeInsets.all(16),
-          child: _buildLogoutItem(context),
-        ),
       ],
     );
   }
@@ -96,19 +90,6 @@ class AdminSidebar extends StatelessWidget {
             : Colors.transparent,
         onTap: () => onItemSelected(index),
       ),
-    );
-  }
-
-  Widget _buildLogoutItem(BuildContext context) {
-    return ListTile(
-      leading: const Icon(Icons.logout, color: AppColors.textSecondary),
-      title: Text('Logout', style: AppTextStyles.bodyMedium),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      onTap: () {
-        // We'll handle this by passing a special index or callback,
-        // but for now let's just use Navigator directly since logout is a global action
-        Navigator.pushReplacementNamed(context, '/');
-      },
     );
   }
 }

@@ -93,7 +93,8 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
                         style: AppTextStyles.bodyMedium)),
                     DataCell(Text(order['userId'] ?? 'Guest',
                         style: AppTextStyles.bodyMedium)),
-                    DataCell(Text('\$${order['total'] ?? 0}',
+                    DataCell(Text(
+                        '\$${(order['totalAmount'] ?? 0).toStringAsFixed(2)}',
                         style: AppTextStyles.bodyMedium
                             .copyWith(color: AppColors.primaryGold))),
                     DataCell(_buildStatusBadge(order['status'] ?? 'pending')),
@@ -102,31 +103,34 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
                         style: AppTextStyles.bodyMedium)),
                     DataCell(
                       (order['status'] ?? 'pending') == 'pending'
-                          ? Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                IconButton(
-                                  icon: const Icon(Icons.check_circle_outline,
-                                      color: AppColors.success),
-                                  tooltip: 'Approve',
-                                  onPressed: () => _confirmUpdateStatus(
-                                      context, order, 'approved'),
+                          ? DropdownButton<String>(
+                              value:
+                                  null, // Initial value null to show hint or "Action"
+                              hint: const Text('Action',
+                                  style: TextStyle(fontSize: 12)),
+                              underline: Container(),
+                              icon: const Icon(Icons.arrow_drop_down,
+                                  color: AppColors.primaryGold),
+                              items: const [
+                                DropdownMenuItem(
+                                  value: 'approved',
+                                  child: Text('Approve',
+                                      style:
+                                          TextStyle(color: AppColors.success)),
                                 ),
-                                IconButton(
-                                  icon: const Icon(Icons.cancel_outlined,
-                                      color: AppColors.error),
-                                  tooltip: 'Decline',
-                                  onPressed: () => _confirmUpdateStatus(
-                                      context, order, 'cancelled'),
+                                DropdownMenuItem(
+                                  value: 'cancelled',
+                                  child: Text('Decline',
+                                      style: TextStyle(color: AppColors.error)),
                                 ),
                               ],
+                              onChanged: (val) {
+                                if (val != null) {
+                                  _confirmUpdateStatus(context, order, val);
+                                }
+                              },
                             )
-                          : IconButton(
-                              icon: const Icon(Icons.edit_note,
-                                  color: AppColors.info),
-                              onPressed: () =>
-                                  _showUpdateStatusDialog(context, order),
-                            ),
+                          : _buildStatusText(order['status'] ?? 'pending'),
                     ),
                   ],
                 );
@@ -216,61 +220,28 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
     );
   }
 
-  void _showUpdateStatusDialog(
-      BuildContext context, Map<String, dynamic> order) {
-    String currentStatus = order['status'] ?? 'pending';
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppColors.cardBackground,
-        title: const Text('Update Status',
-            style: TextStyle(color: AppColors.textPrimary)),
-        content: DropdownButtonFormField<String>(
-          value: currentStatus,
-          dropdownColor: AppColors.surfaceColor,
-          style: const TextStyle(color: AppColors.textPrimary),
-          decoration: const InputDecoration(labelText: 'Status'),
-          items: [
-            'pending',
-            'approved',
-            'processing',
-            'shipped',
-            'delivered',
-            'cancelled'
-          ]
-              .map((s) =>
-                  DropdownMenuItem(value: s, child: Text(s.toUpperCase())))
-              .toList(),
-          onChanged: (v) => currentStatus = v!,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(context);
-              try {
-                await context.read<AdminOrderProvider>().updateOrderStatus(
-                    order['id'], currentStatus,
-                    userId: order['userId']);
-                if (context.mounted) {
-                  AdminHelpers.showSuccessSnackbar(
-                      context, 'Order status updated');
-                }
-              } catch (e) {
-                if (context.mounted) {
-                  AdminHelpers.showErrorSnackbar(
-                      context, 'Failed to update status');
-                }
-              }
-            },
-            child: const Text('Update'),
-          ),
-        ],
-      ),
+  Widget _buildStatusText(String status) {
+    Color color;
+    String label;
+    switch (status.toLowerCase()) {
+      case 'approved':
+      case 'completed':
+      case 'delivered':
+        color = AppColors.success;
+        label = 'Approved';
+        break;
+      case 'cancelled':
+        color = AppColors.error;
+        label = 'Declined';
+        break;
+      default:
+        color = AppColors.textSecondary;
+        label = status.toUpperCase();
+    }
+    return Text(
+      label,
+      style: AppTextStyles.bodyMedium
+          .copyWith(color: color, fontWeight: FontWeight.bold),
     );
   }
 }

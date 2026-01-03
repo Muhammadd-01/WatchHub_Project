@@ -485,7 +485,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
           const SizedBox(height: 16),
           SizedBox(
             width: double.infinity,
-            child: OutlinedButton.icon(
+            child: ElevatedButton.icon(
               onPressed: () {
                 final authProvider = context.read<AuthProvider>();
                 if (!authProvider.isAuthenticated) {
@@ -495,13 +495,16 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                 Navigator.pushNamed(context, AppRoutes.writeReview,
                     arguments: product.id);
               },
-              icon: Icon(Icons.rate_review_outlined,
-                  color: Theme.of(context).primaryColor),
-              label: Text('Write a Review',
-                  style: TextStyle(color: Theme.of(context).primaryColor)),
-              style: OutlinedButton.styleFrom(
-                side: BorderSide(color: Theme.of(context).primaryColor),
-                padding: const EdgeInsets.symmetric(vertical: 12),
+              icon: const Icon(Icons.rate_review_rounded),
+              label: const Text('Write a Community Review'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryGold,
+                foregroundColor: Colors.black,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 0,
               ),
             ),
           ),
@@ -577,18 +580,57 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
               ),
             ),
             const SizedBox(width: 16),
-            // Add to cart button
+            // Buttons
             Expanded(
-              child: Consumer<CartProvider>(
-                builder: (context, cartProvider, _) {
-                  return LoadingButton(
-                    onPressed:
-                        product.isInStock ? () => _addToCart(product) : null,
-                    isLoading: cartProvider.isLoading,
-                    text: product.isInStock ? 'Add to Cart' : 'Out of Stock',
-                    icon: Icons.shopping_bag_outlined,
-                  );
-                },
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Consumer<CartProvider>(
+                          builder: (context, cartProvider, _) {
+                            return LoadingButton(
+                              onPressed: product.isInStock
+                                  ? () => _addToCart(product)
+                                  : null,
+                              isLoading: cartProvider.isLoading,
+                              text: 'Add to Cart',
+                              icon: Icons.shopping_bag_outlined,
+                              outlined: true,
+                            );
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: LoadingButton(
+                          onPressed: product.isInStock
+                              ? () {
+                                  final authProvider =
+                                      context.read<AuthProvider>();
+                                  if (!authProvider.isAuthenticated) {
+                                    Navigator.pushNamed(
+                                        context, AppRoutes.login);
+                                    return;
+                                  }
+                                  Navigator.pushNamed(
+                                    context,
+                                    AppRoutes.checkout,
+                                    arguments: {
+                                      'product': product,
+                                      'quantity': _quantity,
+                                    },
+                                  );
+                                }
+                              : null,
+                          text: 'Buy Now',
+                          icon: Icons.flash_on_rounded,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ],

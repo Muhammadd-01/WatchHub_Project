@@ -114,10 +114,14 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
           );
         },
         backgroundColor: AppColors.primaryGold,
-        foregroundColor: AppColors
-            .scaffoldBackground, // Keeping gold for FAB is standard usually, but can check theme
+        foregroundColor: Colors.black,
+        elevation: 4,
+        highlightElevation: 8,
         icon: const Icon(Icons.rate_review_outlined),
-        label: const Text('Write Review'),
+        label: const Text(
+          'Write Review',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
       ),
     );
   }
@@ -144,6 +148,26 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
             'Be the first to review this product',
             style: AppTextStyles.bodyMedium.copyWith(
               color: Theme.of(context).textTheme.bodyMedium?.color,
+            ),
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigator.pushNamed(
+                context,
+                AppRoutes.writeReview,
+                arguments: widget.productId,
+              );
+            },
+            icon: const Icon(Icons.add),
+            label: const Text('Write a Review'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryGold,
+              foregroundColor: Colors.black,
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(30),
+              ),
             ),
           ),
         ],

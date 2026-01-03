@@ -24,6 +24,8 @@ import 'providers/category_provider.dart'; // Added this import
 import 'providers/cart_provider.dart';
 import 'providers/wishlist_provider.dart';
 import 'providers/theme_provider.dart';
+import 'providers/notification_provider.dart';
+import 'providers/search_provider.dart';
 
 // Services
 import 'services/supabase_service.dart';
@@ -42,6 +44,8 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   debugPrint('Handling a background message: ${message.messageId}');
 }
+
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 /// Main entry point
 void main() async {
@@ -65,7 +69,7 @@ void main() async {
   // Initialize Firebase Cloud Messaging
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
   final pushNotificationService = PushNotificationService();
-  await pushNotificationService.initialize();
+  await pushNotificationService.initialize(navigatorKey);
 
   // Initialize Supabase
   await SupabaseService.initialize(
@@ -88,6 +92,8 @@ void main() async {
         ChangeNotifierProvider(create: (_) => CartProvider()),
         ChangeNotifierProvider(create: (_) => WishlistProvider()),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider(create: (_) => NotificationProvider()),
+        ChangeNotifierProvider(create: (_) => SearchProvider()),
       ],
       child: const WatchHubApp(),
     ),
@@ -111,6 +117,9 @@ class WatchHubApp extends StatelessWidget {
           themeMode: themeProvider.themeMode,
           theme: AppTheme.lightTheme,
           darkTheme: AppTheme.darkTheme,
+
+          // Navigation
+          navigatorKey: navigatorKey,
 
           // Routing
           // Removed initialRoute to use home with AuthWrapper
@@ -136,6 +145,13 @@ class AuthWrapper extends StatelessWidget {
       builder: (context, auth, _) {
         switch (auth.state) {
           case AuthState.authenticated:
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (auth.user != null) {
+                final notifProvider =
+                    Provider.of<NotificationProvider>(context, listen: false);
+                notifProvider.init(auth.user!.uid);
+              }
+            });
             return const MainScreen();
           case AuthState.unauthenticated:
             return const LoginScreen();

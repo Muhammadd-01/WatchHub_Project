@@ -179,6 +179,10 @@ class NotificationScreen extends StatelessWidget {
                         // Mark as read logic
                         FirestoreCrudService().markNotificationRead(
                             auth.uid!, notification['id']);
+
+                        // Navigate to Orders
+                        // Ideally we would navigate to specific order if orderId was attached
+                        Navigator.pushNamed(context, '/orders');
                       },
                     ),
                   );

@@ -6,6 +6,7 @@
 // =============================================================================
 
 import 'package:flutter/material.dart';
+import '../../screens/profile/about_sub_pages.dart';
 import '../../screens/auth/splash_screen.dart';
 import '../../screens/auth/login_screen.dart';
 import '../../screens/auth/signup_screen.dart';
@@ -73,6 +74,9 @@ class AppRoutes {
   static const String orderDetails = '/order-details';
   static const String notifications = '/notifications';
   static const String about = '/about';
+  static const String terms = '/terms';
+  static const String privacy = '/privacy';
+  static const String licenses = '/licenses';
   static const String help = '/help';
 
   // ===========================================================================
@@ -176,6 +180,15 @@ class AppRoutes {
 
       case about:
         return _buildRoute(const AboutScreen(), settings);
+
+      case terms:
+        return _buildRoute(const TermsOfServicePage(), settings);
+
+      case privacy:
+        return _buildRoute(const PrivacyPolicyPage(), settings);
+
+      case licenses:
+        return _buildRoute(const AppLicensePage(), settings);
 
       case help:
         return _buildRoute(const HelpSupportScreen(), settings);
