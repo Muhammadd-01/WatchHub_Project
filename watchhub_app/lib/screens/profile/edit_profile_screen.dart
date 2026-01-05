@@ -159,7 +159,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         );
       } catch (e) {
         if (mounted) {
-          Helpers.showErrorSnackbar(context, 'Failed to upload image');
+          final message = e is SupabaseStorageException
+              ? e.message
+              : 'Failed to upload image';
+          Helpers.showErrorSnackbar(context, message);
         }
         setState(() => _isUploadingImage = false);
         return;

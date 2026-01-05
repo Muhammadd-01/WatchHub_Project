@@ -40,6 +40,12 @@ class UserModel {
   /// This is a public URL pointing to the image in Supabase Storage
   final String? profileImageUrl;
 
+  /// Whether push notifications are enabled
+  final bool pushNotificationsEnabled;
+
+  /// Whether order update notifications are enabled
+  final bool orderUpdatesEnabled;
+
   /// Account creation timestamp
   final DateTime createdAt;
 
@@ -54,6 +60,8 @@ class UserModel {
     this.phone,
     this.address,
     this.profileImageUrl,
+    this.pushNotificationsEnabled = true,
+    this.orderUpdatesEnabled = true,
     required this.createdAt,
     this.updatedAt,
   });
@@ -77,6 +85,8 @@ class UserModel {
       phone: data['phone'],
       address: data['address'],
       profileImageUrl: data['profileImageUrl'],
+      pushNotificationsEnabled: data['pushNotificationsEnabled'] ?? true,
+      orderUpdatesEnabled: data['orderUpdatesEnabled'] ?? true,
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       updatedAt: (data['updatedAt'] as Timestamp?)?.toDate(),
     );
@@ -91,6 +101,8 @@ class UserModel {
       phone: map['phone'],
       address: map['address'],
       profileImageUrl: map['profileImageUrl'],
+      pushNotificationsEnabled: map['pushNotificationsEnabled'] ?? true,
+      orderUpdatesEnabled: map['orderUpdatesEnabled'] ?? true,
       createdAt: map['createdAt'] is Timestamp
           ? (map['createdAt'] as Timestamp).toDate()
           : (map['createdAt'] as DateTime?) ?? DateTime.now(),
@@ -112,6 +124,8 @@ class UserModel {
       'phone': phone,
       'address': address,
       'profileImageUrl': profileImageUrl,
+      'pushNotificationsEnabled': pushNotificationsEnabled,
+      'orderUpdatesEnabled': orderUpdatesEnabled,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': updatedAt != null ? Timestamp.fromDate(updatedAt!) : null,
     };
@@ -126,6 +140,8 @@ class UserModel {
       'phone': phone,
       'address': address,
       'profileImageUrl': profileImageUrl,
+      'pushNotificationsEnabled': pushNotificationsEnabled,
+      'orderUpdatesEnabled': orderUpdatesEnabled,
       'createdAt': createdAt,
       'updatedAt': updatedAt,
     };
@@ -145,6 +161,8 @@ class UserModel {
     String? phone,
     String? address,
     String? profileImageUrl,
+    bool? pushNotificationsEnabled,
+    bool? orderUpdatesEnabled,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -155,6 +173,9 @@ class UserModel {
       phone: phone ?? this.phone,
       address: address ?? this.address,
       profileImageUrl: profileImageUrl ?? this.profileImageUrl,
+      pushNotificationsEnabled:
+          pushNotificationsEnabled ?? this.pushNotificationsEnabled,
+      orderUpdatesEnabled: orderUpdatesEnabled ?? this.orderUpdatesEnabled,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

@@ -43,9 +43,9 @@ void main() async {
 
   // Initialize Supabase
   await Supabase.initialize(
-    url: 'https://vjrqmftfwhxhpbfuwrws.supabase.co',
+    url: 'https://gsoxyadehywfpeuuyger.supabase.co',
     anonKey:
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZqcnFtZnRmd2h4aHBiZnV3cndzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDM2OTg5MDYsImV4cCI6MjAyNTI3NDkwNn0.C7u-P4Q9T-6u3k8m2_3_9_3_9_3_9_3_9_3_9_3_9_3',
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdzb3h5YWRlaHl3ZnBldXV5Z2VyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc2MTc0ODIsImV4cCI6MjA4MzE5MzQ4Mn0.MWeLkq2O5rCpF4_MJjqALXhtVeB3mozXKTvVb-WI6eM',
   );
 
   runApp(const WatchHubAdminApp());

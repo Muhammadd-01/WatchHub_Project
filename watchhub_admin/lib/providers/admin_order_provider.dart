@@ -60,25 +60,37 @@ class AdminOrderProvider extends ChangeNotifier {
 
       // Send Notification
       if (userId != null) {
-        String title = 'Order Update';
-        String message = 'Your order status has been updated to $newStatus.';
+        // Fetch user notification preferences
+        final userDoc = await _firestore.collection('users').doc(userId).get();
+        final userData = userDoc.data();
 
-        if (newStatus == 'approved') {
-          title = 'Order Approved';
-          message = 'Your order has been approved and is being processed.';
-        } else if (newStatus == 'shipped') {
-          title = 'Order Shipped';
-          message = 'Your order is on its way!';
-        } else if (newStatus == 'delivered') {
-          title = 'Order Delivered';
-          message = 'Your order has been delivered. Enjoy!';
-        } else if (newStatus == 'cancelled') {
-          title = 'Order Cancelled';
-          message = 'Your order was cancelled.';
+        final bool pushEnabled = userData?['pushNotificationsEnabled'] ?? true;
+        final bool orderEnabled = userData?['orderUpdatesEnabled'] ?? true;
+
+        if (pushEnabled && orderEnabled) {
+          String title = 'Order Update';
+          String message = 'Your order status has been updated to $newStatus.';
+
+          if (newStatus == 'approved') {
+            title = 'Order Approved';
+            message = 'Your order has been approved and is being processed.';
+          } else if (newStatus == 'shipped') {
+            title = 'Order Shipped';
+            message = 'Your order is on its way!';
+          } else if (newStatus == 'delivered') {
+            title = 'Order Delivered';
+            message = 'Your order has been delivered. Enjoy!';
+          } else if (newStatus == 'cancelled') {
+            title = 'Order Cancelled';
+            message = 'Your order was cancelled.';
+          }
+
+          await _sendNotification(userId, title, message);
+          await _sendEmail(userId, title, message);
+        } else {
+          debugPrint(
+              'AdminOrderProvider: Notifications suppressed by user settings for $userId');
         }
-
-        await _sendNotification(userId, title, message);
-        await _sendEmail(userId, title, message);
       }
 
       return true;

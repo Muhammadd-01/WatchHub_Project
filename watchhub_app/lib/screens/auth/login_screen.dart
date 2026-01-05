@@ -52,7 +52,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (success && mounted) {
         Navigator.of(context).pushReplacementNamed(AppRoutes.main);
-      } else if (mounted && authProvider.errorMessage != null) {
+      } else if (!success && mounted && authProvider.errorMessage != null) {
         _handleError(authProvider.errorMessage!);
       }
     } catch (e) {
@@ -264,22 +264,34 @@ class _LoginScreenState extends State<LoginScreen> {
                   final success = await authProvider.signInWithGoogle();
                   if (success && mounted) {
                     Navigator.of(context).pushReplacementNamed(AppRoutes.main);
+                  } else if (!success &&
+                      mounted &&
+                      authProvider.errorMessage != null) {
+                    _handleError(authProvider.errorMessage!);
                   }
                 },
                 icon: Image.asset('assets/images/google_logo.png',
-                    height: 24,
-                    width: 24,
+                    height: 20,
+                    width: 20,
                     errorBuilder: (context, error, stackTrace) =>
                         const Icon(Icons.g_mobiledata, size: 24)),
-                label: const Text('Continue with Google'),
+                label: Text(
+                  'Continue with Google',
+                  style: AppTextStyles.labelLarge.copyWith(
+                    color: theme.textTheme.bodyLarge?.color,
+                    letterSpacing: 0.5,
+                  ),
+                ),
                 style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  side: BorderSide(color: theme.dividerColor),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  side: BorderSide(color: theme.dividerColor.withOpacity(0.5)),
+                  backgroundColor: theme.cardColor.withOpacity(0.5),
                   foregroundColor: theme.textTheme.bodyLarge?.color,
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
+                      borderRadius: BorderRadius.circular(16)),
+                  elevation: 0,
                 ),
-              ).animate().fadeIn(delay: 700.ms),
+              ).animate().fadeIn(delay: 750.ms).slideY(begin: 0.1),
 
               const SizedBox(height: 24),
 

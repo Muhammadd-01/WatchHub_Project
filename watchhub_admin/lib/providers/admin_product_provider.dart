@@ -154,22 +154,37 @@ class AdminProductProvider extends ChangeNotifier {
 
   Future<List<String>> _uploadImages(List<XFile> images) async {
     final List<String> urls = [];
-    for (var image in images) {
-      final fileName =
-          'products/${DateTime.now().millisecondsSinceEpoch}_${image.name}';
-      final bytes = await image.readAsBytes();
+    try {
+      for (var image in images) {
+        final fileName =
+            'products/${DateTime.now().millisecondsSinceEpoch}_${image.name}';
+        final bytes = await image.readAsBytes();
 
-      await _supabase.storage.from('product-images').uploadBinary(
-            fileName,
-            bytes,
-            fileOptions: FileOptions(contentType: image.mimeType),
-          );
+        await _supabase.storage.from('product-images').uploadBinary(
+              fileName,
+              bytes,
+              fileOptions: FileOptions(contentType: image.mimeType),
+            );
 
-      final url =
-          _supabase.storage.from('product-images').getPublicUrl(fileName);
-      urls.add(url);
+        final url =
+            _supabase.storage.from('product-images').getPublicUrl(fileName);
+        urls.add(url);
+      }
+      return urls;
+    } on StorageException catch (e) {
+      String message = 'Supabase Storage error: ${e.message}';
+      if (e.statusCode == '404') {
+        message =
+            'Bucket "product-images" not found. Please create it in Supabase.';
+      } else if (e.statusCode == '403') {
+        message = 'Access denied to bucket. Check RLS policies.';
+      }
+      debugPrint('AdminProductProvider: $message');
+      throw Exception(message);
+    } catch (e) {
+      debugPrint('AdminProductProvider: Unexpected error during upload - $e');
+      throw Exception('Failed to upload images: $e');
     }
-    return urls;
   }
 
   // Fetch Reviews

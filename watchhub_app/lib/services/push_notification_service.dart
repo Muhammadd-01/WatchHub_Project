@@ -138,7 +138,39 @@ class PushNotificationService {
 /// Top-level function for background message handling
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  // If you're going to use other Firebase services in the background, such as Firestore,
-  // make sure you call `Firebase.initializeApp` before using other Firebase services.
+  // 1. Initialize Firebase if needed
+  // await Firebase.initializeApp(); // Uncomment if you use Firebase services here
+
   debugPrint("Handling a background message: ${message.messageId}");
+
+  // 2. Load settings from SharedPreferences
+  // Note: Background isolate needs its own initialization
+  final prefs = await SharedPreferences.getInstance();
+  final isPushEnabled = prefs.getBool('push_notifications_enabled') ?? true;
+  final isOrderEnabled = prefs.getBool('order_notifications_enabled') ?? true;
+
+  // 3. Early return if all notifications are disabled
+  if (!isPushEnabled) {
+    debugPrint('BackgroundHandler: Push notifications disabled. Skipping.');
+    return;
+  }
+
+  // 4. Check for order updates
+  final notification = message.notification;
+  if (notification != null) {
+    final title = notification.title?.toLowerCase() ?? '';
+    final body = notification.body?.toLowerCase() ?? '';
+    final isOrderUpdate = title.contains('order') ||
+        body.contains('order') ||
+        title.contains('status') ||
+        body.contains('ship');
+
+    if (isOrderUpdate && !isOrderEnabled) {
+      debugPrint('BackgroundHandler: Order updates disabled. Skipping.');
+      return;
+    }
+  }
+
+  debugPrint(
+      'BackgroundHandler: Notification allowed. Firebase will handle display.');
 }

@@ -86,7 +86,7 @@ class SupabaseService {
       return publicUrl;
     } catch (e) {
       debugPrint('SupabaseService: Error uploading product image - $e');
-      rethrow;
+      throw _handleStorageError(e, 'uploading product image');
     }
   }
 
@@ -113,7 +113,7 @@ class SupabaseService {
       return publicUrl;
     } catch (e) {
       debugPrint('SupabaseService: Error uploading product image bytes - $e');
-      rethrow;
+      throw _handleStorageError(e, 'uploading product image bytes');
     }
   }
 
@@ -173,7 +173,7 @@ class SupabaseService {
       return publicUrl;
     } catch (e) {
       debugPrint('SupabaseService: Error uploading profile image - $e');
-      rethrow;
+      throw _handleStorageError(e, 'uploading profile image');
     }
   }
 
@@ -200,7 +200,7 @@ class SupabaseService {
       return publicUrl;
     } catch (e) {
       debugPrint('SupabaseService: Error uploading profile image bytes - $e');
-      rethrow;
+      throw _handleStorageError(e, 'uploading profile image bytes');
     }
   }
 
@@ -376,6 +376,36 @@ class SupabaseService {
       debugPrint('SupabaseService: Error creating signed URL - $e');
       rethrow;
     }
+  }
+  // ===========================================================================
+  // ERROR HANDLING
+  // ===========================================================================
+
+  /// Analyzes storage errors and returns a user-friendly exception
+  SupabaseStorageException _handleStorageError(
+      dynamic error, String operation) {
+    String message = 'Failed to $operation';
+
+    if (error is StorageException) {
+      if (error.statusCode == '404') {
+        message =
+            'Storage bucket not found. Please ensure buckets are created in Supabase.';
+      } else if (error.statusCode == '403') {
+        message =
+            'Access denied. Please check your Supabase Storage RLS policies.';
+      } else if (error.statusCode == '413') {
+        message = 'File is too large to upload.';
+      } else if (error.message.contains('bucket not found')) {
+        message =
+            'Bucket not found. Ensure "product-images" and "profile-images" buckets exist.';
+      } else {
+        message = 'Supabase Storage error: ${error.message}';
+      }
+    } else {
+      message = 'Unexpected storage error: $error';
+    }
+
+    return SupabaseStorageException(message);
   }
 }
 

@@ -12,6 +12,8 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'firebase_options.dart';
 
+import 'package:shared_preferences/shared_preferences.dart';
+
 // Core
 import 'core/theme/app_theme.dart';
 import 'core/routes/app_routes.dart';
@@ -43,6 +45,35 @@ import 'screens/auth/splash_screen.dart';
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   debugPrint('Handling a background message: ${message.messageId}');
+
+  // 1. Load settings from SharedPreferences
+  final prefs = await SharedPreferences.getInstance();
+  final isPushEnabled = prefs.getBool('push_notifications_enabled') ?? true;
+  final isOrderEnabled = prefs.getBool('order_notifications_enabled') ?? true;
+
+  // 2. Suppress if push is disabled
+  if (!isPushEnabled) {
+    debugPrint('BackgroundHandler: Push notifications disabled. Skipping.');
+    return;
+  }
+
+  // 3. Suppress if order update and order notifications disabled
+  final notification = message.notification;
+  if (notification != null) {
+    final title = notification.title?.toLowerCase() ?? '';
+    final body = notification.body?.toLowerCase() ?? '';
+    final isOrderUpdate = title.contains('order') ||
+        body.contains('order') ||
+        title.contains('status') ||
+        body.contains('ship');
+
+    if (isOrderUpdate && !isOrderEnabled) {
+      debugPrint('BackgroundHandler: Order updates disabled. Skipping.');
+      return;
+    }
+  }
+
+  debugPrint('BackgroundHandler: Notification allowed.');
 }
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -73,9 +104,9 @@ void main() async {
 
   // Initialize Supabase
   await SupabaseService.initialize(
-    url: 'https://mpsiczyqptlhxbukzwfj.supabase.co',
+    url: 'https://gsoxyadehywfpeuuyger.supabase.co',
     anonKey:
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1wc2ljenlxcHRsaHhidWt6d2ZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5MDczMDYsImV4cCI6MjA4MjQ4MzMwNn0.xWwTDK6VoXvjjTDDYYWO5PVqOzZRGBd7T11JRHXne-g',
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdzb3h5YWRlaHl3ZnBldXV5Z2VyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc2MTc0ODIsImV4cCI6MjA4MzE5MzQ4Mn0.MWeLkq2O5rCpF4_MJjqALXhtVeB3mozXKTvVb-WI6eM',
   );
 
   // Seed database with sample products if needed
@@ -143,23 +174,35 @@ class AuthWrapper extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<AuthProvider>(
       builder: (context, auth, _) {
-        switch (auth.state) {
-          case AuthState.authenticated:
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (auth.user != null) {
-                final notifProvider =
-                    Provider.of<NotificationProvider>(context, listen: false);
-                notifProvider.init(auth.user!.uid);
-              }
-            });
-            return const MainScreen();
-          case AuthState.unauthenticated:
-            return const LoginScreen();
-          case AuthState.initial:
-          default:
-            return const SplashScreen();
-        }
+        return AnimatedSwitcher(
+          duration: const Duration(milliseconds: 600),
+          switchInCurve: Curves.easeIn,
+          switchOutCurve: Curves.easeOut,
+          transitionBuilder: (Widget child, Animation<double> animation) {
+            return FadeTransition(opacity: animation, child: child);
+          },
+          child: _buildAuthScreen(context, auth),
+        );
       },
     );
+  }
+
+  Widget _buildAuthScreen(BuildContext context, AuthProvider auth) {
+    switch (auth.state) {
+      case AuthState.authenticated:
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (auth.user != null) {
+            final notifProvider =
+                Provider.of<NotificationProvider>(context, listen: false);
+            notifProvider.init(auth.user!.uid);
+          }
+        });
+        return const MainScreen(key: ValueKey('main_screen'));
+      case AuthState.unauthenticated:
+        return const LoginScreen(key: ValueKey('login_screen'));
+      case AuthState.initial:
+      default:
+        return const SplashScreen(key: ValueKey('splash_screen'));
+    }
   }
 }

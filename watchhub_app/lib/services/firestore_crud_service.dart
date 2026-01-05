@@ -757,10 +757,37 @@ class FirestoreCrudService {
   Future<void> sendNotification(
       String uid, String title, String message) async {
     try {
-      await _usersCollection
-          .doc(uid)
-          .collection('notifications') // Using literal 'notifications' for now
-          .add({
+      // 1. Fetch user notification preferences
+      final userDoc = await _usersCollection.doc(uid).get();
+      if (!userDoc.exists) return;
+
+      final userData = userDoc.data() as Map<String, dynamic>;
+      final bool pushEnabled = userData['pushNotificationsEnabled'] ?? true;
+      final bool orderEnabled = userData['orderUpdatesEnabled'] ?? true;
+
+      // 2. Check if this is an order-related notification
+      final lowerTitle = title.toLowerCase();
+      final lowerMessage = message.toLowerCase();
+      final isOrderUpdate = lowerTitle.contains('order') ||
+          lowerMessage.contains('order') ||
+          lowerTitle.contains('status') ||
+          lowerMessage.contains('ship');
+
+      // 3. Suppress if settings are disabled
+      if (!pushEnabled) {
+        debugPrint(
+            'FirestoreCrudService: Push notifications disabled for $uid. Skipping.');
+        return;
+      }
+
+      if (isOrderUpdate && !orderEnabled) {
+        debugPrint(
+            'FirestoreCrudService: Order updates disabled for $uid. Skipping.');
+        return;
+      }
+
+      // 4. Create the notification document
+      await _usersCollection.doc(uid).collection('notifications').add({
         'title': title,
         'message': message,
         'read': false,
@@ -769,7 +796,6 @@ class FirestoreCrudService {
       debugPrint('FirestoreCrudService: Notification sent to $uid');
     } catch (e) {
       debugPrint('FirestoreCrudService: Error sending notification - $e');
-      // Don't rethrow, notification failure shouldn't block main flow
     }
   }
 

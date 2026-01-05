@@ -11,6 +11,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../core/routes/app_routes.dart';
+import '../../core/utils/helpers.dart';
 import '../../core/utils/validators.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/common/glass_container.dart';
@@ -61,7 +62,13 @@ class _SignupScreenState extends State<SignupScreen> {
 
     if (success && mounted) {
       Navigator.of(context).pushReplacementNamed(AppRoutes.main);
+    } else if (!success && mounted && authProvider.errorMessage != null) {
+      _handleError(authProvider.errorMessage!);
     }
+  }
+
+  void _handleError(String message) {
+    Helpers.showErrorSnackbar(context, message);
   }
 
   @override
@@ -120,22 +127,34 @@ class _SignupScreenState extends State<SignupScreen> {
                   final success = await authProvider.signInWithGoogle();
                   if (success && mounted) {
                     Navigator.of(context).pushReplacementNamed(AppRoutes.main);
+                  } else if (!success &&
+                      mounted &&
+                      authProvider.errorMessage != null) {
+                    _handleError(authProvider.errorMessage!);
                   }
                 },
                 icon: Image.asset('assets/images/google_logo.png',
-                    height: 24,
-                    width: 24,
+                    height: 20,
+                    width: 20,
                     errorBuilder: (context, error, stackTrace) =>
                         const Icon(Icons.g_mobiledata, size: 24)),
-                label: const Text('Continue with Google'),
+                label: Text(
+                  'Continue with Google',
+                  style: AppTextStyles.labelLarge.copyWith(
+                    color: theme.textTheme.bodyLarge?.color,
+                    letterSpacing: 0.5,
+                  ),
+                ),
                 style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  side: BorderSide(color: theme.dividerColor),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  side: BorderSide(color: theme.dividerColor.withOpacity(0.5)),
+                  backgroundColor: theme.cardColor.withOpacity(0.5),
                   foregroundColor: theme.textTheme.bodyLarge?.color,
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
+                      borderRadius: BorderRadius.circular(16)),
+                  elevation: 0,
                 ),
-              ).animate().fadeIn(delay: 400.ms),
+              ).animate().fadeIn(delay: 450.ms).slideY(begin: 0.1),
 
               const SizedBox(height: 24),
 

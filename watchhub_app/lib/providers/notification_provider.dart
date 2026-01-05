@@ -10,6 +10,8 @@ class NotificationProvider extends ChangeNotifier {
   bool _isOrderEnabled = true;
   int _unreadCount = 0;
 
+  String? _userId;
+
   bool get isPushEnabled => _isPushEnabled;
   bool get isOrderEnabled => _isOrderEnabled;
   int get unreadCount => _unreadCount;
@@ -19,6 +21,8 @@ class NotificationProvider extends ChangeNotifier {
   }
 
   void init(String userId) {
+    _userId = userId;
+    _loadRemoteSettings();
     FirebaseFirestore.instance
         .collection('users')
         .doc(userId)
@@ -38,7 +42,31 @@ class NotificationProvider extends ChangeNotifier {
       _isOrderEnabled = prefs.getBool(_orderKey) ?? true;
       notifyListeners();
     } catch (e) {
-      debugPrint('Error loading notification settings: $e');
+      debugPrint('Error loading local notification settings: $e');
+    }
+  }
+
+  Future<void> _loadRemoteSettings() async {
+    if (_userId == null) return;
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(_userId)
+          .get();
+      if (doc.exists) {
+        final data = doc.data() as Map<String, dynamic>;
+        _isPushEnabled = data['pushNotificationsEnabled'] ?? true;
+        _isOrderEnabled = data['orderUpdatesEnabled'] ?? true;
+
+        // Sync to local
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool(_pushKey, _isPushEnabled);
+        await prefs.setBool(_orderKey, _isOrderEnabled);
+
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Error loading remote notification settings: $e');
     }
   }
 
@@ -47,6 +75,14 @@ class NotificationProvider extends ChangeNotifier {
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_pushKey, value);
+
+    // Sync to Firestore
+    if (_userId != null) {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(_userId)
+          .update({'pushNotificationsEnabled': value});
+    }
   }
 
   Future<void> setOrderEnabled(bool value) async {
@@ -54,5 +90,13 @@ class NotificationProvider extends ChangeNotifier {
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_orderKey, value);
+
+    // Sync to Firestore
+    if (_userId != null) {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(_userId)
+          .update({'orderUpdatesEnabled': value});
+    }
   }
 }
