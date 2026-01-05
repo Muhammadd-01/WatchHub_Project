@@ -31,7 +31,7 @@ class CartBadge extends StatelessWidget {
               return Container(
                 padding: const EdgeInsets.all(4),
                 decoration: const BoxDecoration(
-                  color: AppColors.error,
+                  color: AppColors.primaryGold,
                   shape: BoxShape.circle,
                 ),
                 constraints: const BoxConstraints(
@@ -41,7 +41,7 @@ class CartBadge extends StatelessWidget {
                 child: Text(
                   count > 9 ? '9+' : count.toString(),
                   style: AppTextStyles.labelSmall.copyWith(
-                    color: Colors.white,
+                    color: Colors.black,
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
                   ),

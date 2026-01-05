@@ -68,6 +68,12 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   void _handleError(String message) {
+    if (message.toLowerCase().contains('cancel') ||
+        message.toLowerCase().contains('interrupted')) {
+      // Ignore cancelations silently or log them
+      debugPrint('SignupScreen: Google Sign-In canceled by user');
+      return;
+    }
     Helpers.showErrorSnackbar(context, message);
   }
 
@@ -121,39 +127,58 @@ class _SignupScreenState extends State<SignupScreen> {
               const SizedBox(height: 16),
 
               // Google Sign In Button
-              OutlinedButton.icon(
-                onPressed: () async {
-                  final authProvider = context.read<AuthProvider>();
-                  final success = await authProvider.signInWithGoogle();
-                  if (success && mounted) {
-                    Navigator.of(context).pushReplacementNamed(AppRoutes.main);
-                  } else if (!success &&
-                      mounted &&
-                      authProvider.errorMessage != null) {
-                    _handleError(authProvider.errorMessage!);
-                  }
+              Consumer<AuthProvider>(
+                builder: (context, authProvider, _) {
+                  return OutlinedButton.icon(
+                    onPressed: authProvider.isLoading
+                        ? null
+                        : () async {
+                            final success =
+                                await authProvider.signInWithGoogle();
+                            if (success && mounted) {
+                              Navigator.of(context)
+                                  .pushReplacementNamed(AppRoutes.main);
+                            } else if (!success &&
+                                mounted &&
+                                authProvider.errorMessage != null) {
+                              _handleError(authProvider.errorMessage!);
+                            }
+                          },
+                    icon: authProvider.isLoading
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppColors.primaryGold,
+                            ),
+                          )
+                        : Image.asset('assets/images/google_logo.png',
+                            height: 20,
+                            width: 20,
+                            errorBuilder: (context, error, stackTrace) =>
+                                const Icon(Icons.g_mobiledata, size: 24)),
+                    label: Text(
+                      authProvider.isLoading
+                          ? 'Signing in...'
+                          : 'Continue with Google',
+                      style: AppTextStyles.labelLarge.copyWith(
+                        color: theme.textTheme.bodyLarge?.color,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      side: BorderSide(
+                          color: theme.dividerColor.withOpacity(0.5)),
+                      backgroundColor: theme.cardColor.withOpacity(0.5),
+                      foregroundColor: theme.textTheme.bodyLarge?.color,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16)),
+                      elevation: 0,
+                    ),
+                  );
                 },
-                icon: Image.asset('assets/images/google_logo.png',
-                    height: 20,
-                    width: 20,
-                    errorBuilder: (context, error, stackTrace) =>
-                        const Icon(Icons.g_mobiledata, size: 24)),
-                label: Text(
-                  'Continue with Google',
-                  style: AppTextStyles.labelLarge.copyWith(
-                    color: theme.textTheme.bodyLarge?.color,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  side: BorderSide(color: theme.dividerColor.withOpacity(0.5)),
-                  backgroundColor: theme.cardColor.withOpacity(0.5),
-                  foregroundColor: theme.textTheme.bodyLarge?.color,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16)),
-                  elevation: 0,
-                ),
               ).animate().fadeIn(delay: 450.ms).slideY(begin: 0.1),
 
               const SizedBox(height: 24),
@@ -283,19 +308,6 @@ class _SignupScreenState extends State<SignupScreen> {
   Widget _buildSignupButton() {
     return Consumer<AuthProvider>(
       builder: (context, authProvider, _) {
-        // Show error if any
-        if (authProvider.errorMessage != null) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(authProvider.errorMessage!),
-                backgroundColor: AppColors.error,
-              ),
-            );
-            authProvider.clearError();
-          });
-        }
-
         return LoadingButton(
           onPressed: _handleSignup,
           isLoading: authProvider.isLoading,

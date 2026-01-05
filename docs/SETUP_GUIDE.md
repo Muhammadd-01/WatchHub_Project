@@ -656,4 +656,85 @@ Note: If you encountered errors running commands or plugins, ensure **Developer 
 1.  Open **Settings** > **Privacy & security** > **For developers**.
 2.  Toggle **Developer Mode** to **On**.
 
+---
+
+## Part 12: Real-Time Push Notifications (FCM)
+
+To ensure notifications appear on the device's lock screen/tray even when the app is closed, you must configure the FCM Server Key in the Admin Panel.
+
+### 12.1: Get FCM Server Key
+1. Go to [Firebase Console](https://console.firebase.google.com/)
+2. Select your project (**WatchHub**)
+3. Click the **Settings (gear icon)** > **Project settings**
+4. Go to the **Cloud Messaging** tab
+5. Look for **Cloud Messaging API (Legacy)**.
+   - > [!IMPORTANT]
+   - > If it says **Disabled**, click the **three vertical dots** (⋮) on the far right of that row.
+   - > Select **Manage API in Google Cloud Console**.
+   - > In the new tab, click the blue **ENABLE** button.
+6. **CRITICAL**: Go back to the Firebase Console tab and **REFRESH the page**. 
+7. You will now see a section called **Server key**. Copy the long string next to it.
+
+### 12.2: Update Admin Panel
+1. Open `watchhub_admin/lib/providers/admin_order_provider.dart`
+2. Find the line: `const String serverKey = 'YOUR_FCM_SERVER_KEY';`
+3. Replace `'YOUR_FCM_SERVER_KEY'` with the key you copied.
+
+### 12.3: Verification
+1. Open the WatchHub App on a real device or emulator.
+2. Sign in or Sign up (this will save your device token).
+3. Close the app completely.
+4. Use the Admin Panel to update an order status for your user.
+5. You should receive a push notification on your device tray!
+---
+
+## Part 13: Free Email Relay (Google Apps Script)
+
+Since the Firebase "Trigger Email" extension requires a paid Blaze plan, we have implemented a **100% Free** way to send emails using your own Gmail account via Google Apps Script.
+
+### 13.1: Create the Email Relay
+1. Go to [script.google.com](https://script.google.com/) and click **"New Project"**.
+2. Delete any existing code and paste this exact script:
+
+```javascript
+function doPost(e) {
+  try {
+    var data = JSON.parse(e.postData.contents);
+    var to = data.to;
+    var subject = data.subject;
+    var message = data.message;
+    
+    MailApp.sendEmail({
+      to: to,
+      subject: subject,
+      htmlBody: message
+    });
+    
+    return ContentService.createTextOutput(JSON.stringify({status: "success"}))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (error) {
+    return ContentService.createTextOutput(JSON.stringify({status: "error", message: error.toString()}))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+```
+
+3. Click the **Save** icon and name it "WatchHub Email Relay".
+4. Click **Deploy** > **New Deployment**.
+5. Select type: **Web App**.
+6. Set **Execute as**: **Me**.
+7. Set **Who has access**: **Anyone** (This is safe as only your Admin Panel will know the URL).
+8. Click **Deploy**.
+9. **Copy the "Web App URL"** shown at the end.
+
+### 13.2: Update Admin Panel
+1. Open `watchhub_admin/lib/providers/admin_order_provider.dart`
+2. Find the line: `static const String emailRelayUrl = 'YOUR_EMAIL_RELAY_URL';`
+3. Replace `'YOUR_EMAIL_RELAY_URL'` with the URL you just copied.
+
+### 13.3: Verification
+1. Update an order status in the Admin Panel.
+2. Check your debug console! You should see `Email sent via Relay successfully`.
+3. The user will receive the updated status email instantly for free.
+
 

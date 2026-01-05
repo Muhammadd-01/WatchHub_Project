@@ -6,9 +6,15 @@
 
 import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class AdminOrderProvider extends ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  /// Free Email Relay URL (Google Apps Script)
+  /// Instructions in docs/SETUP_GUIDE.md
+  static const String emailRelayUrl = 'https://script.google.com/macros/s/AKfycbxB-RRd6dRUyiYTEsKwBwjDDkRx7KcHtEfAeVy45TsLP8Hmo3lw3LaMxOlU8Rnm28cQ/exec';
 
   List<Map<String, dynamic>> _orders = [];
   bool _isLoading = false;
@@ -87,6 +93,7 @@ class AdminOrderProvider extends ChangeNotifier {
 
           await _sendNotification(userId, title, message);
           await _sendEmail(userId, title, message);
+          await _sendPushNotification(userId, title, message);
         } else {
           debugPrint(
               'AdminOrderProvider: Notifications suppressed by user settings for $userId');
@@ -123,7 +130,7 @@ class AdminOrderProvider extends ChangeNotifier {
     }
   }
 
-  /// Sends an email via Firebase Extension (mail collection)
+  /// Sends an email via Free Relay (Google Apps Script)
   Future<void> _sendEmail(String uid, String title, String message) async {
     try {
       // 1. Get user email
@@ -135,18 +142,95 @@ class AdminOrderProvider extends ChangeNotifier {
         return;
       }
 
-      // 2. Add to mail collection
+      // 2. Try sending via Relay if configured
+      if (emailRelayUrl != 'YOUR_EMAIL_RELAY_URL') {
+        final response = await http.post(
+          Uri.parse(emailRelayUrl),
+          body: jsonEncode({
+            'to': userEmail,
+            'subject': title,
+            'message': '<p>$message</p>',
+          }),
+        );
+
+        if (response.statusCode == 200) {
+          debugPrint('AdminOrderProvider: Email sent via Relay successfully');
+          return;
+        } else {
+          debugPrint(
+              'AdminOrderProvider: Relay failed with status ${response.statusCode}');
+        }
+      }
+
+      // 3. Fallback: Add to mail collection (Requires Firebase Extension)
       await _firestore.collection('mail').add({
         'to': [userEmail],
         'message': {
           'subject': title,
           'text': message,
-          'html': '<p>$message</p>', // Simple HTML
+          'html': '<p>$message</p>',
         },
       });
-      debugPrint('AdminOrderProvider: Email queued for $userEmail');
+      debugPrint('AdminOrderProvider: Email queued in Firestore (Fallback)');
     } catch (e) {
       debugPrint('AdminOrderProvider: Error sending email - $e');
+    }
+  }
+
+  /// Sends a real push notification via FCM (Legacy API)
+  /// Note: Requires FCM Server Key from Firebase Console
+  Future<void> _sendPushNotification(
+      String uid, String title, String body) async {
+    try {
+      // 1. Get User's FCM Token
+      final userDoc = await _firestore.collection('users').doc(uid).get();
+      final token = userDoc.data()?['fcmToken'];
+
+      if (token == null) {
+        debugPrint('AdminOrderProvider: FCM Token not found for $uid');
+        return;
+      }
+
+      // 2. FCM Server Key (Placeholder - User needs to fill this or we help them)
+      // TODO: Move this to a secure config
+      const String serverKey = 'YOUR_FCM_SERVER_KEY';
+
+      if (serverKey == 'YOUR_FCM_SERVER_KEY') {
+        debugPrint(
+            'AdminOrderProvider: FCM Server Key not configured. Skipping push.');
+        return;
+      }
+
+      // 3. Send Request
+      final response = await http.post(
+        Uri.parse('https://fcm.googleapis.com/fcm/send'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'key=$serverKey',
+        },
+        body: jsonEncode({
+          'to': token,
+          'notification': {
+            'title': title,
+            'body': body,
+            'click_action': 'FLUTTER_NOTIFICATION_CLICK',
+            'sound': 'default',
+          },
+          'data': {
+            'type': 'order_update',
+            'click_action': 'FLUTTER_NOTIFICATION_CLICK',
+          },
+          'priority': 'high',
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        debugPrint('AdminOrderProvider: FCM Push sent successfully');
+      } else {
+        debugPrint('AdminOrderProvider: FCM Push failed - ${response.body}');
+      }
+    } catch (e) {
+      debugPrint('AdminOrderProvider: Error sending FCM Push - $e');
     }
   }
 }

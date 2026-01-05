@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../core/constants/app_colors.dart';
 import '../providers/auth_provider.dart';
+import '../../main.dart';
 import '../providers/cart_provider.dart';
 import '../providers/product_provider.dart';
 import '../providers/wishlist_provider.dart';
@@ -16,6 +17,7 @@ import 'search/search_screen.dart';
 import 'wishlist/wishlist_screen.dart';
 import 'cart/cart_screen.dart';
 import 'profile/profile_screen.dart';
+import '../services/push_notification_service.dart';
 
 /// Root screen for authenticated users
 ///
@@ -53,6 +55,9 @@ class _MainScreenState extends State<MainScreen> {
         context.read<WishlistProvider>().initialize(uid);
         // Also ensure products are loaded for search
         context.read<ProductProvider>().refresh();
+
+        // Initialize Push Notifications with UID
+        PushNotificationService().initialize(navigatorKey, uid: uid);
       }
     });
   }

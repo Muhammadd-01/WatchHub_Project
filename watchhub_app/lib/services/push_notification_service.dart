@@ -2,6 +2,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 /// Service to handle Firebase Cloud Messaging (Push Notifications)
 class PushNotificationService {
@@ -10,7 +11,8 @@ class PushNotificationService {
       FlutterLocalNotificationsPlugin();
 
   /// Initialize Push Notifications
-  Future<void> initialize(GlobalKey<NavigatorState> navigatorKey) async {
+  Future<void> initialize(GlobalKey<NavigatorState> navigatorKey,
+      {String? uid}) async {
     // 1. Request Permission
     NotificationSettings settings = await _firebaseMessaging.requestPermission(
       alert: true,
@@ -74,10 +76,25 @@ class PushNotificationService {
       navigatorKey.currentState?.pushNamed('/orders');
     }
 
-    // 5. Get Token (for testing/backend)
+    // 6. Get Token and Save it
     final token = await _firebaseMessaging.getToken();
     debugPrint('FCM Token: $token');
-    // TODO: Save this token to Firestore User document if we want to target specific devices
+    if (token != null && uid != null) {
+      await saveToken(uid, token);
+    }
+  }
+
+  /// Save FCM token to Firestore User document
+  Future<void> saveToken(String uid, String token) async {
+    try {
+      await FirebaseFirestore.instance.collection('users').doc(uid).set({
+        'fcmToken': token,
+        'lastTokenUpdate': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+      debugPrint('PushNotificationService: Token saved for $uid');
+    } catch (e) {
+      debugPrint('PushNotificationService: Error saving token - $e');
+    }
   }
 
   /// Show a local notification when app is in foreground
@@ -133,44 +150,4 @@ class PushNotificationService {
       );
     }
   }
-}
-
-/// Top-level function for background message handling
-@pragma('vm:entry-point')
-Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  // 1. Initialize Firebase if needed
-  // await Firebase.initializeApp(); // Uncomment if you use Firebase services here
-
-  debugPrint("Handling a background message: ${message.messageId}");
-
-  // 2. Load settings from SharedPreferences
-  // Note: Background isolate needs its own initialization
-  final prefs = await SharedPreferences.getInstance();
-  final isPushEnabled = prefs.getBool('push_notifications_enabled') ?? true;
-  final isOrderEnabled = prefs.getBool('order_notifications_enabled') ?? true;
-
-  // 3. Early return if all notifications are disabled
-  if (!isPushEnabled) {
-    debugPrint('BackgroundHandler: Push notifications disabled. Skipping.');
-    return;
-  }
-
-  // 4. Check for order updates
-  final notification = message.notification;
-  if (notification != null) {
-    final title = notification.title?.toLowerCase() ?? '';
-    final body = notification.body?.toLowerCase() ?? '';
-    final isOrderUpdate = title.contains('order') ||
-        body.contains('order') ||
-        title.contains('status') ||
-        body.contains('ship');
-
-    if (isOrderUpdate && !isOrderEnabled) {
-      debugPrint('BackgroundHandler: Order updates disabled. Skipping.');
-      return;
-    }
-  }
-
-  debugPrint(
-      'BackgroundHandler: Notification allowed. Firebase will handle display.');
 }
