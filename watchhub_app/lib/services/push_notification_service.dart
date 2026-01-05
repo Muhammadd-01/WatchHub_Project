@@ -82,19 +82,38 @@ class PushNotificationService {
 
   /// Show a local notification when app is in foreground
   Future<void> _showLocalNotification(RemoteMessage message) async {
-    // Check if push notifications are enabled in settings
+    // 1. Get user preferences from SharedPreferences
     final prefs = await SharedPreferences.getInstance();
     final isPushEnabled = prefs.getBool('push_notifications_enabled') ?? true;
+    final isOrderEnabled = prefs.getBool('order_notifications_enabled') ?? true;
 
+    // 2. Determine if this is an order update
+    final notification = message.notification;
+    if (notification == null) return;
+
+    final title = notification.title?.toLowerCase() ?? '';
+    final body = notification.body?.toLowerCase() ?? '';
+    final isOrderUpdate = title.contains('order') ||
+        body.contains('order') ||
+        title.contains('status') ||
+        body.contains('ship');
+
+    // 3. Apply filtering rules
+    // Case A: Overall push is disabled
     if (!isPushEnabled) {
       debugPrint('Push notifications are disabled in settings. Skipping.');
       return;
     }
 
-    final notification = message.notification;
+    // Case B: This is an order update but order notifications are disabled
+    if (isOrderUpdate && !isOrderEnabled) {
+      debugPrint('Order updates are disabled in settings. Skipping.');
+      return;
+    }
+
     final android = message.notification?.android;
 
-    if (notification != null && android != null) {
+    if (android != null) {
       await _localNotifications.show(
         notification.hashCode,
         notification.title,

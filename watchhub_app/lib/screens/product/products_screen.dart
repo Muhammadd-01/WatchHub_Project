@@ -123,24 +123,29 @@ class _ProductsScreenState extends State<ProductsScreen> {
                   return _buildEmptyState();
                 }
 
-                return RefreshIndicator(
-                  color: Theme.of(context).primaryColor,
-                  onRefresh: _loadProducts,
-                  child: GridView.builder(
-                    padding: const EdgeInsets.all(16),
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      childAspectRatio: 0.60,
-                      crossAxisSpacing: 16,
-                      mainAxisSpacing: 16,
+                return AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 500),
+                  child: RefreshIndicator(
+                    key: ValueKey(
+                        '${provider.products.length}_${_sortBy}_${provider.selectedBrands.length}'),
+                    color: Theme.of(context).primaryColor,
+                    onRefresh: _loadProducts,
+                    child: GridView.builder(
+                      padding: const EdgeInsets.all(16),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        childAspectRatio: 0.60,
+                        crossAxisSpacing: 16,
+                        mainAxisSpacing: 16,
+                      ),
+                      itemCount: provider.products.length,
+                      itemBuilder: (context, index) {
+                        return ProductCard(
+                          product: provider.products[index],
+                        ).animate().fadeIn(delay: (50 * index).ms);
+                      },
                     ),
-                    itemCount: provider.products.length,
-                    itemBuilder: (context, index) {
-                      return ProductCard(
-                        product: provider.products[index],
-                      ).animate().fadeIn(delay: (50 * index).ms);
-                    },
                   ),
                 );
               },

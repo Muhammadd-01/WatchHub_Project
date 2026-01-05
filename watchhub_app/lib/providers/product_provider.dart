@@ -59,7 +59,8 @@ class ProductProvider extends ChangeNotifier {
       _selectedBrands.isNotEmpty ||
       _selectedCategories.isNotEmpty ||
       _minPrice != null ||
-      _maxPrice != null;
+      _maxPrice != null ||
+      _sortBy != 'newest';
 
   List<String> get selectedBrands => List.unmodifiable(_selectedBrands);
   List<String> get selectedCategories => List.unmodifiable(_selectedCategories);
