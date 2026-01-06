@@ -1,6 +1,7 @@
-import 'package:google_sign_in/google_sign_in.dart';
+import 'package:google_sign_in/google_sign_in.dart' as google_sign_in;
 
 void main() {
-  final GoogleSignIn googleSignIn = GoogleSignIn();
+  final google_sign_in.GoogleSignIn googleSignIn =
+      google_sign_in.GoogleSignIn();
   print(googleSignIn);
 }
