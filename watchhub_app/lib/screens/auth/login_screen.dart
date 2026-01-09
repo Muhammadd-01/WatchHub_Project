@@ -260,7 +260,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
               const SizedBox(height: 16),
 
-              // Google Sign In Button
+              // Social Sign In Button (Auth0)
               Consumer<AuthProvider>(
                 builder: (context, authProvider, _) {
                   return OutlinedButton.icon(
@@ -268,7 +268,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ? null
                         : () async {
                             final success =
-                                await authProvider.signInWithGoogle();
+                                await authProvider.signInWithSocial();
                             if (success && mounted) {
                               Navigator.of(context)
                                   .pushReplacementNamed(AppRoutes.main);
@@ -287,15 +287,12 @@ class _LoginScreenState extends State<LoginScreen> {
                               color: AppColors.primaryGold,
                             ),
                           )
-                        : Image.asset('assets/images/google_logo.png',
-                            height: 20,
-                            width: 20,
-                            errorBuilder: (context, error, stackTrace) =>
-                                const Icon(Icons.g_mobiledata, size: 24)),
+                        : const Icon(Icons.public,
+                            size: 24), // Generic social icon
                     label: Text(
                       authProvider.isLoading
-                          ? 'Signing in...'
-                          : 'Continue with Google',
+                          ? 'Redirecting...'
+                          : 'Continue with Social Accounts',
                       style: AppTextStyles.labelLarge.copyWith(
                         color: theme.textTheme.bodyLarge?.color,
                         letterSpacing: 0.5,

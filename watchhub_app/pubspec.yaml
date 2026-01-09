@@ -55,10 +55,12 @@ dependencies:
   icons_plus: ^5.0.0
   geolocator: ^14.0.2
   geocoding: ^4.0.0
-  google_sign_in: ^6.3.0
+
   shared_preferences: ^2.5.4
   firebase_messaging: ^16.1.0
   flutter_local_notifications: ^19.5.0
+  auth0_flutter: ^1.6.0
+  flutter_dotenv: ^5.1.0
 
 dev_dependencies:
   flutter_test:
@@ -81,6 +83,7 @@ flutter:
   # ASSETS - Add your assets here
   # ============================================
   assets:
+    - .env
     - assets/images/
   #   - assets/icons/
   #   - assets/animations/

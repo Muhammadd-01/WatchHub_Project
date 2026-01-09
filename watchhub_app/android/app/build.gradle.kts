@@ -26,6 +26,10 @@ android {
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.watchhub.watchhub_app"
+        // Auth0 Configuration
+        manifestPlaceholders["auth0Domain"] = "dev-1eu3wfre6rt6kn2q.us.auth0.com"
+        manifestPlaceholders["auth0Scheme"] = "demo"
+
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion

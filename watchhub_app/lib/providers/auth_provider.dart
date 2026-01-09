@@ -38,6 +38,7 @@ class AuthProvider extends ChangeNotifier {
   UserModel? _user;
   String? _errorMessage;
   bool _isLoading = false;
+  bool _isSocialLogin = false; // Flag for Auth0 login
 
   // Auth state subscription
   StreamSubscription<User?>? _authSubscription;
@@ -76,6 +77,13 @@ class AuthProvider extends ChangeNotifier {
     debugPrint('AuthProvider: Auth state changed - ${firebaseUser?.uid}');
 
     if (firebaseUser == null) {
+      // If we are logged in via Social (Auth0), ignore Firebase null state
+      if (_isSocialLogin && _user != null) {
+        debugPrint(
+            'AuthProvider: Ignoring Firebase logout (Social Login Active)');
+        return;
+      }
+
       // User signed out
       _user = null;
       _state = AuthState.unauthenticated;
@@ -184,15 +192,16 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  /// Signs in with Google
-  Future<bool> signInWithGoogle() async {
+  /// Signs in with Social (Auth0)
+  Future<bool> signInWithSocial() async {
     try {
       _setLoading(true);
       _clearError();
 
-      final userModel = await _authService.signInWithGoogle();
+      final userModel = await _authService.signInWithSocial();
 
       _user = userModel;
+      _isSocialLogin = true; // Set flag
       _state = AuthState.authenticated;
 
       notifyListeners();
@@ -201,8 +210,8 @@ class AuthProvider extends ChangeNotifier {
       _setError(e.message);
       return false;
     } catch (e) {
-      debugPrint('AuthProvider: Google sign in error - $e');
-      _setError('Failed to sign in with Google');
+      debugPrint('AuthProvider: Social sign in error - $e');
+      _setError('Failed to sign in with Social Account');
       return false;
     } finally {
       _setLoading(false);
@@ -220,6 +229,7 @@ class AuthProvider extends ChangeNotifier {
 
       await _authService.signOut();
 
+      _isSocialLogin = false; // Reset flag
       _user = null;
       _state = AuthState.unauthenticated;
 
