@@ -9,10 +9,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
-
-import 'package:shared_preferences/shared_preferences.dart';
 
 // Core
 import 'core/theme/app_theme.dart';
@@ -40,42 +38,6 @@ import 'screens/main_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/splash_screen.dart';
 
-/// Background message handler (must be top-level function)
-@pragma('vm:entry-point')
-Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  debugPrint('Handling a background message: ${message.messageId}');
-
-  // 1. Load settings from SharedPreferences
-  final prefs = await SharedPreferences.getInstance();
-  final isPushEnabled = prefs.getBool('push_notifications_enabled') ?? true;
-  final isOrderEnabled = prefs.getBool('order_notifications_enabled') ?? true;
-
-  // 2. Suppress if push is disabled
-  if (!isPushEnabled) {
-    debugPrint('BackgroundHandler: Push notifications disabled. Skipping.');
-    return;
-  }
-
-  // 3. Suppress if order update and order notifications disabled
-  final notification = message.notification;
-  if (notification != null) {
-    final title = notification.title?.toLowerCase() ?? '';
-    final body = notification.body?.toLowerCase() ?? '';
-    final isOrderUpdate = title.contains('order') ||
-        body.contains('order') ||
-        title.contains('status') ||
-        body.contains('ship');
-
-    if (isOrderUpdate && !isOrderEnabled) {
-      debugPrint('BackgroundHandler: Order updates disabled. Skipping.');
-      return;
-    }
-  }
-
-  debugPrint('BackgroundHandler: Notification allowed.');
-}
-
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 /// Main entry point
@@ -97,9 +59,9 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // Initialize Firebase Cloud Messaging
-  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+  // Initialize Push Notifications (OneSignal)
   final pushNotificationService = PushNotificationService();
+  // Pass null for UID initially, AuthWrapper handles login later
   await pushNotificationService.initialize(navigatorKey);
 
   // Initialize Supabase

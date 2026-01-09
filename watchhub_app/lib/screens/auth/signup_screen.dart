@@ -126,7 +126,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
               const SizedBox(height: 16),
 
-              // Social Sign In Button (Auth0)
+              // Google Sign In Button
               Consumer<AuthProvider>(
                 builder: (context, authProvider, _) {
                   return OutlinedButton.icon(
@@ -134,7 +134,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         ? null
                         : () async {
                             final success =
-                                await authProvider.signInWithSocial();
+                                await authProvider.signInWithGoogle();
                             if (success && mounted) {
                               Navigator.of(context)
                                   .pushReplacementNamed(AppRoutes.main);
@@ -153,11 +153,11 @@ class _SignupScreenState extends State<SignupScreen> {
                               color: AppColors.primaryGold,
                             ),
                           )
-                        : const Icon(Icons.public, size: 24),
+                        : const Icon(Icons.g_mobiledata, size: 24),
                     label: Text(
                       authProvider.isLoading
-                          ? 'Redirecting...'
-                          : 'Continue with Social Accounts',
+                          ? 'Signing in...'
+                          : 'Continue with Google',
                       style: AppTextStyles.labelLarge.copyWith(
                         color: theme.textTheme.bodyLarge?.color,
                         letterSpacing: 0.5,
@@ -176,6 +176,60 @@ class _SignupScreenState extends State<SignupScreen> {
                   );
                 },
               ).animate().fadeIn(delay: 450.ms).slideY(begin: 0.1),
+
+              const SizedBox(height: 12),
+
+              // Facebook Sign In Button
+              Consumer<AuthProvider>(
+                builder: (context, authProvider, _) {
+                  return OutlinedButton.icon(
+                    onPressed: authProvider.isLoading
+                        ? null
+                        : () async {
+                            final success =
+                                await authProvider.signInWithFacebook();
+                            if (success && mounted) {
+                              Navigator.of(context)
+                                  .pushReplacementNamed(AppRoutes.main);
+                            } else if (!success &&
+                                mounted &&
+                                authProvider.errorMessage != null) {
+                              _handleError(authProvider.errorMessage!);
+                            }
+                          },
+                    icon: authProvider.isLoading
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppColors.primaryGold,
+                            ),
+                          )
+                        : const Icon(Icons.facebook,
+                            size: 24, color: Color(0xFF1877F2)),
+                    label: Text(
+                      authProvider.isLoading
+                          ? 'Signing in...'
+                          : 'Continue with Facebook',
+                      style: AppTextStyles.labelLarge.copyWith(
+                        color: theme.textTheme.bodyLarge?.color,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      side: BorderSide(
+                          color: theme.dividerColor.withOpacity(0.5)),
+                      backgroundColor: theme.cardColor.withOpacity(0.5),
+                      foregroundColor: theme.textTheme.bodyLarge?.color,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16)),
+                      elevation: 0,
+                    ),
+                  );
+                },
+              ).animate().fadeIn(delay: 550.ms).slideY(begin: 0.1),
 
               const SizedBox(height: 24),
 

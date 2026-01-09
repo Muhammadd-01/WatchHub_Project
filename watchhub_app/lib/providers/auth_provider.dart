@@ -192,13 +192,13 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  /// Signs in with Social (Auth0)
-  Future<bool> signInWithSocial() async {
+  /// Signs in with Google via Auth0
+  Future<bool> signInWithGoogle() async {
     try {
       _setLoading(true);
       _clearError();
 
-      final userModel = await _authService.signInWithSocial();
+      final userModel = await _authService.signInWithGoogle();
 
       _user = userModel;
       _isSocialLogin = true; // Set flag
@@ -210,8 +210,34 @@ class AuthProvider extends ChangeNotifier {
       _setError(e.message);
       return false;
     } catch (e) {
-      debugPrint('AuthProvider: Social sign in error - $e');
-      _setError('Failed to sign in with Social Account');
+      debugPrint('AuthProvider: Google sign in error - $e');
+      _setError('Failed to sign in with Google');
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  /// Signs in with Facebook via Auth0
+  Future<bool> signInWithFacebook() async {
+    try {
+      _setLoading(true);
+      _clearError();
+
+      final userModel = await _authService.signInWithFacebook();
+
+      _user = userModel;
+      _isSocialLogin = true; // Set flag
+      _state = AuthState.authenticated;
+
+      notifyListeners();
+      return true;
+    } on AuthException catch (e) {
+      _setError(e.message);
+      return false;
+    } catch (e) {
+      debugPrint('AuthProvider: Facebook sign in error - $e');
+      _setError('Failed to sign in with Facebook');
       return false;
     } finally {
       _setLoading(false);

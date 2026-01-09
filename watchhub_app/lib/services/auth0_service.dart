@@ -34,26 +34,31 @@ class Auth0Service {
     debugPrint('Auth0Service: Initialized with domain $domain');
   }
 
-  // Login with Auth0
-  Future<Credentials?> login() async {
-    if (!_isInitialized) await initialize();
+  /// Login with Auth0
+  ///
+  /// [connection] - Optional connection name:
+  /// - 'google-oauth2' for Google Sign-In
+  /// - 'facebook' for Facebook Sign-In
+  /// - null for Universal Login (shows all enabled connections)
+  Future<Credentials?> login({String? connection}) async {
+    if (!_isInitialized) {
+      await initialize();
+    }
 
     try {
-      final credentials =
-          await _auth0.webAuthentication(scheme: 'demo').login();
-      // NOTE: 'demo' scheme should be replaced with the app's bundle identifier or configured custom scheme
-      // In production, use the custom scheme defined in build.gradle
-
+      final credentials = await _auth0.webAuthentication(scheme: 'demo').login(
+            parameters: connection != null ? {'connection': connection} : {},
+          );
       debugPrint(
           'Auth0Service: Login successful. User: ${credentials.user.name}');
       return credentials;
     } catch (e) {
-      debugPrint('Auth0Service: Login error: $e');
+      debugPrint('Auth0Service: Login error - $e');
       return null;
     }
   }
 
-  // Logout
+  /// Logout from Auth0
   Future<void> logout() async {
     if (!_isInitialized) await initialize();
 
@@ -61,7 +66,7 @@ class Auth0Service {
       await _auth0.webAuthentication(scheme: 'demo').logout();
       debugPrint('Auth0Service: Logout successful');
     } catch (e) {
-      debugPrint('Auth0Service: Logout error: $e');
+      debugPrint('Auth0Service: Logout error - $e');
     }
   }
 

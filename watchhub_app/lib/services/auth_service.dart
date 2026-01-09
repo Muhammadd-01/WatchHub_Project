@@ -236,28 +236,64 @@ class AuthService {
   // Auth0 Service
   final Auth0Service _auth0Service = Auth0Service();
 
+  /// Constructor - Initialize Auth0
+  AuthService() {
+    _initializeAuth0();
+  }
+
+  Future<void> _initializeAuth0() async {
+    try {
+      await _auth0Service.initialize();
+    } catch (e) {
+      debugPrint('AuthService: Failed to initialize Auth0 - $e');
+    }
+  }
+
   // ===========================================================================
   // SOCIAL SIGN IN (Auth0)
   // ===========================================================================
 
-  /// Signs in using Auth0 (Social Login)
+  /// Signs in using Auth0 with Google
   ///
   /// CALLED FROM:
   /// - LoginScreen (via AuthProvider)
+  /// - SignupScreen (via AuthProvider)
   ///
   /// DESCRIPTION:
-  /// Initiates the Auth0 Universal Login flow.
-  /// 1. Opens Auth0 Web Auth.
-  /// 2. User signs in with Google, Facebook, etc.
+  /// Initiates the Auth0 login flow specifically for Google.
+  /// 1. Opens Auth0 Web Auth with Google connection.
+  /// 2. User signs in with Google account.
   /// 3. Returns Auth0 Credentials.
   /// 4. Checks if user exists in Firestore (using Auth0 'sub' as UID).
-  /// 5. If new user, creates a Firestore document.
-  Future<UserModel> signInWithSocial() async {
-    try {
-      debugPrint('AuthService: Starting Auth0 Sign In...');
+  /// 5. If new user, creates a Firestore document with profile picture.
+  Future<UserModel> signInWithGoogle() async {
+    return _signInWithAuth0('google-oauth2');
+  }
 
-      // 1. Trigger Auth0 login
-      final credentials = await _auth0Service.login();
+  /// Signs in using Auth0 with Facebook
+  ///
+  /// CALLED FROM:
+  /// - LoginScreen (via AuthProvider)
+  /// - SignupScreen (via AuthProvider)
+  ///
+  /// DESCRIPTION:
+  /// Initiates the Auth0 login flow specifically for Facebook.
+  /// 1. Opens Auth0 Web Auth with Facebook connection.
+  /// 2. User signs in with Facebook account.
+  /// 3. Returns Auth0 Credentials.
+  /// 4. Checks if user exists in Firestore (using Auth0 'sub' as UID).
+  /// 5. If new user, creates a Firestore document with profile picture.
+  Future<UserModel> signInWithFacebook() async {
+    return _signInWithAuth0('facebook');
+  }
+
+  /// Internal method to handle Auth0 sign-in with specific connection
+  Future<UserModel> _signInWithAuth0(String connection) async {
+    try {
+      debugPrint('AuthService: Starting Auth0 Sign In with $connection...');
+
+      // 1. Trigger Auth0 login with specific connection
+      final credentials = await _auth0Service.login(connection: connection);
 
       if (credentials == null) {
         throw AuthException('Sign in canceled or failed');
@@ -283,20 +319,27 @@ class AuthService {
         name: auth0User.name ?? auth0User.nickname ?? 'User',
         email: auth0User.email ?? '',
         createdAt: DateTime.now(),
-        profileImageUrl: auth0User.pictureUrl.toString(),
+        profileImageUrl: auth0User.pictureUrl?.toString(),
       );
 
       await _firestoreService.createUser(newUser);
+      debugPrint(
+          'AuthService: User document created with profile picture: ${newUser.profileImageUrl}');
+
       return newUser;
     } catch (e) {
       debugPrint('AuthService: Auth0 Login Error - $e');
-      throw AuthException('Failed to sign in with Social Account');
+      throw AuthException('Failed to sign in with $connection');
     }
   }
 
   /// Logs out from Auth0 and Firebase
   Future<void> socialLogout() async {
-    await _auth0Service.logout();
+    try {
+      await _auth0Service.logout();
+    } catch (e) {
+      debugPrint('AuthService: Auth0 logout error - $e');
+    }
   }
 
   // ===========================================================================

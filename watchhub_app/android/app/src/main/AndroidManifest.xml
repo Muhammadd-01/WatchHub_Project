@@ -3,9 +3,15 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <application
-        android:label="watchhub_app"
+        android:label="WatchHub"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+        
+        <!-- OneSignal Notification Service -->
+        <meta-data
+            android:name="com.onesignal.NotificationServiceExtension"
+            android:value="com.onesignal.NotificationServiceExtension" />
+            
         <activity
             android:name=".MainActivity"
             android:exported="true"
