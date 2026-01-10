@@ -100,7 +100,11 @@ void main() async {
   // Initialize Firebase Cloud Messaging
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
   final pushNotificationService = PushNotificationService();
-  await pushNotificationService.initialize(navigatorKey);
+  try {
+    await pushNotificationService.initialize(navigatorKey);
+  } catch (e) {
+    debugPrint('main: Error initializing PushNotificationService - $e');
+  }
 
   // Initialize Supabase
   await SupabaseService.initialize(

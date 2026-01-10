@@ -77,10 +77,19 @@ class PushNotificationService {
     }
 
     // 6. Get Token and Save it
-    final token = await _firebaseMessaging.getToken();
-    debugPrint('FCM Token: $token');
-    if (token != null && uid != null) {
-      await saveToken(uid, token);
+    try {
+      final token = await _firebaseMessaging.getToken();
+      debugPrint('FCM Token: $token');
+      if (token != null && uid != null) {
+        await saveToken(uid, token);
+      }
+    } catch (e) {
+      debugPrint('PushNotificationService: Error getting FCM token - $e');
+      // If it's an APNS token error, we don't want to crash the app
+      if (e.toString().contains('apns-token-not-set')) {
+        debugPrint(
+            'PushNotificationService: APNS token not yet available. This is expected on iOS simulators or before APNS initialization is complete.');
+      }
     }
   }
 
