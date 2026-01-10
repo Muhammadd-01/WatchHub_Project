@@ -252,12 +252,13 @@ class AuthService {
   /// 3. Returns Auth0 Credentials.
   /// 4. Checks if user exists in Firestore (using Auth0 'sub' as UID).
   /// 5. If new user, creates a Firestore document.
-  Future<UserModel> signInWithSocial() async {
+  Future<UserModel> signInWithSocial({String? connection}) async {
     try {
-      debugPrint('AuthService: Starting Auth0 Sign In...');
+      debugPrint(
+          'AuthService: Starting Auth0 Sign In with connection: $connection...');
 
       // 1. Trigger Auth0 login
-      final credentials = await _auth0Service.login();
+      final credentials = await _auth0Service.login(connection: connection);
 
       if (credentials == null) {
         throw AuthException('Sign in canceled or failed');

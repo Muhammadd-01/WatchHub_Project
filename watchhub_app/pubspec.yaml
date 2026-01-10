@@ -60,6 +60,7 @@ dependencies:
   shared_preferences: ^2.5.4
   firebase_messaging: ^16.1.0
   flutter_local_notifications: ^19.5.0
+  onesignal_flutter: ^5.3.3
   auth0_flutter: ^1.6.0
   flutter_dotenv: ^5.1.0
 

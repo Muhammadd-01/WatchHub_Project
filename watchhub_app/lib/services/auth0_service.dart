@@ -5,11 +5,14 @@
 // =============================================================================
 
 import 'package:auth0_flutter/auth0_flutter.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart' show debugPrint, kIsWeb;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+
+import 'auth0_web_stub.dart' if (dart.library.html) 'auth0_web_impl.dart';
 
 class Auth0Service {
   late Auth0 _auth0;
+  Auth0WebImpl? _auth0Web;
   bool _isInitialized = false;
 
   // Initialize the service
@@ -29,24 +32,33 @@ class Auth0Service {
       return; // Or throw an exception
     }
 
-    _auth0 = Auth0(domain, clientId);
+    if (kIsWeb) {
+      _auth0Web = Auth0WebImpl(domain, clientId);
+      await _auth0Web!.init();
+    } else {
+      _auth0 = Auth0(domain, clientId);
+    }
     _isInitialized = true;
     debugPrint('Auth0Service: Initialized with domain $domain');
   }
 
   // Login with Auth0
-  Future<Credentials?> login() async {
+  Future<Credentials?> login({String? connection}) async {
     if (!_isInitialized) await initialize();
 
     try {
-      final credentials =
-          await _auth0.webAuthentication(scheme: 'demo').login();
-      // NOTE: 'demo' scheme should be replaced with the app's bundle identifier or configured custom scheme
-      // In production, use the custom scheme defined in build.gradle
-
-      debugPrint(
-          'Auth0Service: Login successful. User: ${credentials.user.name}');
-      return credentials;
+      if (kIsWeb && _auth0Web != null) {
+        return await _auth0Web!.loginWithPopup(connection: connection);
+      } else {
+        final credentials = await _auth0
+            .webAuthentication(scheme: 'com.watchhub.watchhubApp')
+            .login(
+                parameters:
+                    connection != null ? {'connection': connection} : {});
+        debugPrint(
+            'Auth0Service: Login successful. User: ${credentials.user.name}');
+        return credentials;
+      }
     } catch (e) {
       debugPrint('Auth0Service: Login error: $e');
       return null;
@@ -58,7 +70,13 @@ class Auth0Service {
     if (!_isInitialized) await initialize();
 
     try {
-      await _auth0.webAuthentication(scheme: 'demo').logout();
+      if (kIsWeb && _auth0Web != null) {
+        await _auth0Web!.logout();
+      } else {
+        await _auth0
+            .webAuthentication(scheme: 'com.watchhub.watchhubApp')
+            .logout();
+      }
       debugPrint('Auth0Service: Logout successful');
     } catch (e) {
       debugPrint('Auth0Service: Logout error: $e');

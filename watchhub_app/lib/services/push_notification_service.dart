@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:onesignal_flutter/onesignal_flutter.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 /// Service to handle Firebase Cloud Messaging (Push Notifications)
 class PushNotificationService {
@@ -90,6 +92,30 @@ class PushNotificationService {
         debugPrint(
             'PushNotificationService: APNS token not yet available. This is expected on iOS simulators or before APNS initialization is complete.');
       }
+    }
+
+    // 7. Initialize OneSignal
+    await _initializeOneSignal(uid);
+  }
+
+  /// Initialize OneSignal
+  Future<void> _initializeOneSignal(String? uid) async {
+    final appId = dotenv.env['ONESIGNAL_APP_ID'];
+    if (appId == null || appId == 'YOUR_ONESIGNAL_APP_ID_HERE') {
+      debugPrint('PushNotificationService: OneSignal App ID not configured.');
+      return;
+    }
+
+    // Remove this method if OneSignal is not needed or already initialized
+    OneSignal.Debug.setLogLevel(OSLogLevel.verbose);
+    OneSignal.initialize(appId);
+
+    // The promptForPushNotificationsWithUserResponse function will show the iOS or Android push prompt.
+    // We recommend removing the following code and instead using an In-App Message to prompt for notification permission
+    OneSignal.Notifications.requestPermission(true);
+
+    if (uid != null) {
+      OneSignal.login(uid);
     }
   }
 

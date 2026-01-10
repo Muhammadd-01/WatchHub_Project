@@ -35,7 +35,9 @@ class SeederService {
       await seedProducts();
       debugPrint('SeederService: Seeding complete!');
     } catch (e) {
-      debugPrint('SeederService: Error during seeding - $e');
+      debugPrint(
+          'SeederService: Error during seeding (likely permissions) - $e');
+      // We don't rethrow because seeding is optional for the app to function
     }
   }
 

@@ -193,12 +193,13 @@ class AuthProvider extends ChangeNotifier {
   }
 
   /// Signs in with Social (Auth0)
-  Future<bool> signInWithSocial() async {
+  Future<bool> signInWithSocial({String? connection}) async {
     try {
       _setLoading(true);
       _clearError();
 
-      final userModel = await _authService.signInWithSocial();
+      final userModel =
+          await _authService.signInWithSocial(connection: connection);
 
       _user = userModel;
       _isSocialLogin = true; // Set flag
