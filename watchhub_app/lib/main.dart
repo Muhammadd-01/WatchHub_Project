@@ -9,7 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_core/firebase_core.dart';
+
 import 'firebase_options.dart';
 
 // Core
@@ -61,8 +61,11 @@ void main() async {
 
   // Initialize Push Notifications (OneSignal)
   final pushNotificationService = PushNotificationService();
-  // Pass null for UID initially, AuthWrapper handles login later
-  await pushNotificationService.initialize(navigatorKey);
+  try {
+    await pushNotificationService.initialize(navigatorKey);
+  } catch (e) {
+    debugPrint('main: Error initializing PushNotificationService - $e');
+  }
 
   // Initialize Supabase
   await SupabaseService.initialize(

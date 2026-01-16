@@ -265,32 +265,21 @@ class AuthService {
   /// 2. User signs in with Google account.
   /// 3. Returns Auth0 Credentials.
   /// 4. Checks if user exists in Firestore (using Auth0 'sub' as UID).
-  /// 5. If new user, creates a Firestore document with profile picture.
+  /// Signs in using Auth0 with Google
   Future<UserModel> signInWithGoogle() async {
-    return _signInWithAuth0('google-oauth2');
+    return signInWithSocial(connection: 'google-oauth2');
   }
 
   /// Signs in using Auth0 with Facebook
-  ///
-  /// CALLED FROM:
-  /// - LoginScreen (via AuthProvider)
-  /// - SignupScreen (via AuthProvider)
-  ///
-  /// DESCRIPTION:
-  /// Initiates the Auth0 login flow specifically for Facebook.
-  /// 1. Opens Auth0 Web Auth with Facebook connection.
-  /// 2. User signs in with Facebook account.
-  /// 3. Returns Auth0 Credentials.
-  /// 4. Checks if user exists in Firestore (using Auth0 'sub' as UID).
-  /// 5. If new user, creates a Firestore document with profile picture.
   Future<UserModel> signInWithFacebook() async {
-    return _signInWithAuth0('facebook');
+    return signInWithSocial(connection: 'facebook');
   }
 
   /// Internal method to handle Auth0 sign-in with specific connection
-  Future<UserModel> _signInWithAuth0(String connection) async {
+  Future<UserModel> signInWithSocial({String? connection}) async {
     try {
-      debugPrint('AuthService: Starting Auth0 Sign In with $connection...');
+      debugPrint(
+          'AuthService: Starting Auth0 Sign In with ${connection ?? "Universal Login"}...');
 
       // 1. Trigger Auth0 login with specific connection
       final credentials = await _auth0Service.login(connection: connection);

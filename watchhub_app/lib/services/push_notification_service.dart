@@ -92,6 +92,7 @@ class PushNotificationService {
   }
 
   /// Update the OneSignal Player ID (Subscription ID) in Firestore
+
   /// Note: OneSignal v5+ uses the External ID (login) mostly, but Subscription ID is still useful.
   Future<void> _updateUserTokenInFirestore(String uid) async {
     try {

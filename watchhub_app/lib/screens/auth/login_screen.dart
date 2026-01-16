@@ -60,6 +60,23 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  Future<void> _handleSocialLogin(String connection) async {
+    final authProvider = context.read<AuthProvider>();
+
+    try {
+      final success =
+          await authProvider.signInWithSocial(connection: connection);
+
+      if (success && mounted) {
+        Navigator.of(context).pushReplacementNamed(AppRoutes.main);
+      } else if (!success && mounted && authProvider.errorMessage != null) {
+        _handleError(authProvider.errorMessage!);
+      }
+    } catch (e) {
+      if (mounted) _handleError(e.toString());
+    }
+  }
+
   void _handleError(String message) {
     if (message.contains('user-not-found') ||
         message.contains('no user record')) {
@@ -260,110 +277,27 @@ class _LoginScreenState extends State<LoginScreen> {
 
               const SizedBox(height: 16),
 
-              // Google Sign In Button
-              Consumer<AuthProvider>(
-                builder: (context, authProvider, _) {
-                  return OutlinedButton.icon(
-                    onPressed: authProvider.isLoading
-                        ? null
-                        : () async {
-                            final success =
-                                await authProvider.signInWithGoogle();
-                            if (success && mounted) {
-                              Navigator.of(context)
-                                  .pushReplacementNamed(AppRoutes.main);
-                            } else if (!success &&
-                                mounted &&
-                                authProvider.errorMessage != null) {
-                              _handleError(authProvider.errorMessage!);
-                            }
-                          },
-                    icon: authProvider.isLoading
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: AppColors.primaryGold,
-                            ),
-                          )
-                        : const Icon(Icons.g_mobiledata, size: 24),
-                    label: Text(
-                      authProvider.isLoading
-                          ? 'Signing in...'
-                          : 'Continue with Google',
-                      style: AppTextStyles.labelLarge.copyWith(
-                        color: theme.textTheme.bodyLarge?.color,
-                        letterSpacing: 0.5,
-                      ),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildSocialButton(
+                      label: 'Google',
+                      icon: Icons.g_mobiledata_rounded,
+                      onPressed: () => _handleSocialLogin('google-oauth2'),
+                      theme: theme,
                     ),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      side: BorderSide(
-                          color: theme.dividerColor.withOpacity(0.5)),
-                      backgroundColor: theme.cardColor.withOpacity(0.5),
-                      foregroundColor: theme.textTheme.bodyLarge?.color,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16)),
-                      elevation: 0,
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: _buildSocialButton(
+                      label: 'Facebook',
+                      icon: Icons.facebook_rounded,
+                      onPressed: () => _handleSocialLogin('facebook'),
+                      theme: theme,
                     ),
-                  );
-                },
-              ).animate().fadeIn(delay: 750.ms).slideY(begin: 0.1),
-
-              const SizedBox(height: 12),
-
-              // Facebook Sign In Button
-              Consumer<AuthProvider>(
-                builder: (context, authProvider, _) {
-                  return OutlinedButton.icon(
-                    onPressed: authProvider.isLoading
-                        ? null
-                        : () async {
-                            final success =
-                                await authProvider.signInWithFacebook();
-                            if (success && mounted) {
-                              Navigator.of(context)
-                                  .pushReplacementNamed(AppRoutes.main);
-                            } else if (!success &&
-                                mounted &&
-                                authProvider.errorMessage != null) {
-                              _handleError(authProvider.errorMessage!);
-                            }
-                          },
-                    icon: authProvider.isLoading
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: AppColors.primaryGold,
-                            ),
-                          )
-                        : const Icon(Icons.facebook,
-                            size: 24, color: Color(0xFF1877F2)),
-                    label: Text(
-                      authProvider.isLoading
-                          ? 'Signing in...'
-                          : 'Continue with Facebook',
-                      style: AppTextStyles.labelLarge.copyWith(
-                        color: theme.textTheme.bodyLarge?.color,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      side: BorderSide(
-                          color: theme.dividerColor.withOpacity(0.5)),
-                      backgroundColor: theme.cardColor.withOpacity(0.5),
-                      foregroundColor: theme.textTheme.bodyLarge?.color,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16)),
-                      elevation: 0,
-                    ),
-                  );
-                },
-              ).animate().fadeIn(delay: 850.ms).slideY(begin: 0.1),
+                  ),
+                ],
+              ),
 
               const SizedBox(height: 24),
 
@@ -375,6 +309,47 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildSocialButton({
+    required String label,
+    required IconData icon,
+    required VoidCallback onPressed,
+    required ThemeData theme,
+  }) {
+    return Consumer<AuthProvider>(
+      builder: (context, authProvider, _) {
+        return OutlinedButton.icon(
+          onPressed: authProvider.isLoading ? null : onPressed,
+          icon: authProvider.isLoading
+              ? const SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: AppColors.primaryGold,
+                  ),
+                )
+              : Icon(icon, size: 24),
+          label: Text(
+            authProvider.isLoading ? '...' : label,
+            style: AppTextStyles.labelLarge.copyWith(
+              color: theme.textTheme.bodyLarge?.color,
+              letterSpacing: 0.5,
+            ),
+          ),
+          style: OutlinedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            side: BorderSide(color: theme.dividerColor.withOpacity(0.5)),
+            backgroundColor: theme.cardColor.withOpacity(0.5),
+            foregroundColor: theme.textTheme.bodyLarge?.color,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            elevation: 0,
+          ),
+        );
+      },
     );
   }
 }
