@@ -118,11 +118,7 @@ class _MainScreenState extends State<MainScreen> {
                 selectedIcon: Icons.search_rounded,
                 label: 'Search',
               ),
-              _buildNavDestination(
-                icon: Icons.favorite_outline,
-                selectedIcon: Icons.favorite_rounded,
-                label: 'Wishlist',
-              ),
+              _buildWishlistDestination(),
               _buildCartDestination(),
               _buildNavDestination(
                 icon: Icons.person_outline,
@@ -156,7 +152,7 @@ class _MainScreenState extends State<MainScreen> {
             label: Text('${cart.totalItems}'),
             isLabelVisible: cart.totalItems > 0,
             backgroundColor: AppColors.primaryGold,
-            textColor: Colors.black,
+            textColor: Colors.white,
             child: const Icon(Icons.shopping_bag_outlined,
                 color: AppColors.textSecondary),
           );
@@ -168,13 +164,43 @@ class _MainScreenState extends State<MainScreen> {
             label: Text('${cart.totalItems}'),
             isLabelVisible: cart.totalItems > 0,
             backgroundColor: AppColors.primaryGold,
-            textColor: Colors.black,
+            textColor: Colors.white,
             child: const Icon(Icons.shopping_bag_rounded,
                 color: AppColors.primaryGold),
           );
         },
       ),
       label: 'Cart',
+    );
+  }
+
+  NavigationDestination _buildWishlistDestination() {
+    return NavigationDestination(
+      icon: Consumer<WishlistProvider>(
+        builder: (context, wishlist, child) {
+          return Badge(
+            label: Text('${wishlist.count}'),
+            isLabelVisible: wishlist.count > 0,
+            backgroundColor: AppColors.primaryGold,
+            textColor: Colors.white,
+            child: const Icon(Icons.favorite_outline,
+                color: AppColors.textSecondary),
+          );
+        },
+      ),
+      selectedIcon: Consumer<WishlistProvider>(
+        builder: (context, wishlist, child) {
+          return Badge(
+            label: Text('${wishlist.count}'),
+            isLabelVisible: wishlist.count > 0,
+            backgroundColor: AppColors.primaryGold,
+            textColor: Colors.white,
+            child: const Icon(Icons.favorite_rounded,
+                color: AppColors.primaryGold),
+          );
+        },
+      ),
+      label: 'Wishlist',
     );
   }
 }

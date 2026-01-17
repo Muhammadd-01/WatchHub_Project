@@ -5,7 +5,7 @@
     <application
         android:label="WatchHub"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/launcher_icon">
         
         <!-- OneSignal Notification Service -->
         <meta-data

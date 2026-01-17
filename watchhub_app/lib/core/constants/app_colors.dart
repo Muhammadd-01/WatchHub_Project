@@ -1,8 +1,8 @@
 // =============================================================================
 // FILE: app_colors.dart
 // PURPOSE: Premium color palette for WatchHub luxury watch application
-// DESCRIPTION: Defines a sophisticated dark theme with gold and silver accents
-//              to reflect the luxury nature of the watch shopping experience.
+// DESCRIPTION: Navy blue theme with cyan accents and metallic silver,
+//              inspired by the WatchHub logo design.
 // =============================================================================
 
 import 'package:flutter/material.dart';
@@ -10,63 +10,69 @@ import 'package:flutter/material.dart';
 /// Premium color palette for WatchHub
 ///
 /// Design Philosophy:
-/// - Dark mode first for luxury feel
-/// - Gold accents for premium emphasis
-/// - Silver accents for secondary elements
+/// - Navy blue base for sophisticated dark mode
+/// - Cyan accents for modern, premium highlighting
+/// - Metallic silver for secondary elements
 /// - Glassmorphism-compatible colors with opacity
 class AppColors {
   // Private constructor to prevent instantiation
   AppColors._();
 
   // ===========================================================================
-  // PRIMARY COLORS - GOLD PALETTE
+  // PRIMARY COLORS - CYAN PALETTE
   // ===========================================================================
-  // Gold represents luxury, success, and premium quality
+  // Cyan represents innovation, technology, and premium quality
 
-  /// Primary gold color - main accent
-  static const Color primaryGold = Color(0xFFD4AF37);
+  /// Primary cyan color - main accent
+  static const Color primaryCyan = Color(0xFF00A3FF);
 
-  /// Darker gold for pressed states
-  static const Color darkGold = Color(0xFFB8860B);
+  /// Darker cyan for pressed states
+  static const Color darkCyan = Color(0xFF0088DD);
 
-  /// Lighter gold for highlights
-  static const Color lightGold = Color(0xFFE6C97A);
+  /// Lighter cyan for highlights
+  static const Color lightCyan = Color(0xFF66C7FF);
 
-  /// Very light gold for subtle accents
-  static const Color paleGold = Color(0xFFF5E6C8);
+  /// Very light cyan for subtle accents
+  static const Color paleCyan = Color(0xFFE0F4FF);
+
+  // Legacy alias for compatibility
+  static const Color primaryGold = primaryCyan;
+  static const Color darkGold = darkCyan;
+  static const Color lightGold = lightCyan;
+  static const Color paleGold = paleCyan;
 
   // ===========================================================================
-  // SECONDARY COLORS - SILVER PALETTE
+  // SECONDARY COLORS - METALLIC SILVER PALETTE
   // ===========================================================================
   // Silver represents elegance and sophistication
 
-  /// Primary silver color
-  static const Color primarySilver = Color(0xFFC0C0C0);
+  /// Primary silver color - metallic finish
+  static const Color primarySilver = Color(0xFFC8D0D8);
 
   /// Darker silver for depth
-  static const Color darkSilver = Color(0xFF808080);
+  static const Color darkSilver = Color(0xFF9CA8B0);
 
   /// Light silver for subtle elements
-  static const Color lightSilver = Color(0xFFE8E8E8);
+  static const Color lightSilver = Color(0xFFE8ECF0);
 
   // ===========================================================================
-  // BACKGROUND COLORS - DARK THEME
+  // BACKGROUND COLORS - NAVY DARK THEME
   // ===========================================================================
 
-  /// Main scaffold background - near black
-  static const Color scaffoldBackground = Color(0xFF0A0A0A);
+  /// Main scaffold background - deep navy
+  static const Color scaffoldBackground = Color(0xFF0A1628);
 
-  /// Card background - slightly lighter
-  static const Color cardBackground = Color(0xFF1A1A1A);
+  /// Card background - slightly lighter navy
+  static const Color cardBackground = Color(0xFF1A2A3A);
 
   /// Surface color for elevated elements
-  static const Color surfaceColor = Color(0xFF242424);
+  static const Color surfaceColor = Color(0xFF243444);
 
   /// Slightly elevated surface
-  static const Color elevatedSurface = Color(0xFF2A2A2A);
+  static const Color elevatedSurface = Color(0xFF2E3E4E);
 
   /// Dialog/modal background
-  static const Color dialogBackground = Color(0xFF1E1E1E);
+  static const Color dialogBackground = Color(0xFF1E2E3E);
 
   // ===========================================================================
   // GLASSMORPHISM COLORS
@@ -74,31 +80,32 @@ class AppColors {
   // Semi-transparent colors for glass effect
 
   /// Glass background with low opacity
-  static Color glassBackground = Colors.white.withValues(alpha: 0.05);
+  static Color glassBackground = Colors.white.withOpacity(0.05);
 
   /// Glass border color
-  static Color glassBorder = Colors.white.withValues(alpha: 0.1);
+  static Color glassBorder = Colors.white.withOpacity(0.1);
 
   /// Glass shadow
-  static Color glassShadow = Colors.black.withValues(alpha: 0.3);
+  static Color glassShadow = Colors.black.withOpacity(0.3);
 
   /// Dark glass for overlays
-  static Color darkGlass = const Color(0xFF1A1A1A).withValues(alpha: 0.7);
+  static Color darkGlass = const Color(0xFF1A2A3A).withOpacity(0.7);
 
   // ===========================================================================
   // LIGHT THEME COLORS
   // ===========================================================================
-  static const Color scaffoldBackgroundLight = Color(0xFFF8F9FA); // Off-white
+  static const Color scaffoldBackgroundLight =
+      Color(0xFFF8FAFC); // Light gray-blue
   static const Color cardBackgroundLight = Colors.white;
-  static const Color textPrimaryLight = Color(0xFF1A1A1A); // Almost black
-  static const Color textSecondaryLight = Color(0xFF6C757D); // Grey
-  static const Color textTertiaryLight = Color(0xFFADB5BD); // Light grey
-  static const Color textHintLight = Color(0xFFCED4DA);
-  static const Color iconPrimaryLight = Color(0xFF212529);
-  static const Color iconSecondaryLight = Color(0xFF6C757D);
-  static const Color dividerLight = Color(0xFFE9ECEF);
-  static const Color cardBorderLight = Color(0xFFDEE2E6);
-  static const Color inputBorderLight = Color(0xFFDEE2E6);
+  static const Color textPrimaryLight = Color(0xFF0A1628); // Navy
+  static const Color textSecondaryLight = Color(0xFF64748B); // Slate
+  static const Color textTertiaryLight = Color(0xFF94A3B8); // Light slate
+  static const Color textHintLight = Color(0xFFCBD5E1);
+  static const Color iconPrimaryLight = Color(0xFF1E293B);
+  static const Color iconSecondaryLight = Color(0xFF64748B);
+  static const Color dividerLight = Color(0xFFE2E8F0);
+  static const Color cardBorderLight = Color(0xFFE2E8F0);
+  static const Color inputBorderLight = Color(0xFFCBD5E1);
 
   // ===========================================================================
   // TEXT COLORS
@@ -108,16 +115,16 @@ class AppColors {
   static const Color textPrimary = Color(0xFFFFFFFF);
 
   /// Secondary text - light gray
-  static const Color textSecondary = Color(0xFFB0B0B0);
+  static const Color textSecondary = Color(0xFFB0B8C0);
 
   /// Tertiary text - darker gray
-  static const Color textTertiary = Color(0xFF707070);
+  static const Color textTertiary = Color(0xFF707880);
 
   /// Disabled text
-  static const Color textDisabled = Color(0xFF505050);
+  static const Color textDisabled = Color(0xFF505860);
 
   /// Hint text color
-  static const Color textHint = Color(0xFF606060);
+  static const Color textHint = Color(0xFF606870);
 
   // ===========================================================================
   // STATUS COLORS
@@ -132,39 +139,46 @@ class AppColors {
   /// Warning color - amber
   static const Color warning = Color(0xFFFFB74D);
 
-  /// Info color - blue
-  static const Color info = Color(0xFF64B5F6);
+  /// Info color - cyan (matches theme)
+  static const Color info = primaryCyan;
 
   // ===========================================================================
   // GRADIENT DEFINITIONS
   // ===========================================================================
 
-  /// Premium gold gradient for buttons and highlights
-  static const LinearGradient goldGradient = LinearGradient(
+  /// Premium cyan gradient for buttons and highlights (shiny metallic effect)
+  static const LinearGradient cyanGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [lightGold, primaryGold, darkGold],
+    colors: [lightCyan, primaryCyan, darkCyan],
   );
+
+  /// Metallic silver gradient (shiny chrome effect)
+  static const LinearGradient silverGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [lightSilver, primarySilver, darkSilver],
+  );
+
+  /// Legacy alias
+  static const LinearGradient goldGradient = cyanGradient;
 
   /// Subtle background gradient
   static const LinearGradient backgroundGradient = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
-    colors: [Color(0xFF1A1A1A), Color(0xFF0A0A0A)],
+    colors: [Color(0xFF1A2A3A), Color(0xFF0A1628)],
   );
 
   /// Card gradient for glass effect
   static LinearGradient cardGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [
-      Colors.white.withValues(alpha: 0.1),
-      Colors.white.withValues(alpha: 0.05)
-    ],
+    colors: [Colors.white.withOpacity(0.1), Colors.white.withOpacity(0.05)],
   );
 
   /// Shimmer gradient for loading states
-  static LinearGradient shimmerGradient = LinearGradient(
+  static LinearGradient shimmerGradient = const LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [cardBackground, surfaceColor, cardBackground],
@@ -175,39 +189,39 @@ class AppColors {
   // ===========================================================================
 
   /// Subtle border for cards
-  static Color cardBorder = Colors.white.withValues(alpha: 0.08);
+  static Color cardBorder = Colors.white.withOpacity(0.08);
 
   /// Input field border
-  static const Color inputBorder = Color(0xFF3A3A3A);
+  static const Color inputBorder = Color(0xFF3A4A5A);
 
   /// Focused input border
-  static const Color inputFocusedBorder = primaryGold;
+  static const Color inputFocusedBorder = primaryCyan;
 
   /// Divider color
-  static const Color divider = Color(0xFF2A2A2A);
+  static const Color divider = Color(0xFF2A3A4A);
 
   // ===========================================================================
   // ICON COLORS
   // ===========================================================================
 
   /// Primary icon color
-  static const Color iconPrimary = Color(0xFFE0E0E0);
+  static const Color iconPrimary = Color(0xFFE0E4E8);
 
   /// Secondary icon color
-  static const Color iconSecondary = Color(0xFF808080);
+  static const Color iconSecondary = Color(0xFF808890);
 
-  /// Accent icon color (gold)
-  static const Color iconAccent = primaryGold;
+  /// Accent icon color (cyan)
+  static const Color iconAccent = primaryCyan;
 
   // ===========================================================================
   // RATING COLORS
   // ===========================================================================
 
-  /// Star rating color (gold)
-  static const Color ratingColor = primaryGold;
+  /// Star rating color (cyan)
+  static const Color ratingColor = primaryCyan;
 
   /// Empty star color
-  static const Color ratingEmpty = Color(0xFF404040);
+  static const Color ratingEmpty = Color(0xFF404850);
 
   // ===========================================================================
   // MATERIAL COLOR SWATCH
@@ -215,16 +229,16 @@ class AppColors {
 
   /// Primary swatch for Material widgets
   static const MaterialColor primarySwatch =
-      MaterialColor(0xFFD4AF37, <int, Color>{
-    50: Color(0xFFFBF7E9),
-    100: Color(0xFFF5E6C8),
-    200: Color(0xFFEED5A5),
-    300: Color(0xFFE6C482),
-    400: Color(0xFFDEB968),
-    500: Color(0xFFD4AF37),
-    600: Color(0xFFC9A02F),
-    700: Color(0xFFBC8F27),
-    800: Color(0xFFAE7F1F),
-    900: Color(0xFF946512),
+      MaterialColor(0xFF00A3FF, <int, Color>{
+    50: Color(0xFFE0F4FF),
+    100: Color(0xFFB3E3FF),
+    200: Color(0xFF80D0FF),
+    300: Color(0xFF4DBDFF),
+    400: Color(0xFF26AEFF),
+    500: Color(0xFF00A3FF),
+    600: Color(0xFF0095E6),
+    700: Color(0xFF0088DD),
+    800: Color(0xFF007ACC),
+    900: Color(0xFF0066B3),
   });
 }

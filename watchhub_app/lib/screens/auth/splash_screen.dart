@@ -66,30 +66,24 @@ class _SplashScreenState extends State<SplashScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Logo icon
+            // Logo
             Container(
               width: 140,
               height: 140,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                gradient: AppColors.goldGradient,
+                color: AppColors.scaffoldBackground,
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.primaryGold.withValues(alpha: 0.3),
+                    color: AppColors.primaryGold.withOpacity(0.3),
                     blurRadius: 30,
                     spreadRadius: 5,
                   ),
                 ],
               ),
-              padding: const EdgeInsets.all(4), // Border width
-              child: Container(
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.black, // Inner background behind logo
-                ),
-                padding: const EdgeInsets.all(20),
+              child: ClipOval(
                 child: Image.asset(
-                  'assets/images/app_icon.png',
+                  'assets/images/watchhub_logo.png',
                   fit: BoxFit.contain,
                 ),
               ),

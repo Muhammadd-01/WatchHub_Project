@@ -16,9 +16,10 @@ import '../../providers/product_provider.dart';
 import '../../providers/category_provider.dart';
 import '../../providers/notification_provider.dart';
 import '../../widgets/common/glass_container.dart';
-import '../../widgets/home/product_card.dart';
+import '../../models/product_model.dart';
 import '../../widgets/home/category_chip.dart';
 import '../../widgets/common/cart_badge.dart';
+import '../../widgets/home/auto_looping_product_card.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -31,11 +32,19 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    // Fetch data on screen load
+    // Simple one-time data fetch
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        context.read<ProductProvider>().refresh();
-        context.read<CategoryProvider>().refresh();
+      if (!mounted) return;
+
+      // Only fetch once when first visiting the screen
+      final productProvider = context.read<ProductProvider>();
+      final categoryProvider = context.read<CategoryProvider>();
+
+      if (!productProvider.hasProducts) {
+        productProvider.refresh();
+      }
+      if (categoryProvider.categories.isEmpty) {
+        categoryProvider.refresh();
       }
     });
   }
@@ -79,18 +88,14 @@ class _HomeScreenState extends State<HomeScreen> {
       elevation: 0,
       title: Row(
         children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: AppColors.goldGradient,
-            ),
-            child: Icon(
-              Icons.watch_rounded,
-              size: 20,
-              color: theme.colorScheme
-                  .onPrimary, // Dynamic icon color inside gold? actually gold gradient is static, so icon should probably stay static or be dynamic. Let's keep it contrasty. If gradient is gold, icon should probably be dark or light depending on gold. Gold is bright. Dark icon is safe. Or Theme background.
+          // WatchHub Logo
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Image.asset(
+              'assets/images/watchhub_logo.png',
+              width: 36,
+              height: 36,
+              fit: BoxFit.contain,
             ),
           ),
           const SizedBox(width: 12),
@@ -111,7 +116,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 label: Text('${notifProvider.unreadCount}'),
                 isLabelVisible: notifProvider.unreadCount > 0,
                 backgroundColor: AppColors.primaryGold,
-                textColor: Colors.black,
+                textColor: Colors.white,
                 child: Icon(Icons.notifications_outlined,
                     color: theme.iconTheme.color),
               );
@@ -224,7 +229,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primaryGold,
-                        foregroundColor: Colors.black,
+                        foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(
                           horizontal: 28,
                           vertical: 12,
@@ -364,24 +369,48 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             const SizedBox(height: 12),
-            SizedBox(
-              height: 320,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: featured.length,
-                itemBuilder: (context, index) {
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 16),
-                    child: ProductCard(
-                      product: featured[index],
-                      width: 180,
-                    ),
-                  )
-                      .animate()
-                      .fadeIn(delay: (100 * index).ms)
-                      .slideX(begin: 0.2);
-                },
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: SizedBox(
+                height: 320,
+                child: Builder(builder: (context) {
+                  // Split products into two lists
+                  final list1 = <ProductModel>[];
+                  final list2 = <ProductModel>[];
+
+                  for (var i = 0; i < featured.length; i++) {
+                    if (i % 2 == 0) {
+                      list1.add(featured[i]);
+                    } else {
+                      list2.add(featured[i]);
+                    }
+                  }
+
+                  // Handle single product case
+                  if (list2.isEmpty && list1.isNotEmpty) {
+                    list2.add(list1[0]);
+                  }
+
+                  return Row(
+                    children: [
+                      Expanded(
+                        child: AutoLoopingProductCard(
+                          products: list1,
+                          interval: const Duration(seconds: 5),
+                          height: 300,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: AutoLoopingProductCard(
+                          products: list2,
+                          interval: const Duration(seconds: 4),
+                          height: 300,
+                        ),
+                      ),
+                    ],
+                  );
+                }),
               ),
             ),
             const SizedBox(height: 24),
@@ -455,24 +484,48 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             const SizedBox(height: 12),
-            SizedBox(
-              height: 320,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: newArrivals.length,
-                itemBuilder: (context, index) {
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 16),
-                    child: ProductCard(
-                      product: newArrivals[index],
-                      width: 180,
-                    ),
-                  )
-                      .animate()
-                      .fadeIn(delay: (100 * index).ms)
-                      .slideX(begin: 0.2);
-                },
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: SizedBox(
+                height: 320,
+                child: Builder(builder: (context) {
+                  // Split products into two lists
+                  final list1 = <ProductModel>[];
+                  final list2 = <ProductModel>[];
+
+                  for (var i = 0; i < newArrivals.length; i++) {
+                    if (i % 2 == 0) {
+                      list1.add(newArrivals[i]);
+                    } else {
+                      list2.add(newArrivals[i]);
+                    }
+                  }
+
+                  // Handle single product case
+                  if (list2.isEmpty && list1.isNotEmpty) {
+                    list2.add(list1[0]);
+                  }
+
+                  return Row(
+                    children: [
+                      Expanded(
+                        child: AutoLoopingProductCard(
+                          products: list1,
+                          interval: const Duration(seconds: 6),
+                          height: 300,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: AutoLoopingProductCard(
+                          products: list2,
+                          interval: const Duration(seconds: 4),
+                          height: 300,
+                        ),
+                      ),
+                    ],
+                  );
+                }),
               ),
             ),
             const SizedBox(height: 24),

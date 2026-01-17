@@ -114,7 +114,7 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
           );
         },
         backgroundColor: AppColors.primaryGold,
-        foregroundColor: Colors.black,
+        foregroundColor: Colors.white,
         elevation: 4,
         highlightElevation: 8,
         icon: const Icon(Icons.rate_review_outlined),
@@ -163,7 +163,7 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
             label: const Text('Write a Review'),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primaryGold,
-              foregroundColor: Colors.black,
+              foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(30),
