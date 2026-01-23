@@ -9,7 +9,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 
-import 'auth0_service.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
+
 import '../models/user_model.dart';
 import 'firestore_crud_service.dart';
 
@@ -233,101 +235,122 @@ class AuthService {
     }
   }
 
-  // Auth0 Service
-  final Auth0Service _auth0Service = Auth0Service();
+  // Google Sign In instance
+  final GoogleSignIn _googleSignIn = GoogleSignIn();
 
-  /// Constructor - Initialize Auth0
-  AuthService() {
-    _initializeAuth0();
-  }
+  /// Constructor
+  AuthService();
 
-  Future<void> _initializeAuth0() async {
-    try {
-      await _auth0Service.initialize();
-    } catch (e) {
-      debugPrint('AuthService: Failed to initialize Auth0 - $e');
-    }
-  }
-
-  // ===========================================================================
-  // SOCIAL SIGN IN (Auth0)
-  // ===========================================================================
-
-  /// Signs in using Auth0 with Google
-  ///
-  /// CALLED FROM:
-  /// - LoginScreen (via AuthProvider)
-  /// - SignupScreen (via AuthProvider)
-  ///
-  /// DESCRIPTION:
-  /// Initiates the Auth0 login flow specifically for Google.
-  /// 1. Opens Auth0 Web Auth with Google connection.
-  /// 2. User signs in with Google account.
-  /// 3. Returns Auth0 Credentials.
-  /// 4. Checks if user exists in Firestore (using Auth0 'sub' as UID).
-  /// Signs in using Auth0 with Google
+  /// Signs in using native Firebase Google Sign-In
   Future<UserModel> signInWithGoogle() async {
-    return signInWithSocial(connection: 'google-oauth2');
-  }
-
-  /// Signs in using Auth0 with Facebook
-  Future<UserModel> signInWithFacebook() async {
-    return signInWithSocial(connection: 'facebook');
-  }
-
-  /// Internal method to handle Auth0 sign-in with specific connection
-  Future<UserModel> signInWithSocial({String? connection}) async {
     try {
-      debugPrint(
-          'AuthService: Starting Auth0 Sign In with ${connection ?? "Universal Login"}...');
+      debugPrint('AuthService: Starting Google Sign In...');
 
-      // 1. Trigger Auth0 login with specific connection
-      final credentials = await _auth0Service.login(connection: connection);
+      // 1. Trigger Google Sign-In flow
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
 
-      if (credentials == null) {
-        throw AuthException('Sign in canceled or failed');
+      if (googleUser == null) {
+        throw AuthException('Google sign-in canceled');
       }
 
-      final auth0User = credentials.user;
-      final String uid = auth0User.sub; // Use Auth0 Subject ID as UID
+      // 2. Get auth details from Google
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
 
-      debugPrint('AuthService: Auth0 Sign In successful. UID: $uid');
-
-      // 2. Check if user exists in Firestore
-      final UserModel? existingUser = await _firestoreService.getUser(uid);
-
-      if (existingUser != null) {
-        return existingUser;
-      }
-
-      // 3. Create new user document
-      debugPrint('AuthService: Creating new user document for Auth0 user...');
-
-      final newUser = UserModel(
-        uid: uid,
-        name: auth0User.name ?? auth0User.nickname ?? 'User',
-        email: auth0User.email ?? '',
-        createdAt: DateTime.now(),
-        profileImageUrl: auth0User.pictureUrl?.toString(),
+      // 3. Create a new credential for Firebase
+      final AuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
       );
 
-      await _firestoreService.createUser(newUser);
-      debugPrint(
-          'AuthService: User document created with profile picture: ${newUser.profileImageUrl}');
+      // 4. Sign in to Firebase with the credential
+      final UserCredential userCredential =
+          await _auth.signInWithCredential(credential);
+      final User? firebaseUser = userCredential.user;
 
-      return newUser;
+      if (firebaseUser == null) {
+        throw AuthException('Failed to sign in with Google');
+      }
+
+      return _syncUserToFirestore(firebaseUser);
     } catch (e) {
-      debugPrint('AuthService: Auth0 Login Error - $e');
-      throw AuthException('Failed to sign in with $connection');
+      debugPrint('AuthService: Google Sign In Error - $e');
+      throw AuthException('Failed to sign in with Google');
     }
   }
 
-  /// Logs out from Auth0 and Firebase
+  /// Signs in using native Firebase Facebook Sign-In
+  Future<UserModel> signInWithFacebook() async {
+    try {
+      debugPrint('AuthService: Starting Facebook Sign In...');
+
+      // 1. Trigger Facebook login flow
+      final LoginResult result = await FacebookAuth.instance.login();
+
+      if (result.status == LoginStatus.cancelled) {
+        throw AuthException('Facebook sign-in canceled');
+      }
+
+      if (result.status != LoginStatus.success) {
+        throw AuthException('Facebook sign-in failed: ${result.message}');
+      }
+
+      // 2. Create a new credential for Firebase
+      final AuthCredential credential =
+          FacebookAuthProvider.credential(result.accessToken!.tokenString);
+
+      // 3. Sign in to Firebase with the credential
+      final UserCredential userCredential =
+          await _auth.signInWithCredential(credential);
+      final User? firebaseUser = userCredential.user;
+
+      if (firebaseUser == null) {
+        throw AuthException('Failed to sign in with Facebook');
+      }
+
+      return _syncUserToFirestore(firebaseUser);
+    } catch (e) {
+      debugPrint('AuthService: Facebook Sign In Error - $e');
+      throw AuthException('Failed to sign in with Facebook');
+    }
+  }
+
+  /// Helper to sync authenticated social user to Firestore
+  Future<UserModel> _syncUserToFirestore(User firebaseUser) async {
+    final String uid = firebaseUser.uid;
+    debugPrint('AuthService: Syncing user to Firestore. UID: $uid');
+
+    // Check if user exists in Firestore
+    final UserModel? existingUser = await _firestoreService.getUser(uid);
+
+    if (existingUser != null) {
+      return existingUser;
+    }
+
+    // Create new user document
+    debugPrint('AuthService: Creating new user document for social user...');
+
+    final newUser = UserModel(
+      uid: uid,
+      name: firebaseUser.displayName ?? 'User',
+      email: firebaseUser.email ?? '',
+      createdAt: DateTime.now(),
+      profileImageUrl: firebaseUser.photoURL,
+    );
+
+    await _firestoreService.createUser(newUser);
+    debugPrint('AuthService: User document created for ${newUser.name}');
+
+    return newUser;
+  }
+
+  /// Logs out from social providers
   Future<void> socialLogout() async {
     try {
-      await _auth0Service.logout();
+      await _googleSignIn.signOut();
+      await FacebookAuth.instance.logOut();
     } catch (e) {
-      debugPrint('AuthService: Auth0 logout error - $e');
+      debugPrint('AuthService: Social logout error - $e');
     }
   }
 
@@ -339,7 +362,7 @@ class AuthService {
   Future<void> signOut() async {
     try {
       debugPrint('AuthService: Signing out...');
-      await socialLogout(); // Ensure Auth0 logout
+      await socialLogout(); // Ensure social providers are signed out
       await _auth.signOut();
       debugPrint('AuthService: Sign out complete');
     } catch (e) {

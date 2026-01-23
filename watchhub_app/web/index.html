@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <!--
     If you are serving your web app in a path other than the root, change the
@@ -27,13 +28,29 @@
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
   <!-- Favicon -->
-  <link rel="icon" type="image/png" href="favicon.png"/>
+  <link rel="icon" type="image/png" href="favicon.png" />
 
   <title>watchhub_app</title>
   <link rel="manifest" href="manifest.json">
-  <meta name="google-signin-client_id" content="495177119332-aunegajpr53ui14isqbh785j8gfll1ir.apps.googleusercontent.com">
+  <meta name="google-signin-client_id"
+    content="495177119332-aunegajpr53ui14isqbh785j8gfll1ir.apps.googleusercontent.com">
 </head>
+
 <body>
+  <div id="fb-root"></div>
+  <script>
+    window.fbAsyncInit = function () {
+      FB.init({
+        appId: 'YOUR_FACEBOOK_APP_ID',
+        cookie: true,
+        xfbml: true,
+        version: 'v18.0'
+      });
+      FB.AppEvents.logPageView();
+    };
+  </script>
+  <script src="https://connect.facebook.net/en_US/sdk.js"></script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
+
 </html>

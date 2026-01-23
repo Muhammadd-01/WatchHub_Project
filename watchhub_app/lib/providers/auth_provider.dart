@@ -37,8 +37,9 @@ class AuthProvider extends ChangeNotifier {
   AuthState _state = AuthState.initial;
   UserModel? _user;
   String? _errorMessage;
-  bool _isLoading = false;
-  bool _isSocialLogin = false; // Flag for Auth0 login
+  bool _isEmailLoading = false;
+  bool _isGoogleLoading = false;
+  bool _isFacebookLoading = false;
 
   // Auth state subscription
   StreamSubscription<User?>? _authSubscription;
@@ -47,7 +48,11 @@ class AuthProvider extends ChangeNotifier {
   AuthState get state => _state;
   UserModel? get user => _user;
   String? get errorMessage => _errorMessage;
-  bool get isLoading => _isLoading;
+  bool get isLoading =>
+      _isEmailLoading || _isGoogleLoading || _isFacebookLoading;
+  bool get isEmailLoading => _isEmailLoading;
+  bool get isGoogleLoading => _isGoogleLoading;
+  bool get isFacebookLoading => _isFacebookLoading;
   bool get isAuthenticated =>
       _state == AuthState.authenticated && _user != null;
   String? get uid => _user?.uid ?? _authService.currentUid;
@@ -77,13 +82,6 @@ class AuthProvider extends ChangeNotifier {
     debugPrint('AuthProvider: Auth state changed - ${firebaseUser?.uid}');
 
     if (firebaseUser == null) {
-      // If we are logged in via Social (Auth0), ignore Firebase null state
-      if (_isSocialLogin && _user != null) {
-        debugPrint(
-            'AuthProvider: Ignoring Firebase logout (Social Login Active)');
-        return;
-      }
-
       // User signed out
       _user = null;
       _state = AuthState.unauthenticated;
@@ -129,7 +127,7 @@ class AuthProvider extends ChangeNotifier {
     String? phone,
   }) async {
     try {
-      _setLoading(true);
+      _setEmailLoading(true);
       _clearError();
 
       final userModel = await _authService.signUp(
@@ -154,7 +152,7 @@ class AuthProvider extends ChangeNotifier {
       _setError('An unexpected error occurred');
       return false;
     } finally {
-      _setLoading(false);
+      _setEmailLoading(false);
     }
   }
 
@@ -165,7 +163,7 @@ class AuthProvider extends ChangeNotifier {
   /// Signs in an existing user
   Future<bool> signIn({required String email, required String password}) async {
     try {
-      _setLoading(true);
+      _setEmailLoading(true);
       _clearError();
 
       final userModel = await _authService.signIn(
@@ -188,21 +186,19 @@ class AuthProvider extends ChangeNotifier {
       _setError('An unexpected error occurred');
       return false;
     } finally {
-      _setLoading(false);
+      _setEmailLoading(false);
     }
   }
 
-  /// Signs in with Social (Auth0)
-  Future<bool> signInWithSocial({String? connection}) async {
+  /// Signs in with Google
+  Future<bool> signInWithGoogle() async {
     try {
-      _setLoading(true);
+      _setGoogleLoading(true);
       _clearError();
 
-      final userModel =
-          await _authService.signInWithSocial(connection: connection);
+      final userModel = await _authService.signInWithGoogle();
 
       _user = userModel;
-      _isSocialLogin = true; // Set flag
       _state = AuthState.authenticated;
 
       notifyListeners();
@@ -211,22 +207,37 @@ class AuthProvider extends ChangeNotifier {
       _setError(e.message);
       return false;
     } catch (e) {
-      debugPrint('AuthProvider: Social sign in error - $e');
-      _setError('Failed to sign in with ${connection ?? "Social Provider"}');
+      debugPrint('AuthProvider: Google sign in error - $e');
+      _setError('Failed to sign in with Google');
       return false;
     } finally {
-      _setLoading(false);
+      _setGoogleLoading(false);
     }
   }
 
-  /// Signs in with Google via Auth0
-  Future<bool> signInWithGoogle() async {
-    return signInWithSocial(connection: 'google-oauth2');
-  }
-
-  /// Signs in with Facebook via Auth0
+  /// Signs in with Facebook
   Future<bool> signInWithFacebook() async {
-    return signInWithSocial(connection: 'facebook');
+    try {
+      _setFacebookLoading(true);
+      _clearError();
+
+      final userModel = await _authService.signInWithFacebook();
+
+      _user = userModel;
+      _state = AuthState.authenticated;
+
+      notifyListeners();
+      return true;
+    } on AuthException catch (e) {
+      _setError(e.message);
+      return false;
+    } catch (e) {
+      debugPrint('AuthProvider: Facebook sign in error - $e');
+      _setError('Failed to sign in with Facebook');
+      return false;
+    } finally {
+      _setFacebookLoading(false);
+    }
   }
 
   // ===========================================================================
@@ -236,11 +247,10 @@ class AuthProvider extends ChangeNotifier {
   /// Signs out the current user
   Future<void> signOut() async {
     try {
-      _setLoading(true);
+      _setEmailLoading(true);
 
       await _authService.signOut();
 
-      _isSocialLogin = false; // Reset flag
       _user = null;
       _state = AuthState.unauthenticated;
 
@@ -251,7 +261,7 @@ class AuthProvider extends ChangeNotifier {
       debugPrint('AuthProvider: Sign out error - $e');
       _setError('Failed to sign out');
     } finally {
-      _setLoading(false);
+      _setEmailLoading(false);
     }
   }
 
@@ -262,7 +272,7 @@ class AuthProvider extends ChangeNotifier {
   /// Sends a password reset email
   Future<bool> sendPasswordResetEmail(String email) async {
     try {
-      _setLoading(true);
+      _setEmailLoading(true);
       _clearError();
 
       await _authService.sendPasswordResetEmail(email);
@@ -278,7 +288,7 @@ class AuthProvider extends ChangeNotifier {
       _setError('Failed to send reset email');
       return false;
     } finally {
-      _setLoading(false);
+      _setEmailLoading(false);
     }
   }
 
@@ -296,7 +306,7 @@ class AuthProvider extends ChangeNotifier {
     if (_user == null) return false;
 
     try {
-      _setLoading(true);
+      _setEmailLoading(true);
       _clearError();
 
       final updates = <String, dynamic>{};
@@ -341,7 +351,7 @@ class AuthProvider extends ChangeNotifier {
       _setError('Failed to update profile');
       return false;
     } finally {
-      _setLoading(false);
+      _setEmailLoading(false);
     }
   }
 
@@ -368,8 +378,18 @@ class AuthProvider extends ChangeNotifier {
   // HELPER METHODS
   // ===========================================================================
 
-  void _setLoading(bool loading) {
-    _isLoading = loading;
+  void _setEmailLoading(bool loading) {
+    _isEmailLoading = loading;
+    notifyListeners();
+  }
+
+  void _setGoogleLoading(bool loading) {
+    _isGoogleLoading = loading;
+    notifyListeners();
+  }
+
+  void _setFacebookLoading(bool loading) {
+    _isFacebookLoading = loading;
     notifyListeners();
   }
 

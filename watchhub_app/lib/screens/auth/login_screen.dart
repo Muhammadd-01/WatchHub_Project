@@ -60,12 +60,16 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  Future<void> _handleSocialLogin(String connection) async {
+  Future<void> _handleSocialLogin(String provider) async {
     final authProvider = context.read<AuthProvider>();
 
     try {
-      final success =
-          await authProvider.signInWithSocial(connection: connection);
+      bool success = false;
+      if (provider == 'google') {
+        success = await authProvider.signInWithGoogle();
+      } else if (provider == 'facebook') {
+        success = await authProvider.signInWithFacebook();
+      }
 
       if (success && mounted) {
         Navigator.of(context).pushReplacementNamed(AppRoutes.main);
@@ -203,7 +207,7 @@ class _LoginScreenState extends State<LoginScreen> {
       builder: (context, authProvider, _) {
         return LoadingButton(
           onPressed: _handleLogin,
-          isLoading: authProvider.isLoading,
+          isLoading: authProvider.isEmailLoading,
           text: 'Sign In',
         );
       },
@@ -277,26 +281,32 @@ class _LoginScreenState extends State<LoginScreen> {
 
               const SizedBox(height: 16),
 
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildSocialButton(
-                      label: 'Google',
-                      icon: Icons.g_mobiledata_rounded,
-                      onPressed: () => _handleSocialLogin('google-oauth2'),
-                      theme: theme,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _buildSocialButton(
-                      label: 'Facebook',
-                      icon: Icons.facebook_rounded,
-                      onPressed: () => _handleSocialLogin('facebook'),
-                      theme: theme,
-                    ),
-                  ),
-                ],
+              Consumer<AuthProvider>(
+                builder: (context, authProvider, _) {
+                  return Row(
+                    children: [
+                      Expanded(
+                        child: _buildSocialButton(
+                          label: 'Google',
+                          icon: Icons.g_mobiledata_rounded,
+                          onPressed: () => _handleSocialLogin('google'),
+                          theme: theme,
+                          isLoading: authProvider.isGoogleLoading,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _buildSocialButton(
+                          label: 'Facebook',
+                          icon: Icons.facebook_rounded,
+                          onPressed: () => _handleSocialLogin('facebook'),
+                          theme: theme,
+                          isLoading: authProvider.isFacebookLoading,
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
 
               const SizedBox(height: 24),
@@ -317,12 +327,13 @@ class _LoginScreenState extends State<LoginScreen> {
     required IconData icon,
     required VoidCallback onPressed,
     required ThemeData theme,
+    required bool isLoading,
   }) {
     return Consumer<AuthProvider>(
       builder: (context, authProvider, _) {
         return OutlinedButton.icon(
           onPressed: authProvider.isLoading ? null : onPressed,
-          icon: authProvider.isLoading
+          icon: isLoading
               ? const SizedBox(
                   height: 20,
                   width: 20,
@@ -333,7 +344,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 )
               : Icon(icon, size: 24),
           label: Text(
-            authProvider.isLoading ? '...' : label,
+            isLoading ? '...' : label,
             style: AppTextStyles.labelLarge.copyWith(
               color: theme.textTheme.bodyLarge?.color,
               letterSpacing: 0.5,
