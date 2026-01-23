@@ -8,13 +8,15 @@ import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class AdminOrderProvider extends ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   /// Free Email Relay URL (Google Apps Script)
   /// Instructions in docs/SETUP_GUIDE.md
-  static const String emailRelayUrl = 'https://script.google.com/macros/s/AKfycbxB-RRd6dRUyiYTEsKwBwjDDkRx7KcHtEfAeVy45TsLP8Hmo3lw3LaMxOlU8Rnm28cQ/exec';
+  static const String emailRelayUrl =
+      'https://script.google.com/macros/s/AKfycbxB-RRd6dRUyiYTEsKwBwjDDkRx7KcHtEfAeVy45TsLP8Hmo3lw3LaMxOlU8Rnm28cQ/exec';
 
   List<Map<String, dynamic>> _orders = [];
   bool _isLoading = false;
@@ -177,60 +179,56 @@ class AdminOrderProvider extends ChangeNotifier {
     }
   }
 
-  /// Sends a real push notification via FCM (Legacy API)
-  /// Note: Requires FCM Server Key from Firebase Console
+  /// Sends a real push notification via OneSignal REST API
   Future<void> _sendPushNotification(
       String uid, String title, String body) async {
     try {
-      // 1. Get User's FCM Token
+      // 1. Get User's OneSignal ID
       final userDoc = await _firestore.collection('users').doc(uid).get();
-      final token = userDoc.data()?['fcmToken'];
+      final playerId = userDoc.data()?['oneSignalPlayerId'];
 
-      if (token == null) {
-        debugPrint('AdminOrderProvider: FCM Token not found for $uid');
-        return;
-      }
-
-      // 2. FCM Server Key (Placeholder - User needs to fill this or we help them)
-      // TODO: Move this to a secure config
-      const String serverKey = 'YOUR_FCM_SERVER_KEY';
-
-      if (serverKey == 'YOUR_FCM_SERVER_KEY') {
+      if (playerId == null) {
         debugPrint(
-            'AdminOrderProvider: FCM Server Key not configured. Skipping push.');
+            'AdminOrderProvider: OneSignal Player ID not found for $uid');
         return;
       }
 
-      // 3. Send Request
+      // 2. Get API Keys from .env
+      final appId = dotenv.env['ONESIGNAL_APP_ID'];
+      final restApiKey = dotenv.env['ONESIGNAL_REST_API_KEY'];
+
+      if (appId == null ||
+          restApiKey == null ||
+          appId == 'YOUR_ONESIGNAL_APP_ID') {
+        debugPrint(
+            'AdminOrderProvider: OneSignal keys not configured. Skipping push.');
+        return;
+      }
+
+      // 3. Send Request to OneSignal REST API
       final response = await http.post(
-        Uri.parse('https://fcm.googleapis.com/fcm/send'),
+        Uri.parse('https://onesignal.com/api/v1/notifications'),
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'key=$serverKey',
+          'Content-Type': 'application/json; charset=utf-8',
+          'Authorization': 'Basic $restApiKey',
         },
         body: jsonEncode({
-          'to': token,
-          'notification': {
-            'title': title,
-            'body': body,
-            'click_action': 'FLUTTER_NOTIFICATION_CLICK',
-            'sound': 'default',
-          },
-          'data': {
-            'type': 'order_update',
-            'click_action': 'FLUTTER_NOTIFICATION_CLICK',
-          },
-          'priority': 'high',
+          'app_id': appId,
+          'include_player_ids': [playerId],
+          'headings': {'en': title},
+          'contents': {'en': body},
+          'data': {'type': 'order_update'},
         }),
       );
 
       if (response.statusCode == 200) {
-        debugPrint('AdminOrderProvider: FCM Push sent successfully');
+        debugPrint('AdminOrderProvider: OneSignal Push sent successfully');
       } else {
-        debugPrint('AdminOrderProvider: FCM Push failed - ${response.body}');
+        debugPrint(
+            'AdminOrderProvider: OneSignal Push failed - ${response.body}');
       }
     } catch (e) {
-      debugPrint('AdminOrderProvider: Error sending FCM Push - $e');
+      debugPrint('AdminOrderProvider: Error sending OneSignal Push - $e');
     }
   }
 }

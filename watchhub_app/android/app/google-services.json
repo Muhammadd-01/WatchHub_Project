@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "495177119332-h3hedcf3a7vr2nv843o0ka8mv7b9t9da.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.watchhub.watchhub_app",
+            "certificate_hash": "9740c90022f93272c99d8c2396b42eee3635f95c"
+          }
+        },
+        {
           "client_id": "495177119332-aunegajpr53ui14isqbh785j8gfll1ir.apps.googleusercontent.com",
           "client_type": 3
         }

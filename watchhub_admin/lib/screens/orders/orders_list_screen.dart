@@ -78,7 +78,7 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
                 DataColumn2(label: Text('Total'), size: ColumnSize.S),
                 DataColumn2(label: Text('Status'), size: ColumnSize.S),
                 DataColumn2(label: Text('Items'), size: ColumnSize.S),
-                DataColumn2(label: Text('Actions'), fixedWidth: 80),
+                DataColumn2(label: Text('Actions'), fixedWidth: 100),
               ],
               rows: provider.orders.map((order) {
                 final date = order['createdAt'] != null
@@ -103,32 +103,36 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
                         style: AppTextStyles.bodyMedium)),
                     DataCell(
                       (order['status'] ?? 'pending') == 'pending'
-                          ? DropdownButton<String>(
-                              value:
-                                  null, // Initial value null to show hint or "Action"
-                              hint: const Text('Action',
-                                  style: TextStyle(fontSize: 12)),
-                              underline: Container(),
-                              icon: const Icon(Icons.arrow_drop_down,
-                                  color: AppColors.primaryGold),
-                              items: const [
-                                DropdownMenuItem(
-                                  value: 'approved',
-                                  child: Text('Approve',
-                                      style:
-                                          TextStyle(color: AppColors.success)),
-                                ),
-                                DropdownMenuItem(
-                                  value: 'cancelled',
-                                  child: Text('Decline',
-                                      style: TextStyle(color: AppColors.error)),
-                                ),
-                              ],
-                              onChanged: (val) {
-                                if (val != null) {
-                                  _confirmUpdateStatus(context, order, val);
-                                }
-                              },
+                          ? DropdownButtonHideUnderline(
+                              child: DropdownButton<String>(
+                                value: null,
+                                isDense: true,
+                                hint: const Text('Action',
+                                    style: TextStyle(fontSize: 12)),
+                                icon: const Icon(Icons.arrow_drop_down,
+                                    color: AppColors.primaryGold, size: 20),
+                                items: const [
+                                  DropdownMenuItem(
+                                    value: 'approved',
+                                    child: Text('Approve',
+                                        style: TextStyle(
+                                            color: AppColors.success,
+                                            fontSize: 13)),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'cancelled',
+                                    child: Text('Decline',
+                                        style: TextStyle(
+                                            color: AppColors.error,
+                                            fontSize: 13)),
+                                  ),
+                                ],
+                                onChanged: (val) {
+                                  if (val != null) {
+                                    _confirmUpdateStatus(context, order, val);
+                                  }
+                                },
+                              ),
                             )
                           : _buildStatusText(order['status'] ?? 'pending'),
                     ),
