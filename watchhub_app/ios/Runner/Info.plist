@@ -65,5 +65,11 @@
 	  <string>fbapi</string>
 	  <string>fb-messenger-share-api</string>
 	</array>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>We need your location to fill your delivery address automatically.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>We need your location to fill your delivery address automatically.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>We need your location to fill your delivery address automatically.</string>
 </dict>
 </plist>

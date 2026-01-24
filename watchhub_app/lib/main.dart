@@ -11,6 +11,7 @@ import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 
 import 'firebase_options.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 // Core
 import 'core/theme/app_theme.dart';
@@ -67,11 +68,13 @@ void main() async {
     debugPrint('main: Error initializing PushNotificationService - $e');
   }
 
+  // Load environment variables
+  await dotenv.load(fileName: ".env");
+
   // Initialize Supabase
   await SupabaseService.initialize(
-    url: 'https://gsoxyadehywfpeuuyger.supabase.co',
-    anonKey:
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdzb3h5YWRlaHl3ZnBldXV5Z2VyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc2MTc0ODIsImV4cCI6MjA4MzE5MzQ4Mn0.MWeLkq2O5rCpF4_MJjqALXhtVeB3mozXKTvVb-WI6eM',
+    url: dotenv.env['SUPABASE_URL'] ?? '',
+    anonKey: dotenv.env['SUPABASE_ANON_KEY'] ?? '',
   );
 
   // Seed database with sample products if needed

@@ -596,13 +596,14 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                                   : null,
                               isLoading: cartProvider.isLoading,
                               text: 'Add to Cart',
-                              icon: Icons.shopping_bag_outlined,
+                              icon: Icons.shopping_cart_outlined,
                               outlined: true,
+                              height: 54,
                             );
                           },
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 16),
                       Expanded(
                         child: LoadingButton(
                           onPressed: product.isInStock
@@ -626,6 +627,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                               : null,
                           text: 'Buy Now',
                           icon: Icons.flash_on_rounded,
+                          height: 54,
                         ),
                       ),
                     ],

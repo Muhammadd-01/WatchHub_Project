@@ -97,7 +97,7 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
           : _reviews.isEmpty
               ? _buildEmptyState()
               : ListView.builder(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
                   itemCount: _reviews.length,
                   itemBuilder: (context, index) {
                     return _ReviewCard(
@@ -105,7 +105,7 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
                     ).animate().fadeIn(delay: (50 * index).ms);
                   },
                 ),
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: FloatingActionButton(
         onPressed: () {
           Navigator.pushNamed(
             context,
@@ -116,12 +116,7 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
         backgroundColor: AppColors.primaryGold,
         foregroundColor: Colors.white,
         elevation: 4,
-        highlightElevation: 8,
-        icon: const Icon(Icons.rate_review_outlined),
-        label: const Text(
-          'Write Review',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
+        child: const Icon(Icons.edit_rounded),
       ),
     );
   }

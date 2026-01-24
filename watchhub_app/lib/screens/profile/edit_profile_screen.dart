@@ -159,9 +159,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         );
       } catch (e) {
         if (mounted) {
-          final message = e is SupabaseStorageException
-              ? e.message
-              : 'Failed to upload image';
+          String message = 'Failed to upload image';
+          if (e.toString().contains('SocketException') ||
+              e.toString().contains('ClientException') ||
+              e.toString().contains('Failed host lookup')) {
+            message = 'Network error: Please check your internet connection.';
+          } else if (e is SupabaseStorageException) {
+            message = e.message;
+          }
           Helpers.showErrorSnackbar(context, message);
         }
         setState(() => _isUploadingImage = false);
