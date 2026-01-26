@@ -1,12 +1,6 @@
-// =============================================================================
-// FILE: main.dart
-// PURPOSE: Application entry point for WatchHub
-// DESCRIPTION: Initializes Firebase, Supabase, and providers.
-//              Sets up the Material app with routing and theming.
-// =============================================================================
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 
@@ -46,26 +40,30 @@ void main() async {
   // Ensure Flutter is initialized
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Set preferred orientations
-  await SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown,
-  ]);
+  // Set preferred orientations (not supported on web)
+  if (!kIsWeb) {
+    await SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
 
-  // Set system UI overlay style
-  AppTheme.setSystemUIOverlayStyle();
+    // Set system UI overlay style
+    AppTheme.setSystemUIOverlayStyle();
+  }
 
   // Initialize Firebase with generated options
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // Initialize Push Notifications (OneSignal)
-  final pushNotificationService = PushNotificationService();
-  try {
-    await pushNotificationService.initialize(navigatorKey);
-  } catch (e) {
-    debugPrint('main: Error initializing PushNotificationService - $e');
+  // Initialize Push Notifications (OneSignal) - not supported on web
+  if (!kIsWeb) {
+    final pushNotificationService = PushNotificationService();
+    try {
+      await pushNotificationService.initialize(navigatorKey);
+    } catch (e) {
+      debugPrint('main: Error initializing PushNotificationService - $e');
+    }
   }
 
   // Load environment variables

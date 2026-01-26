@@ -1,0 +1,1377 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>WatchHub - Complete Project Documentation</title>
+    <style>
+        @page {
+            margin: 1in;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        h1 {
+            color: #0A1628;
+            font-size: 28pt;
+            border-bottom: 3px solid #D4AF37;
+            padding-bottom: 10px;
+            page-break-before: always;
+        }
+
+        h2 {
+            color: #0A1628;
+            font-size: 20pt;
+            border-left: 5px solid #D4AF37;
+            padding-left: 15px;
+            margin-top: 30px;
+        }
+
+        h3 {
+            color: #D4AF37;
+            font-size: 16pt;
+            margin-top: 25px;
+        }
+
+        h4 {
+            color: #0A1628;
+            font-size: 14pt;
+            margin-top: 20px;
+        }
+
+        .cover-page {
+            text-align: center;
+            page-break-after: always;
+            padding-top: 200px;
+        }
+
+        .cover-title {
+            font-size: 48pt;
+            color: #D4AF37;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .cover-subtitle {
+            font-size: 24pt;
+            color: #0A1628;
+            margin-bottom: 50px;
+        }
+
+        .cover-tagline {
+            font-size: 18pt;
+            color: #666;
+            font-style: italic;
+            margin-top: 100px;
+        }
+
+        .gold-box {
+            background: linear-gradient(135deg, #D4AF37, #F4D03F);
+            color: #0A1628;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .dark-box {
+            background: #0A1628;
+            color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        th {
+            background: #D4AF37;
+            color: #0A1628;
+            padding: 12px;
+            text-align: left;
+            font-weight: bold;
+        }
+
+        td {
+            padding: 10px;
+            border: 1px solid #ddd;
+        }
+
+        tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+
+        .screenshot-box {
+            border: 2px dashed #D4AF37;
+            padding: 80px 20px;
+            text-align: center;
+            margin: 20px 0;
+            background: #fafafa;
+        }
+
+        .screenshot-label {
+            color: #999;
+            font-style: italic;
+        }
+
+        .feature-list {
+            background: #f5f5f5;
+            padding: 20px;
+            border-left: 4px solid #D4AF37;
+            margin: 15px 0;
+        }
+
+        .header-logo {
+            text-align: right;
+            color: #D4AF37;
+            font-weight: bold;
+            font-size: 12pt;
+            border-bottom: 1px solid #D4AF37;
+            padding: 5px;
+            margin-bottom: 20px;
+        }
+
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: Consolas, monospace;
+        }
+
+        pre {
+            background: #0A1628;
+            color: #F4D03F;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+
+        .page-break {
+            page-break-before: always;
+        }
+
+        .team-member {
+            display: inline-block;
+            width: 45%;
+            margin: 10px;
+            text-align: center;
+            vertical-align: top;
+        }
+
+        .info-card {
+            border: 1px solid #D4AF37;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- COVER PAGE -->
+    <div class="cover-page">
+        <div style="font-size: 72pt; color: #D4AF37; margin-bottom: 30px;">⌚</div>
+        <div class="cover-title">WATCHHUB</div>
+        <div class="cover-subtitle">Premium Watch E-Commerce Platform</div>
+        <div style="font-size: 16pt; color: #0A1628; margin-top: 50px;">Complete Project Documentation</div>
+        <div style="font-size: 14pt; color: #666; margin-top: 30px;">Version 1.0.0</div>
+        <div style="font-size: 14pt; color: #666;">January 2026</div>
+        <div class="cover-tagline">"Where Time Meets Luxury"</div>
+        <div style="position: absolute; bottom: 100px; left: 0; right: 0; text-align: center;">
+            <div style="font-size: 12pt; color: #999;">Confidential Document</div>
+        </div>
+    </div>
+
+    <!-- PROJECT OVERVIEW PAGE -->
+    <div class="page-break">
+        <div class="header-logo">⌚ WATCHHUB</div>
+        <h1 style="page-break-before: avoid;">Project Overview</h1>
+
+        <div class="gold-box">
+            <h3 style="color: #0A1628; margin-top: 0;">About WatchHub</h3>
+            <p>WatchHub is a premium e-commerce platform designed specifically for luxury watch retail. The platform
+                delivers an exceptional shopping experience through a beautifully crafted mobile application and a
+                powerful web-based admin panel.</p>
+        </div>
+
+        <h3>Platform Components</h3>
+        <table>
+            <tr>
+                <th>Component</th>
+                <th>Technology</th>
+                <th>Purpose</th>
+            </tr>
+            <tr>
+                <td>Mobile Application</td>
+                <td>Flutter (iOS & Android)</td>
+                <td>Customer shopping experience</td>
+            </tr>
+            <tr>
+                <td>Admin Panel</td>
+                <td>Flutter Web</td>
+                <td>Business management dashboard</td>
+            </tr>
+            <tr>
+                <td>Backend</td>
+                <td>Firebase + Supabase</td>
+                <td>Data storage and authentication</td>
+            </tr>
+            <tr>
+                <td>Notifications</td>
+                <td>OneSignal</td>
+                <td>Push notifications</td>
+            </tr>
+        </table>
+
+        <h3>Key Features</h3>
+        <div class="feature-list">
+            <strong>Mobile App:</strong> User authentication, Product browsing, Shopping cart, Checkout, Order tracking,
+            Wishlist, Reviews, Push notifications, Profile management
+        </div>
+        <div class="feature-list">
+            <strong>Admin Panel:</strong> Dashboard analytics, Product management, Order processing, User management,
+            Review moderation, Feedback handling
+        </div>
+    </div>
+
+    <!-- TEAM PAGE -->
+    <div class="page-break">
+        <div class="header-logo">⌚ WATCHHUB</div>
+        <h1 style="page-break-before: avoid;">Development Team</h1>
+
+        <div class="dark-box">
+            <h3 style="color: #D4AF37; margin-top: 0;">Project Team</h3>
+            <p style="color: #ccc;">The WatchHub platform was developed by a dedicated team of professionals committed
+                to delivering excellence in e-commerce solutions.</p>
+        </div>
+
+        <h3>Team Members</h3>
+        <div class="info-card">
+            <h4 style="margin-top: 0; color: #D4AF37;">Project Lead / Developer</h4>
+            <p><strong>Name:</strong> [Your Name]</p>
+            <p><strong>Role:</strong> Full Stack Developer</p>
+            <p><strong>Responsibilities:</strong> Architecture design, Mobile app development, Admin panel development,
+                Backend integration</p>
+        </div>
+
+        <div class="info-card">
+            <h4 style="margin-top: 0; color: #D4AF37;">Supervisor</h4>
+            <p><strong>Name:</strong> [Supervisor Name]</p>
+            <p><strong>Role:</strong> Project Supervisor</p>
+            <p><strong>Institution:</strong> [University/Institution Name]</p>
+        </div>
+
+        <h3>Project Information</h3>
+        <table>
+            <tr>
+                <th>Field</th>
+                <th>Details</th>
+            </tr>
+            <tr>
+                <td>Project Title</td>
+                <td>WatchHub - Premium Watch E-Commerce Platform</td>
+            </tr>
+            <tr>
+                <td>Project Type</td>
+                <td>Final Year Project / Capstone Project</td>
+            </tr>
+            <tr>
+                <td>Duration</td>
+                <td>[Start Date] - [End Date]</td>
+            </tr>
+            <tr>
+                <td>Institution</td>
+                <td>[Your University/College Name]</td>
+            </tr>
+            <tr>
+                <td>Department</td>
+                <td>[Computer Science / IT / Software Engineering]</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- TABLE OF CONTENTS -->
+    <div class="page-break">
+        <div class="header-logo">⌚ WATCHHUB</div>
+        <h1 style="page-break-before: avoid;">Table of Contents</h1>
+
+        <div style="font-size: 14pt; line-height: 2;">
+            <p><strong>1. Executive Summary</strong> ........................... 6</p>
+            <p><strong>2. System Architecture</strong> ........................... 10</p>
+            <p><strong>3. Technology Stack</strong> ........................... 15</p>
+            <p><strong>4. Mobile Application</strong> ........................... 20</p>
+            <p style="padding-left: 30px;">4.1 Authentication Module ........................... 22</p>
+            <p style="padding-left: 30px;">4.2 Home Module ........................... 28</p>
+            <p style="padding-left: 30px;">4.3 Product Module ........................... 35</p>
+            <p style="padding-left: 30px;">4.4 Cart Module ........................... 42</p>
+            <p style="padding-left: 30px;">4.5 Checkout Module ........................... 48</p>
+            <p style="padding-left: 30px;">4.6 Orders Module ........................... 54</p>
+            <p style="padding-left: 30px;">4.7 Reviews Module ........................... 60</p>
+            <p style="padding-left: 30px;">4.8 Wishlist Module ........................... 66</p>
+            <p style="padding-left: 30px;">4.9 Profile Module ........................... 70</p>
+            <p style="padding-left: 30px;">4.10 Notifications Module ........................... 76</p>
+            <p><strong>5. Admin Panel</strong> ........................... 80</p>
+            <p style="padding-left: 30px;">5.1 Dashboard ........................... 82</p>
+            <p style="padding-left: 30px;">5.2 Products Management ........................... 88</p>
+            <p style="padding-left: 30px;">5.3 Orders Management ........................... 96</p>
+            <p style="padding-left: 30px;">5.4 Users Management ........................... 102</p>
+            <p style="padding-left: 30px;">5.5 Reviews Management ........................... 108</p>
+            <p><strong>6. Database Schema</strong> ........................... 115</p>
+            <p><strong>7. API Integration</strong> ........................... 125</p>
+            <p><strong>8. Security</strong> ........................... 135</p>
+            <p><strong>9. Testing</strong> ........................... 140</p>
+            <p><strong>10. Deployment</strong> ........................... 145</p>
+            <p><strong>11. User Manual</strong> ........................... 150</p>
+            <p><strong>12. Appendices</strong> ........................... 155</p>
+        </div>
+    </div>
+
+    <!-- EXECUTIVE SUMMARY -->
+    <div class="page-break">
+        <div class="header-logo">⌚ WATCHHUB</div>
+        <h1 style="page-break-before: avoid;">1. Executive Summary</h1>
+
+        <h2>1.1 Project Vision</h2>
+        <p>WatchHub represents a next-generation e-commerce solution designed specifically for the luxury watch retail
+            market. Our vision is to create a digital shopping experience that matches the elegance and sophistication
+            of the premium timepieces we showcase.</p>
+
+        <div class="gold-box">
+            <strong>Mission Statement:</strong> To deliver an unparalleled digital shopping experience for watch
+            enthusiasts, combining cutting-edge technology with timeless elegance.
+        </div>
+
+        <h2>1.2 Business Objectives</h2>
+        <table>
+            <tr>
+                <th>Objective</th>
+                <th>Description</th>
+                <th>Success Metric</th>
+            </tr>
+            <tr>
+                <td>Premium Experience</td>
+                <td>Create a luxury shopping experience</td>
+                <td>User satisfaction rating > 4.5</td>
+            </tr>
+            <tr>
+                <td>Operational Efficiency</td>
+                <td>Streamline business operations</td>
+                <td>Order processing time < 24hrs</td>
+            </tr>
+            <tr>
+                <td>Customer Engagement</td>
+                <td>Build lasting customer relationships</td>
+                <td>Return customer rate > 40%</td>
+            </tr>
+            <tr>
+                <td>Scalability</td>
+                <td>Support business growth</td>
+                <td>Handle 10,000+ products</td>
+            </tr>
+        </table>
+
+        <h2>1.3 Target Audience</h2>
+        <h3>Mobile Application Users</h3>
+        <div class="feature-list">
+            <ul>
+                <li>Watch collectors and enthusiasts aged 25-55</li>
+                <li>Luxury goods shoppers with disposable income</li>
+                <li>Gift buyers seeking premium timepieces</li>
+                <li>Fashion-conscious individuals</li>
+            </ul>
+        </div>
+
+        <h3>Admin Panel Users</h3>
+        <div class="feature-list">
+            <ul>
+                <li>Store administrators and managers</li>
+                <li>Inventory management personnel</li>
+                <li>Customer service representatives</li>
+                <li>Marketing team members</li>
+            </ul>
+        </div>
+
+        <h2>1.4 Project Scope</h2>
+        <h3>In Scope</h3>
+        <table>
+            <tr>
+                <th>Feature</th>
+                <th>Status</th>
+            </tr>
+            <tr>
+                <td>Mobile application for iOS and Android</td>
+                <td>✅ Completed</td>
+            </tr>
+            <tr>
+                <td>Web-based admin panel</td>
+                <td>✅ Completed</td>
+            </tr>
+            <tr>
+                <td>User authentication (Email, Google, Facebook)</td>
+                <td>✅ Completed</td>
+            </tr>
+            <tr>
+                <td>Product catalog management</td>
+                <td>✅ Completed</td>
+            </tr>
+            <tr>
+                <td>Shopping cart and checkout</td>
+                <td>✅ Completed</td>
+            </tr>
+            <tr>
+                <td>Order management and tracking</td>
+                <td>✅ Completed</td>
+            </tr>
+            <tr>
+                <td>Customer reviews and ratings</td>
+                <td>✅ Completed</td>
+            </tr>
+            <tr>
+                <td>Push notifications</td>
+                <td>✅ Completed</td>
+            </tr>
+        </table>
+
+        <h3>Out of Scope (Future Enhancements)</h3>
+        <table>
+            <tr>
+                <th>Feature</th>
+                <th>Planned Version</th>
+            </tr>
+            <tr>
+                <td>Payment gateway integration</td>
+                <td>v2.0</td>
+            </tr>
+            <tr>
+                <td>Shipping carrier API</td>
+                <td>v2.0</td>
+            </tr>
+            <tr>
+                <td>Multi-language support</td>
+                <td>v2.5</td>
+            </tr>
+            <tr>
+                <td>Multi-currency support</td>
+                <td>v2.5</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- MOBILE APP SECTION -->
+    <div class="page-break">
+        <div class="header-logo">⌚ WATCHHUB</div>
+        <h1 style="page-break-before: avoid;">4. Mobile Application</h1>
+
+        <div class="dark-box">
+            <h3 style="color: #D4AF37; margin-top: 0;">WatchHub Mobile App</h3>
+            <p style="color: #ccc;">A premium mobile shopping experience built with Flutter, available on both iOS and
+                Android platforms.</p>
+        </div>
+
+        <h2>4.1 Application Structure</h2>
+        <pre>
+watchhub_app/
+├── lib/
+│   ├── core/           # Constants, routes, themes, utilities
+│   ├── models/         # Data models (User, Product, Order, etc.)
+│   ├── providers/      # State management (Provider pattern)
+│   ├── screens/        # UI screens organized by feature
+│   ├── services/       # Backend services (Auth, Firestore, etc.)
+│   └── widgets/        # Reusable UI components
+├── assets/             # Images, icons, fonts
+└── pubspec.yaml        # Dependencies
+</pre>
+    </div>
+
+    <!-- LOGIN SCREEN -->
+    <div class="page-break">
+        <div class="header-logo">⌚ WATCHHUB</div>
+        <h1 style="page-break-before: avoid;">4.2 Authentication Module</h1>
+
+        <h2>4.2.1 Login Screen</h2>
+        <div class="info-card">
+            <p><strong>File Location:</strong> <code>lib/screens/auth/login_screen.dart</code></p>
+            <p><strong>Purpose:</strong> Allow existing users to securely access their accounts.</p>
+        </div>
+
+        <h3>Features</h3>
+        <div class="feature-list">
+            <ul>
+                <li>Email and password authentication</li>
+                <li>Google Sign-In integration</li>
+                <li>Facebook Sign-In integration</li>
+                <li>"Forgot Password" functionality</li>
+                <li>Navigation to registration screen</li>
+                <li>Form validation with error messages</li>
+                <li>Loading states during authentication</li>
+            </ul>
+        </div>
+
+        <h3>UI Components</h3>
+        <table>
+            <tr>
+                <th>Component</th>
+                <th>Description</th>
+            </tr>
+            <tr>
+                <td>WatchHub Logo</td>
+                <td>App branding at top of screen</td>
+            </tr>
+            <tr>
+                <td>Email Input</td>
+                <td>Text field with email validation</td>
+            </tr>
+            <tr>
+                <td>Password Input</td>
+                <td>Obscured text field with toggle visibility</td>
+            </tr>
+            <tr>
+                <td>Login Button</td>
+                <td>Primary gold button with loading state</td>
+            </tr>
+            <tr>
+                <td>Social Buttons</td>
+                <td>Google and Facebook sign-in options</td>
+            </tr>
+            <tr>
+                <td>Forgot Password</td>
+                <td>Link to password reset</td>
+            </tr>
+            <tr>
+                <td>Sign Up Link</td>
+                <td>Navigation to registration</td>
+            </tr>
+        </table>
+
+        <h3>Validation Rules</h3>
+        <table>
+            <tr>
+                <th>Field</th>
+                <th>Validation</th>
+                <th>Error Message</th>
+            </tr>
+            <tr>
+                <td>Email</td>
+                <td>Required, valid email format</td>
+                <td>"Please enter a valid email"</td>
+            </tr>
+            <tr>
+                <td>Password</td>
+                <td>Required, minimum 6 characters</td>
+                <td>"Password must be at least 6 characters"</td>
+            </tr>
+        </table>
+
+        <h3>Screenshot</h3>
+        <div class="screenshot-box">
+            <p class="screenshot-label">📱 INSERT LOGIN SCREEN SCREENSHOT HERE</p>
+            <p style="color: #666; font-size: 10pt;">Recommended size: 1080x1920 pixels (9:16 aspect ratio)</p>
+        </div>
+    </div>
+
+    <!-- REGISTRATION SCREEN -->
+    <div class="page-break">
+        <div class="header-logo">⌚ WATCHHUB</div>
+        <h2>4.2.2 Registration Screen</h2>
+
+        <div class="info-card">
+            <p><strong>File Location:</strong> <code>lib/screens/auth/signup_screen.dart</code></p>
+            <p><strong>Purpose:</strong> Enable new users to create accounts and join WatchHub.</p>
+        </div>
+
+        <h3>Features</h3>
+        <div class="feature-list">
+            <ul>
+                <li>Full name input for personalization</li>
+                <li>Email registration with validation</li>
+                <li>Secure password creation with confirmation</li>
+                <li>Optional phone number input</li>
+                <li>Terms of service agreement</li>
+                <li>Social registration options</li>
+            </ul>
+        </div>
+
+        <h3>Form Fields</h3>
+        <table>
+            <tr>
+                <th>Field</th>
+                <th>Type</th>
+                <th>Required</th>
+                <th>Validation</th>
+            </tr>
+            <tr>
+                <td>Full Name</td>
+                <td>Text</td>
+                <td>Yes</td>
+                <td>Min 2 characters</td>
+            </tr>
+            <tr>
+                <td>Email</td>
+                <td>Email</td>
+                <td>Yes</td>
+                <td>Valid format, unique</td>
+            </tr>
+            <tr>
+                <td>Password</td>
+                <td>Password</td>
+                <td>Yes</td>
+                <td>Min 6 characters</td>
+            </tr>
+            <tr>
+                <td>Confirm Password</td>
+                <td>Password</td>
+                <td>Yes</td>
+                <td>Must match password</td>
+            </tr>
+            <tr>
+                <td>Phone</td>
+                <td>Phone</td>
+                <td>No</td>
+                <td>Valid phone format</td>
+            </tr>
+        </table>
+
+        <h3>Screenshot</h3>
+        <div class="screenshot-box">
+            <p class="screenshot-label">📱 INSERT REGISTRATION SCREEN SCREENSHOT HERE</p>
+            <p style="color: #666; font-size: 10pt;">Recommended size: 1080x1920 pixels</p>
+        </div>
+    </div>
+
+    <!-- HOME SCREEN -->
+    <div class="page-break">
+        <div class="header-logo">⌚ WATCHHUB</div>
+        <h1 style="page-break-before: avoid;">4.3 Home Module</h1>
+
+        <h2>4.3.1 Home Screen</h2>
+        <div class="info-card">
+            <p><strong>File Location:</strong> <code>lib/screens/home/home_screen.dart</code></p>
+            <p><strong>Purpose:</strong> Primary landing screen showcasing products, categories, and promotional
+                content.</p>
+        </div>
+
+        <h3>Screen Sections</h3>
+
+        <h4>1. App Bar</h4>
+        <div class="feature-list">
+            <ul>
+                <li>WatchHub logo branding</li>
+                <li>Shopping cart icon with item count badge</li>
+                <li>Notifications icon with unread count badge</li>
+            </ul>
+        </div>
+
+        <h4>2. Hero Banner</h4>
+        <div class="feature-list">
+            <ul>
+                <li>Full-width promotional image</li>
+                <li>"Premium Edition" label</li>
+                <li>"Exclusive Timepieces" heading</li>
+                <li>"Explore Collection" call-to-action button</li>
+            </ul>
+        </div>
+
+        <h4>3. Category Carousel</h4>
+        <div class="feature-list">
+            <ul>
+                <li>"Curated Categories" section header</li>
+                <li>"Experience Elegance" subtitle</li>
+                <li>Auto-scrolling horizontal category chips</li>
+                <li>Continuous loop animation</li>
+                <li>Tap to navigate to category products</li>
+            </ul>
+        </div>
+
+        <h4>4. Featured Products</h4>
+        <div class="feature-list">
+            <ul>
+                <li>Section header with "See All" link</li>
+                <li>Auto-rotating 2-column product grid</li>
+                <li>Product cards with image, name, price</li>
+                <li>Add to wishlist quick action</li>
+            </ul>
+        </div>
+
+        <h4>5. New Arrivals</h4>
+        <div class="feature-list">
+            <ul>
+                <li>"NEW" badge indicator on products</li>
+                <li>Latest products showcase</li>
+                <li>Auto-rotating display</li>
+            </ul>
+        </div>
+
+        <h3>Screenshots</h3>
+        <div class="screenshot-box">
+            <p class="screenshot-label">📱 INSERT HOME SCREEN - HERO SECTION SCREENSHOT</p>
+        </div>
+
+        <div class="screenshot-box">
+            <p class="screenshot-label">📱 INSERT HOME SCREEN - CATEGORIES SECTION SCREENSHOT</p>
+        </div>
+
+        <div class="screenshot-box">
+            <p class="screenshot-label">📱 INSERT HOME SCREEN - PRODUCTS SECTION SCREENSHOT</p>
+        </div>
+    </div>
+
+    <!-- PRODUCT DETAILS SCREEN -->
+    <div class="page-break">
+        <div class="header-logo">⌚ WATCHHUB</div>
+        <h1 style="page-break-before: avoid;">4.4 Product Module</h1>
+
+        <h2>4.4.1 Product Details Screen</h2>
+        <div class="info-card">
+            <p><strong>File Location:</strong> <code>lib/screens/product/product_details_screen.dart</code></p>
+            <p><strong>Purpose:</strong> Display comprehensive product information and enable purchase actions.</p>
+        </div>
+
+        <h3>Screen Sections</h3>
+
+        <h4>1. Product Image Gallery</h4>
+        <table>
+            <tr>
+                <th>Element</th>
+                <th>Description</th>
+            </tr>
+            <tr>
+                <td>Hero Image</td>
+                <td>Full-screen product photo with zoom</td>
+            </tr>
+            <tr>
+                <td>Gradient Overlay</td>
+                <td>Smooth transition to content</td>
+            </tr>
+            <tr>
+                <td>Back Button</td>
+                <td>Glass-morphism circular button</td>
+            </tr>
+            <tr>
+                <td>Wishlist Button</td>
+                <td>Heart icon to add/remove from wishlist</td>
+            </tr>
+            <tr>
+                <td>Share Button</td>
+                <td>Share product with others</td>
+            </tr>
+        </table>
+
+        <h4>2. Product Information</h4>
+        <table>
+            <tr>
+                <th>Element</th>
+                <th>Description</th>
+            </tr>
+            <tr>
+                <td>Brand Name</td>
+                <td>Uppercase brand display with gold color</td>
+            </tr>
+            <tr>
+                <td>Product Name</td>
+                <td>Large headline typography</td>
+            </tr>
+            <tr>
+                <td>Star Rating</td>
+                <td>Visual stars with numeric rating</td>
+            </tr>
+            <tr>
+                <td>Review Count</td>
+                <td>Number of customer reviews</td>
+            </tr>
+            <tr>
+                <td>Price</td>
+                <td>Current price with sale badge if applicable</td>
+            </tr>
+            <tr>
+                <td>Original Price</td>
+                <td>Strikethrough if on sale</td>
+            </tr>
+            <tr>
+                <td>Stock Status</td>
+                <td>Green checkmark or red X with count</td>
+            </tr>
+            <tr>
+                <td>Description</td>
+                <td>Full product description text</td>
+            </tr>
+        </table>
+
+        <h4>3. Specifications</h4>
+        <div class="feature-list">
+            <ul>
+                <li>Glass container with key-value pairs</li>
+                <li>Movement type (Automatic, Quartz, etc.)</li>
+                <li>Case material (Stainless Steel, Gold, etc.)</li>
+                <li>Water resistance rating</li>
+                <li>Dial color and size</li>
+            </ul>
+        </div>
+
+        <h4>4. Reviews Section</h4>
+        <div class="feature-list">
+            <ul>
+                <li>Overall rating display with distribution bars</li>
+                <li>"See All Reviews" navigation</li>
+                <li>"Write a Review" button</li>
+            </ul>
+        </div>
+
+        <h4>5. Bottom Action Bar</h4>
+        <table>
+            <tr>
+                <th>Component</th>
+                <th>Description</th>
+            </tr>
+            <tr>
+                <td>Quantity Selector</td>
+                <td>+/- buttons to adjust quantity</td>
+            </tr>
+            <tr>
+                <td>Add to Cart</td>
+                <td>Outlined gold button</td>
+            </tr>
+            <tr>
+                <td>Buy Now</td>
+                <td>Filled gold button for direct checkout</td>
+            </tr>
+        </table>
+
+        <div class="gold-box">
+            <strong>Responsive Design:</strong> The bottom action bar adapts to screen size. On narrow screens, buttons
+            stack vertically for better usability.
+        </div>
+
+        <h3>Screenshots</h3>
+        <div class="screenshot-box">
+            <p class="screenshot-label">📱 INSERT PRODUCT DETAILS - TOP SECTION SCREENSHOT</p>
+        </div>
+
+        <div class="screenshot-box">
+            <p class="screenshot-label">📱 INSERT PRODUCT DETAILS - SPECIFICATIONS SCREENSHOT</p>
+        </div>
+
+        <div class="screenshot-box">
+            <p class="screenshot-label">📱 INSERT PRODUCT DETAILS - BOTTOM BAR SCREENSHOT</p>
+        </div>
+    </div>
+
+    <!-- CART SCREEN -->
+    <div class="page-break">
+        <div class="header-logo">⌚ WATCHHUB</div>
+        <h1 style="page-break-before: avoid;">4.5 Cart Module</h1>
+
+        <h2>4.5.1 Shopping Cart Screen</h2>
+        <div class="info-card">
+            <p><strong>File Location:</strong> <code>lib/screens/cart/cart_screen.dart</code></p>
+            <p><strong>Purpose:</strong> Manage shopping cart items before checkout.</p>
+        </div>
+
+        <h3>Features</h3>
+        <div class="feature-list">
+            <ul>
+                <li>View all cart items with images</li>
+                <li>Adjust quantity per item</li>
+                <li>Remove items from cart</li>
+                <li>Real-time price calculation</li>
+                <li>Proceed to checkout navigation</li>
+                <li>Empty cart state handling</li>
+            </ul>
+        </div>
+
+        <h3>Cart Item Card</h3>
+        <table>
+            <tr>
+                <th>Element</th>
+                <th>Description</th>
+            </tr>
+            <tr>
+                <td>Product Image</td>
+                <td>Thumbnail of the product</td>
+            </tr>
+            <tr>
+                <td>Product Name</td>
+                <td>Watch name and brand</td>
+            </tr>
+            <tr>
+                <td>Unit Price</td>
+                <td>Price per item</td>
+            </tr>
+            <tr>
+                <td>Quantity Controls</td>
+                <td>+/- buttons to adjust</td>
+            </tr>
+            <tr>
+                <td>Subtotal</td>
+                <td>Price × Quantity</td>
+            </tr>
+            <tr>
+                <td>Remove Button</td>
+                <td>Delete item from cart</td>
+            </tr>
+        </table>
+
+        <h3>Cart Summary</h3>
+        <table>
+            <tr>
+                <th>Line Item</th>
+                <th>Description</th>
+            </tr>
+            <tr>
+                <td>Subtotal</td>
+                <td>Sum of all item totals</td>
+            </tr>
+            <tr>
+                <td>Shipping</td>
+                <td>Estimated shipping cost</td>
+            </tr>
+            <tr>
+                <td>Tax</td>
+                <td>Applicable tax amount</td>
+            </tr>
+            <tr>
+                <td>Total</td>
+                <td>Final amount to pay</td>
+            </tr>
+        </table>
+
+        <h3>Screenshots</h3>
+        <div class="screenshot-box">
+            <p class="screenshot-label">📱 INSERT CART SCREEN - WITH ITEMS SCREENSHOT</p>
+        </div>
+
+        <div class="screenshot-box">
+            <p class="screenshot-label">📱 INSERT CART SCREEN - EMPTY STATE SCREENSHOT</p>
+        </div>
+    </div>
+
+    <!-- CHECKOUT SCREEN -->
+    <div class="page-break">
+        <div class="header-logo">⌚ WATCHHUB</div>
+        <h1 style="page-break-before: avoid;">4.6 Checkout Module</h1>
+
+        <h2>4.6.1 Checkout Screen</h2>
+        <div class="info-card">
+            <p><strong>File Location:</strong> <code>lib/screens/checkout/checkout_screen.dart</code></p>
+            <p><strong>Purpose:</strong> Complete the purchase process with shipping and payment.</p>
+        </div>
+
+        <h3>Checkout Steps</h3>
+        <table>
+            <tr>
+                <th>Step</th>
+                <th>Description</th>
+            </tr>
+            <tr>
+                <td>1. Shipping Address</td>
+                <td>Select or enter delivery address</td>
+            </tr>
+            <tr>
+                <td>2. Payment Method</td>
+                <td>Choose payment option</td>
+            </tr>
+            <tr>
+                <td>3. Order Review</td>
+                <td>Confirm order details</td>
+            </tr>
+            <tr>
+                <td>4. Place Order</td>
+                <td>Submit order for processing</td>
+            </tr>
+        </table>
+
+        <h3>Shipping Address Section</h3>
+        <div class="feature-list">
+            <ul>
+                <li>List of saved addresses</li>
+                <li>Add new address option</li>
+                <li>Edit existing address</li>
+                <li>Select default address</li>
+            </ul>
+        </div>
+
+        <h3>Payment Methods</h3>
+        <table>
+            <tr>
+                <th>Method</th>
+                <th>Status</th>
+            </tr>
+            <tr>
+                <td>Credit/Debit Card</td>
+                <td>Placeholder (Future)</td>
+            </tr>
+            <tr>
+                <td>Cash on Delivery</td>
+                <td>Available</td>
+            </tr>
+        </table>
+
+        <h3>Screenshot</h3>
+        <div class="screenshot-box">
+            <p class="screenshot-label">📱 INSERT CHECKOUT SCREEN SCREENSHOT</p>
+        </div>
+    </div>
+
+    <!-- ORDERS SCREENS -->
+    <div class="page-break">
+        <div class="header-logo">⌚ WATCHHUB</div>
+        <h1 style="page-break-before: avoid;">4.7 Orders Module</h1>
+
+        <h2>4.7.1 Orders List Screen</h2>
+        <div class="info-card">
+            <p><strong>File Location:</strong> <code>lib/screens/orders/orders_list_screen.dart</code></p>
+            <p><strong>Purpose:</strong> View order history and track current orders.</p>
+        </div>
+
+        <h3>Order Card Display</h3>
+        <table>
+            <tr>
+                <th>Element</th>
+                <th>Description</th>
+            </tr>
+            <tr>
+                <td>Order Number</td>
+                <td>Unique order identifier</td>
+            </tr>
+            <tr>
+                <td>Order Date</td>
+                <td>When the order was placed</td>
+            </tr>
+            <tr>
+                <td>Item Count</td>
+                <td>Number of items in order</td>
+            </tr>
+            <tr>
+                <td>Total Amount</td>
+                <td>Order total value</td>
+            </tr>
+            <tr>
+                <td>Status Badge</td>
+                <td>Current order status with color</td>
+            </tr>
+        </table>
+
+        <h3>Order Status Types</h3>
+        <table>
+            <tr>
+                <th>Status</th>
+                <th>Color</th>
+                <th>Description</th>
+            </tr>
+            <tr>
+                <td>Pending</td>
+                <td style="color: orange;">Orange</td>
+                <td>Order placed, awaiting processing</td>
+            </tr>
+            <tr>
+                <td>Approved</td>
+                <td style="color: blue;">Blue</td>
+                <td>Order confirmed by admin</td>
+            </tr>
+            <tr>
+                <td>Processing</td>
+                <td style="color: blue;">Blue</td>
+                <td>Order being prepared</td>
+            </tr>
+            <tr>
+                <td>Shipped</td>
+                <td style="color: purple;">Purple</td>
+                <td>Order in transit</td>
+            </tr>
+            <tr>
+                <td>Completed</td>
+                <td style="color: green;">Green</td>
+                <td>Order delivered</td>
+            </tr>
+            <tr>
+                <td>Cancelled</td>
+                <td style="color: red;">Red</td>
+                <td>Order cancelled</td>
+            </tr>
+        </table>
+
+        <h3>Screenshot</h3>
+        <div class="screenshot-box">
+            <p class="screenshot-label">📱 INSERT ORDERS LIST SCREEN SCREENSHOT</p>
+        </div>
+
+        <h2>4.7.2 Order Details Screen</h2>
+        <div class="info-card">
+            <p><strong>File Location:</strong> <code>lib/screens/orders/order_details_screen.dart</code></p>
+            <p><strong>Purpose:</strong> View complete order information and tracking.</p>
+        </div>
+
+        <h3>Screenshot</h3>
+        <div class="screenshot-box">
+            <p class="screenshot-label">📱 INSERT ORDER DETAILS SCREEN SCREENSHOT</p>
+        </div>
+    </div>
+
+    <!-- REVIEWS SCREENS -->
+    <div class="page-break">
+        <div class="header-logo">⌚ WATCHHUB</div>
+        <h1 style="page-break-before: avoid;">4.8 Reviews Module</h1>
+
+        <h2>4.8.1 Reviews Screen</h2>
+        <div class="info-card">
+            <p><strong>File Location:</strong> <code>lib/screens/reviews/reviews_screen.dart</code></p>
+            <p><strong>Purpose:</strong> View all reviews for a product with admin replies.</p>
+        </div>
+
+        <h3>Features</h3>
+        <div class="feature-list">
+            <ul>
+                <li>Sort reviews by newest, rating, or helpful votes</li>
+                <li>View user reviews with star ratings</li>
+                <li>See admin/store replies to reviews</li>
+                <li>Mark reviews as helpful</li>
+                <li>Write new review via FAB button</li>
+            </ul>
+        </div>
+
+        <h3>Review Card Components</h3>
+        <table>
+            <tr>
+                <th>Component</th>
+                <th>Description</th>
+            </tr>
+            <tr>
+                <td>User Avatar</td>
+                <td>Initial letter in gold circle</td>
+            </tr>
+            <tr>
+                <td>Username</td>
+                <td>Reviewer's display name</td>
+            </tr>
+            <tr>
+                <td>Date</td>
+                <td>Review submission date</td>
+            </tr>
+            <tr>
+                <td>Star Rating</td>
+                <td>1-5 star visual display</td>
+            </tr>
+            <tr>
+                <td>Review Title</td>
+                <td>Optional review headline</td>
+            </tr>
+            <tr>
+                <td>Comment</td>
+                <td>Full review text</td>
+            </tr>
+            <tr>
+                <td>Verified Badge</td>
+                <td>Shows if verified purchase</td>
+            </tr>
+            <tr>
+                <td>Admin Reply</td>
+                <td>Gold-styled store response box</td>
+            </tr>
+            <tr>
+                <td>Helpful Button</td>
+                <td>Thumbs up with count</td>
+            </tr>
+        </table>
+
+        <div class="gold-box">
+            <strong>Admin Reply Feature:</strong> When an admin responds to a review, users see a "WatchHub Response"
+            section styled with gold accent, showing the store's reply.
+        </div>
+
+        <h3>Screenshot</h3>
+        <div class="screenshot-box">
+            <p class="screenshot-label">📱 INSERT REVIEWS SCREEN SCREENSHOT</p>
+        </div>
+
+        <h2>4.8.2 Write Review Screen</h2>
+        <div class="info-card">
+            <p><strong>File Location:</strong> <code>lib/screens/reviews/write_review_screen.dart</code></p>
+            <p><strong>Purpose:</strong> Submit product reviews and ratings.</p>
+        </div>
+
+        <h3>Screenshot</h3>
+        <div class="screenshot-box">
+            <p class="screenshot-label">📱 INSERT WRITE REVIEW SCREEN SCREENSHOT</p>
+        </div>
+    </div>
+
+    <!-- WISHLIST SCREEN -->
+    <div class="page-break">
+        <div class="header-logo">⌚ WATCHHUB</div>
+        <h1 style="page-break-before: avoid;">4.9 Wishlist Module</h1>
+
+        <h2>4.9.1 Wishlist Screen</h2>
+        <div class="info-card">
+            <p><strong>File Location:</strong> <code>lib/screens/wishlist/wishlist_screen.dart</code></p>
+            <p><strong>Purpose:</strong> Manage saved/favorite products.</p>
+        </div>
+
+        <h3>Features</h3>
+        <div class="feature-list">
+            <ul>
+                <li>Grid view of saved products</li>
+                <li>Remove from wishlist</li>
+                <li>Move to cart functionality</li>
+                <li>Quick view product details</li>
+                <li>Empty state with shopping suggestion</li>
+            </ul>
+        </div>
+
+        <h3>Screenshot</h3>
+        <div class="screenshot-box">
+            <p class="screenshot-label">📱 INSERT WISHLIST SCREEN SCREENSHOT</p>
+        </div>
+    </div>
+
+    <!-- PROFILE SCREENS -->
+    <div class="page-break">
+        <div class="header-logo">⌚ WATCHHUB</div>
+        <h1 style="page-break-before: avoid;">4.10 Profile Module</h1>
+
+        <h2>4.10.1 Profile Screen</h2>
+        <div class="info-card">
+            <p><strong>File Location:</strong> <code>lib/screens/profile/profile_screen.dart</code></p>
+            <p><strong>Purpose:</strong> User account management and navigation hub.</p>
+        </div>
+
+        <h3>Menu Items</h3>
+        <table>
+            <tr>
+                <th>Item</th>
+                <th>Icon</th>
+                <th>Destination</th>
+            </tr>
+            <tr>
+                <td>Edit Profile</td>
+                <td>👤</td>
+                <td>Edit Profile Screen</td>
+            </tr>
+            <tr>
+                <td>My Orders</td>
+                <td>🛍️</td>
+                <td>Orders List Screen</td>
+            </tr>
+            <tr>
+                <td>My Wishlist</td>
+                <td>❤️</td>
+                <td>Wishlist Screen</td>
+            </tr>
+            <tr>
+                <td>Notifications</td>
+                <td>🔔</td>
+                <td>Notification Settings</td>
+            </tr>
+            <tr>
+                <td>Help & Support</td>
+                <td>❓</td>
+                <td>Feedback Screen</td>
+            </tr>
+            <tr>
+                <td>About</td>
+                <td>ℹ️</td>
+                <td>About Screen</td>
+            </tr>
+            <tr>
+                <td>Logout</td>
+                <td>🚪</td>
+                <td>Login Screen</td>
+            </tr>
+        </table>
+
+        <h3>Screenshot</h3>
+        <div class="screenshot-box">
+            <p class="screenshot-label">📱 INSERT PROFILE SCREEN SCREENSHOT</p>
+        </div>
+
+        <h2>4.10.2 Edit Profile Screen</h2>
+        <div class="info-card">
+            <p><strong>File Location:</strong> <code>lib/screens/profile/edit_profile_screen.dart</code></p>
+            <p><strong>Purpose:</strong> Update user information and profile picture.</p>
+        </div>
+
+        <h3>Editable Fields</h3>
+        <table>
+            <tr>
+                <th>Field</th>
+                <th>Description</th>
+            </tr>
+            <tr>
+                <td>Profile Image</td>
+                <td>Upload from camera or gallery (Supabase Storage)</td>
+            </tr>
+            <tr>
+                <td>Full Name</td>
+                <td>Display name</td>
+            </tr>
+            <tr>
+                <td>Phone Number</td>
+                <td>Contact number</td>
+            </tr>
+            <tr>
+                <td>Address</td>
+                <td>Delivery address with location picker</td>
+            </tr>
+        </table>
+
+        <h3>Screenshot</h3>
+        <div class="screenshot-box">
+            <p class="screenshot-label">📱 INSERT EDIT PROFILE SCREEN SCREENSHOT</p>
+        </div>
+    </div>
+
+    <!-- NOTIFICATIONS SCREEN -->
+    <div class="page-break">
+        <div class="header-logo">⌚ WATCHHUB</div>
+        <h1 style="page-break-before: avoid;">4.11 Notifications Module</h1>
+
+        <h2>4.11.1 Notifications Screen</h2>
+        <div class="info-card">
+            <p><strong>File Location:</strong> <code>lib/screens/notifications/notifications_screen.dart</code></p>
+            <p><strong>Purpose:</strong> View all in-app notifications.</p>
+        </div>
+
+        <h3>Notification Types</h3>
+        <table>
+            <tr>
+                <th>Type</th>
+                <th>Icon</th>
+                <th>Navigation</th>
+            </tr>
+            <tr>
+                <td>Order Update</td>
+                <td>🛍️</td>
+                <td>Order Details Screen</td>
+            </tr>
+            <tr>
+                <td>Review Reply</td>
+                <td>💬</td>
+                <td>Reviews Screen</td>
+            </tr>
+            <tr>
+                <td>Promotion</td>
+                <td>🏷️</td>
+                <td>Product Details</td>
+            </tr>
+            <tr>
+                <td>System</td>
+                <td>ℹ️</td>
+                <td>None</td>
+            </tr>
+        </table>
+
+        <h3>Screenshot</h3>
+        <div class="screenshot-box">
+            <p class="screenshot-label">📱 INSERT NOTIFICATIONS SCREEN SCREENSHOT</p>
+        </div>
+    </div>
+
+</body>
+
+</html>

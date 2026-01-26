@@ -50,6 +50,12 @@ class ReviewModel {
   /// Number of helpful votes
   final int helpfulCount;
 
+  /// Admin reply to the review
+  final String? adminReply;
+
+  /// When admin replied
+  final DateTime? adminReplyAt;
+
   ReviewModel({
     required this.id,
     required this.productId,
@@ -63,6 +69,8 @@ class ReviewModel {
     this.isEdited = false,
     this.editedAt,
     this.helpfulCount = 0,
+    this.adminReply,
+    this.adminReplyAt,
   });
 
   // ===========================================================================
@@ -85,6 +93,8 @@ class ReviewModel {
       isEdited: data['isEdited'] ?? false,
       editedAt: (data['editedAt'] as Timestamp?)?.toDate(),
       helpfulCount: data['helpfulCount'] ?? 0,
+      adminReply: data['adminReply'],
+      adminReplyAt: (data['adminReplyAt'] as Timestamp?)?.toDate(),
     );
   }
 
@@ -106,6 +116,10 @@ class ReviewModel {
           ? (map['editedAt'] as Timestamp).toDate()
           : map['editedAt'] as DateTime?,
       helpfulCount: map['helpfulCount'] ?? 0,
+      adminReply: map['adminReply'],
+      adminReplyAt: map['adminReplyAt'] is Timestamp
+          ? (map['adminReplyAt'] as Timestamp).toDate()
+          : map['adminReplyAt'] as DateTime?,
     );
   }
 

@@ -17,12 +17,15 @@ class AdminAuthProvider extends ChangeNotifier {
   bool _isLoading = false;
   bool _isAdmin = false;
   String? _errorMessage;
+  String? _adminName;
 
   User? get user => _user;
   bool get isLoading => _isLoading;
   bool get isAuthenticated => _user != null && _isAdmin;
   bool get isAdmin => _isAdmin;
   String? get errorMessage => _errorMessage;
+  String? get adminName => _adminName;
+  String? get adminEmail => _user?.email;
 
   AdminAuthProvider() {
     _auth.authStateChanges().listen(_onAuthStateChanged);
@@ -34,6 +37,7 @@ class AdminAuthProvider extends ChangeNotifier {
       await _checkAdminRole(user.uid);
     } else {
       _isAdmin = false;
+      _adminName = null;
     }
     notifyListeners();
   }
@@ -44,10 +48,28 @@ class AdminAuthProvider extends ChangeNotifier {
       if (doc.exists) {
         final data = doc.data();
         _isAdmin = data?['role'] == 'admin';
+        _adminName = data?['name'] as String?;
       }
     } catch (e) {
       debugPrint('Error checking admin role: $e');
       _isAdmin = false;
+    }
+  }
+
+  /// Update admin profile
+  Future<void> updateProfile({String? name}) async {
+    if (_user == null) return;
+
+    try {
+      final updates = <String, dynamic>{};
+      if (name != null) updates['name'] = name;
+
+      await _firestore.collection('users').doc(_user!.uid).update(updates);
+      _adminName = name;
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error updating admin profile: $e');
+      rethrow;
     }
   }
 
@@ -95,6 +117,7 @@ class AdminAuthProvider extends ChangeNotifier {
   Future<void> signOut() async {
     await _auth.signOut();
     _isAdmin = false;
+    _adminName = null;
     notifyListeners();
   }
 

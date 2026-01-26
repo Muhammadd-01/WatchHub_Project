@@ -11,6 +11,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
 import '../services/firestore_crud_service.dart';
+import '../services/push_notification_service.dart';
 
 /// Authentication state provider
 ///
@@ -103,6 +104,18 @@ class AuthProvider extends ChangeNotifier {
             createdAt: DateTime.now(),
           );
         }
+
+        // Register user with OneSignal for push notifications
+        if (!kIsWeb) {
+          try {
+            final pushService = PushNotificationService();
+            await pushService.loginUser(firebaseUser.uid);
+            debugPrint('AuthProvider: Linked user to OneSignal');
+          } catch (e) {
+            debugPrint('AuthProvider: Error linking to OneSignal - $e');
+          }
+        }
+
         notifyListeners();
       } catch (e) {
         debugPrint('AuthProvider: Error fetching user data - $e');

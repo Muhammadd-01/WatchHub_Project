@@ -1,7 +1,7 @@
 // =============================================================================
 // FILE: orders_list_screen.dart
-// PURPOSE: List all orders
-// DESCRIPTION: Displays orders in a sortable data table.
+// PURPOSE: List all orders with full status management
+// DESCRIPTION: Displays orders in a sortable data table with status actions.
 // =============================================================================
 
 import 'package:flutter/material.dart';
@@ -29,6 +29,25 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<AdminOrderProvider>().fetchOrders();
     });
+  }
+
+  // All possible order statuses (including legacy 'approved' for backwards compatibility)
+  static const List<String> _allStatuses = [
+    'pending',
+    'approved',
+    'processing',
+    'shipped',
+    'completed',
+    'cancelled',
+  ];
+
+  // Normalize status to ensure it exists in the list
+  String _normalizeStatus(String? status) {
+    final s = status?.toLowerCase() ?? 'pending';
+    if (_allStatuses.contains(s)) return s;
+    // Map old statuses to new ones
+    if (s == 'delivered') return 'completed';
+    return 'pending'; // Default fallback
   }
 
   @override
@@ -68,7 +87,7 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
             child: DataTable2(
               columnSpacing: 12,
               horizontalMargin: 12,
-              minWidth: 900,
+              minWidth: 1000,
               headingRowColor: WidgetStateColor.resolveWith(
                   (states) => AppColors.surfaceColor),
               columns: const [
@@ -78,12 +97,14 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
                 DataColumn2(label: Text('Total'), size: ColumnSize.S),
                 DataColumn2(label: Text('Status'), size: ColumnSize.S),
                 DataColumn2(label: Text('Items'), size: ColumnSize.S),
-                DataColumn2(label: Text('Actions'), fixedWidth: 100),
+                DataColumn2(label: Text('Actions'), fixedWidth: 150),
               ],
               rows: provider.orders.map((order) {
                 final date = order['createdAt'] != null
                     ? (order['createdAt'] as Timestamp).toDate()
                     : DateTime.now();
+                final currentStatus =
+                    _normalizeStatus(order['status'] as String?);
 
                 return DataRow(
                   cells: [
@@ -97,45 +118,11 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
                         '\$${(order['totalAmount'] ?? 0).toStringAsFixed(2)}',
                         style: AppTextStyles.bodyMedium
                             .copyWith(color: AppColors.primaryGold))),
-                    DataCell(_buildStatusBadge(order['status'] ?? 'pending')),
+                    DataCell(_buildStatusBadge(currentStatus)),
                     DataCell(Text(
                         '${(order['items'] as List?)?.length ?? 0} items',
                         style: AppTextStyles.bodyMedium)),
-                    DataCell(
-                      (order['status'] ?? 'pending') == 'pending'
-                          ? DropdownButtonHideUnderline(
-                              child: DropdownButton<String>(
-                                value: null,
-                                isDense: true,
-                                hint: const Text('Action',
-                                    style: TextStyle(fontSize: 12)),
-                                icon: const Icon(Icons.arrow_drop_down,
-                                    color: AppColors.primaryGold, size: 20),
-                                items: const [
-                                  DropdownMenuItem(
-                                    value: 'approved',
-                                    child: Text('Approve',
-                                        style: TextStyle(
-                                            color: AppColors.success,
-                                            fontSize: 13)),
-                                  ),
-                                  DropdownMenuItem(
-                                    value: 'cancelled',
-                                    child: Text('Decline',
-                                        style: TextStyle(
-                                            color: AppColors.error,
-                                            fontSize: 13)),
-                                  ),
-                                ],
-                                onChanged: (val) {
-                                  if (val != null) {
-                                    _confirmUpdateStatus(context, order, val);
-                                  }
-                                },
-                              ),
-                            )
-                          : _buildStatusText(order['status'] ?? 'pending'),
-                    ),
+                    DataCell(_buildStatusDropdown(order, currentStatus)),
                   ],
                 );
               }).toList(),
@@ -146,23 +133,76 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
     );
   }
 
-  Widget _buildStatusBadge(String status) {
-    Color color;
+  Widget _buildStatusDropdown(
+      Map<String, dynamic> order, String currentStatus) {
+    // Don't allow changes for completed or cancelled orders
+    if (currentStatus == 'completed' || currentStatus == 'cancelled') {
+      return _buildFinalStatusText(currentStatus);
+    }
+
+    return DropdownButtonHideUnderline(
+      child: DropdownButton<String>(
+        value: currentStatus,
+        isDense: true,
+        icon: const Icon(Icons.arrow_drop_down,
+            color: AppColors.primaryGold, size: 20),
+        items: _allStatuses.map((status) {
+          return DropdownMenuItem(
+            value: status,
+            child: Text(
+              _getStatusLabel(status),
+              style: TextStyle(
+                color: _getStatusColor(status),
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          );
+        }).toList(),
+        onChanged: (newStatus) {
+          if (newStatus != null && newStatus != currentStatus) {
+            _confirmUpdateStatus(context, order, newStatus);
+          }
+        },
+      ),
+    );
+  }
+
+  String _getStatusLabel(String status) {
+    switch (status) {
+      case 'pending':
+        return 'Pending';
+      case 'processing':
+        return 'Processing';
+      case 'shipped':
+        return 'Shipped';
+      case 'completed':
+        return 'Completed';
+      case 'cancelled':
+        return 'Cancelled';
+      default:
+        return status.toUpperCase();
+    }
+  }
+
+  Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
       case 'completed':
-      case 'delivered':
-        color = AppColors.success;
-        break;
+        return AppColors.success;
       case 'processing':
+        return Colors.blue;
       case 'shipped':
-        color = AppColors.info;
-        break;
+        return AppColors.info;
       case 'cancelled':
-        color = AppColors.error;
-        break;
+        return AppColors.error;
+      case 'pending':
       default:
-        color = AppColors.warning;
+        return AppColors.warning;
     }
+  }
+
+  Widget _buildStatusBadge(String status) {
+    final color = _getStatusColor(status);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -172,8 +212,19 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
         border: Border.all(color: color.withOpacity(0.3)),
       ),
       child: Text(
-        status.toUpperCase(),
+        _getStatusLabel(status).toUpperCase(),
         style: AppTextStyles.labelSmall.copyWith(color: color),
+      ),
+    );
+  }
+
+  Widget _buildFinalStatusText(String status) {
+    final color = _getStatusColor(status);
+    return Text(
+      _getStatusLabel(status),
+      style: AppTextStyles.bodyMedium.copyWith(
+        color: color,
+        fontWeight: FontWeight.bold,
       ),
     );
   }
@@ -184,10 +235,10 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.cardBackground,
-        title: Text('${newStatus.toUpperCase()} Order?',
+        title: Text('Update Order Status?',
             style: const TextStyle(color: AppColors.textPrimary)),
         content: Text(
-            'Are you sure you want to mark order #${order['id'].toString().substring(0, 6)} as $newStatus?',
+            'Change order #${order['id'].toString().substring(0, 6)} status to "${_getStatusLabel(newStatus)}"?',
             style: const TextStyle(color: AppColors.textSecondary)),
         actions: [
           TextButton(
@@ -202,8 +253,8 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
                     order['id'], newStatus,
                     userId: order['userId']);
                 if (context.mounted) {
-                  AdminHelpers.showSuccessSnackbar(
-                      context, 'Order marked as $newStatus');
+                  AdminHelpers.showSuccessSnackbar(context,
+                      'Order status updated to ${_getStatusLabel(newStatus)}');
                 }
               } catch (e) {
                 if (context.mounted) {
@@ -213,39 +264,12 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
               }
             },
             style: TextButton.styleFrom(
-              foregroundColor: newStatus == 'cancelled'
-                  ? AppColors.error
-                  : AppColors.success,
+              foregroundColor: _getStatusColor(newStatus),
             ),
-            child: Text(newStatus == 'cancelled' ? 'Decline' : 'Approve'),
+            child: Text('Update to ${_getStatusLabel(newStatus)}'),
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildStatusText(String status) {
-    Color color;
-    String label;
-    switch (status.toLowerCase()) {
-      case 'approved':
-      case 'completed':
-      case 'delivered':
-        color = AppColors.success;
-        label = 'Approved';
-        break;
-      case 'cancelled':
-        color = AppColors.error;
-        label = 'Declined';
-        break;
-      default:
-        color = AppColors.textSecondary;
-        label = status.toUpperCase();
-    }
-    return Text(
-      label,
-      style: AppTextStyles.bodyMedium
-          .copyWith(color: color, fontWeight: FontWeight.bold),
     );
   }
 }

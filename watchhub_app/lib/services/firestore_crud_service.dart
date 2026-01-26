@@ -828,6 +828,24 @@ class FirestoreCrudService {
         .update({'read': true});
   }
 
+  /// Clear all notifications for a user
+  Future<void> clearAllNotifications(String uid) async {
+    try {
+      final snapshot =
+          await _usersCollection.doc(uid).collection('notifications').get();
+
+      final batch = _firestore.batch();
+      for (final doc in snapshot.docs) {
+        batch.delete(doc.reference);
+      }
+      await batch.commit();
+      debugPrint('FirestoreCrudService: All notifications cleared for $uid');
+    } catch (e) {
+      debugPrint('FirestoreCrudService: Error clearing notifications - $e');
+      rethrow;
+    }
+  }
+
   /// Stream of user's orders
   Stream<List<OrderModel>> ordersStream(String uid) {
     return _ordersCollection
@@ -941,6 +959,23 @@ class FirestoreCrudService {
       debugPrint('FirestoreCrudService: Review updated');
     } catch (e) {
       debugPrint('FirestoreCrudService: Error updating review - $e');
+      rethrow;
+    }
+  }
+
+  /// Increments the helpful count for a review
+  Future<void> incrementHelpfulCount(String productId, String reviewId) async {
+    try {
+      await _productsCollection
+          .doc(productId)
+          .collection(AppConstants.reviewsSubcollection)
+          .doc(reviewId)
+          .update({
+        'helpfulCount': FieldValue.increment(1),
+      });
+      debugPrint('FirestoreCrudService: Helpful count incremented');
+    } catch (e) {
+      debugPrint('FirestoreCrudService: Error incrementing helpful count - $e');
       rethrow;
     }
   }

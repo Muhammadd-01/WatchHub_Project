@@ -71,10 +71,13 @@ class SupabaseService {
 
       debugPrint('SupabaseService: Uploading product image - $filePath');
 
+      // Read file as bytes for more reliable upload
+      final bytes = await imageFile.readAsBytes();
+
       // Upload the file
       await _client.storage
           .from(AppConstants.productImagesBucket)
-          .upload(filePath, imageFile);
+          .uploadBinary(filePath, bytes);
 
       // Get the public URL
       final publicUrl = _client.storage
@@ -158,10 +161,13 @@ class SupabaseService {
 
       debugPrint('SupabaseService: Uploading profile image - $filePath');
 
+      // Read file as bytes for more reliable upload
+      final bytes = await imageFile.readAsBytes();
+
       // Upload the file
       await _client.storage
           .from(AppConstants.profileImagesBucket)
-          .upload(filePath, imageFile);
+          .uploadBinary(filePath, bytes);
 
       // Get the public URL
       final publicUrl = _client.storage
@@ -171,8 +177,11 @@ class SupabaseService {
       debugPrint('SupabaseService: Profile image uploaded - $publicUrl');
 
       return publicUrl;
-    } catch (e) {
-      debugPrint('SupabaseService: Error uploading profile image - $e');
+    } catch (e, stackTrace) {
+      debugPrint('SupabaseService: Error uploading profile image');
+      debugPrint('  Error Type: ${e.runtimeType}');
+      debugPrint('  Error: $e');
+      debugPrint('  Stack: $stackTrace');
       throw _handleStorageError(e, 'uploading profile image');
     }
   }
@@ -389,18 +398,23 @@ class SupabaseService {
     if (error is StorageException) {
       if (error.statusCode == '404') {
         message =
-            'Storage bucket not found. Please ensure buckets are created in Supabase.';
+            'Storage bucket not found. Please ensure "product-images" and "profile-images" buckets are created in Supabase.';
       } else if (error.statusCode == '403') {
         message =
-            'Access denied. Please check your Supabase Storage RLS policies.';
+            'Access denied. Please check your Supabase Storage RLS policies for the "${operation.contains('product') ? 'product-images' : 'profile-images'}" bucket.';
       } else if (error.statusCode == '413') {
         message = 'File is too large to upload.';
-      } else if (error.message.contains('bucket not found')) {
+      } else if (error.message.toLowerCase().contains('bucket not found')) {
         message =
             'Bucket not found. Ensure "product-images" and "profile-images" buckets exist.';
       } else {
-        message = 'Supabase Storage error: ${error.message}';
+        message =
+            'Supabase Storage error: ${error.message} (Status: ${error.statusCode})';
       }
+    } else if (error.toString().contains('SocketException') ||
+        error.toString().contains('ClientException') ||
+        error.toString().contains('Failed host lookup')) {
+      message = 'Network error: Please check your internet connection.';
     } else {
       message = 'Unexpected storage error: $error';
     }

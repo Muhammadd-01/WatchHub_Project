@@ -5,6 +5,7 @@
 // =============================================================================
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:provider/provider.dart';
 import '../core/constants/app_colors.dart';
 import '../providers/auth_provider.dart';
@@ -56,8 +57,10 @@ class _MainScreenState extends State<MainScreen> {
         // Also ensure products are loaded for search
         context.read<ProductProvider>().refresh();
 
-        // Initialize Push Notifications with UID
-        PushNotificationService().initialize(navigatorKey, uid: uid);
+        // Initialize Push Notifications with UID (not supported on web)
+        if (!kIsWeb) {
+          PushNotificationService().initialize(navigatorKey, uid: uid);
+        }
       }
     });
   }

@@ -4,6 +4,7 @@
 // DESCRIPTION: Features hero banner, categories, featured products, new arrivals.
 // =============================================================================
 
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -17,7 +18,6 @@ import '../../providers/category_provider.dart';
 import '../../providers/notification_provider.dart';
 import '../../widgets/common/glass_container.dart';
 import '../../models/product_model.dart';
-import '../../widgets/home/category_chip.dart';
 import '../../widgets/common/cart_badge.dart';
 import '../../widgets/home/auto_looping_product_card.dart';
 
@@ -295,30 +295,7 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 16),
             SizedBox(
               height: 42,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: categories.length,
-                itemBuilder: (context, index) {
-                  final category = categories[index];
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 12),
-                    child: CategoryChip(
-                      label: category.name,
-                      onTap: () {
-                        Navigator.pushNamed(
-                          context,
-                          AppRoutes.products,
-                          arguments: {
-                            'title': category.name,
-                            'category': category.name
-                          },
-                        );
-                      },
-                    ),
-                  );
-                },
-              ),
+              child: _AutoScrollingCategories(categories: categories),
             ),
             const SizedBox(height: 32),
           ],
@@ -683,6 +660,132 @@ class _ErrorBanner extends StatelessWidget {
           ),
         ).animate().fadeIn().shake(hz: 4, duration: 500.ms);
       },
+    );
+  }
+}
+
+/// Auto-scrolling categories widget that loops continuously
+class _AutoScrollingCategories extends StatefulWidget {
+  final List<dynamic> categories;
+
+  const _AutoScrollingCategories({required this.categories});
+
+  @override
+  State<_AutoScrollingCategories> createState() =>
+      _AutoScrollingCategoriesState();
+}
+
+class _AutoScrollingCategoriesState extends State<_AutoScrollingCategories> {
+  late ScrollController _scrollController;
+  double _scrollPosition = 0;
+  Timer? _scrollTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController = ScrollController();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _startAutoScroll();
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollTimer?.cancel();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _startAutoScroll() {
+    _scrollTimer?.cancel();
+    _scrollTimer = Timer.periodic(const Duration(milliseconds: 50), (timer) {
+      if (!mounted || !_scrollController.hasClients) return;
+
+      _scrollPosition += 0.5; // Speed of scroll
+
+      // Reset to beginning when reaching the end
+      if (_scrollController.position.maxScrollExtent > 0 &&
+          _scrollPosition >= _scrollController.position.maxScrollExtent) {
+        _scrollPosition = 0;
+        _scrollController.jumpTo(0);
+      } else if (_scrollController.hasClients) {
+        _scrollController.jumpTo(_scrollPosition);
+      }
+    });
+  }
+
+  void _stopAutoScroll() {
+    _scrollTimer?.cancel();
+    _scrollTimer = null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Duplicate categories for seamless loop effect
+    final loopedCategories = [
+      ...widget.categories,
+      ...widget.categories,
+      ...widget.categories,
+    ];
+
+    return NotificationListener<ScrollNotification>(
+      onNotification: (notification) {
+        // Pause auto-scroll when user is manually scrolling
+        if (notification is ScrollStartNotification) {
+          _stopAutoScroll();
+        } else if (notification is ScrollEndNotification) {
+          _scrollPosition = _scrollController.offset;
+          _startAutoScroll();
+        }
+        return false;
+      },
+      child: ListView.builder(
+        controller: _scrollController,
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        itemCount: loopedCategories.length,
+        itemBuilder: (context, index) {
+          final category = loopedCategories[index];
+          return Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: GestureDetector(
+              onTap: () {
+                Navigator.pushNamed(
+                  context,
+                  AppRoutes.products,
+                  arguments: {
+                    'title': category.name,
+                    'category': category.name,
+                  },
+                );
+              },
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.primaryGold.withOpacity(0.15),
+                      AppColors.primaryGold.withOpacity(0.05),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: AppColors.primaryGold.withOpacity(0.3),
+                  ),
+                ),
+                child: Text(
+                  category.name,
+                  style: AppTextStyles.labelMedium.copyWith(
+                    color: AppColors.primaryGold,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 }

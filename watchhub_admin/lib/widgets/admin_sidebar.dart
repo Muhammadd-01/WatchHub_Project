@@ -57,9 +57,12 @@ class AdminSidebar extends StatelessWidget {
               _buildNavItem(
                   context, 'Active Carts', Icons.shopping_cart_checkout, 4),
               _buildNavItem(context, 'Users', Icons.people_outline, 5),
-              _buildNavItem(context, 'Feedback', Icons.feedback_outlined, 6),
+              _buildNavItem(context, 'Reviews', Icons.rate_review_outlined, 6),
+              _buildNavItem(context, 'Feedback', Icons.feedback_outlined, 7),
               const Divider(color: AppColors.divider, height: 32),
-              _buildNavItem(context, 'Settings', Icons.settings_outlined, 7),
+              _buildNavItem(
+                  context, 'Profile', Icons.account_circle_outlined, 8),
+              _buildNavItem(context, 'Settings', Icons.settings_outlined, 9),
             ],
           ),
         ),

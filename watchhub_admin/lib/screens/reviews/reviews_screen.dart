@@ -1,0 +1,445 @@
+// =============================================================================
+// FILE: reviews_screen.dart
+// PURPOSE: Admin Reviews Management Screen
+// DESCRIPTION: Shows all product reviews and allows admin to reply.
+// =============================================================================
+
+import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
+import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import '../../core/constants/app_colors.dart';
+import '../../core/constants/app_text_styles.dart';
+import '../../core/utils/admin_helpers.dart';
+import '../../widgets/admin_scaffold.dart';
+
+class ReviewsScreen extends StatefulWidget {
+  const ReviewsScreen({super.key});
+
+  @override
+  State<ReviewsScreen> createState() => _ReviewsScreenState();
+}
+
+class _ReviewsScreenState extends State<ReviewsScreen> {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  List<Map<String, dynamic>> _reviews = [];
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchAllReviews();
+  }
+
+  Future<void> _fetchAllReviews() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      // Get all products
+      final productsSnapshot = await _firestore.collection('products').get();
+      final allReviews = <Map<String, dynamic>>[];
+
+      for (final productDoc in productsSnapshot.docs) {
+        final productData = productDoc.data();
+        final reviewsSnapshot = await productDoc.reference
+            .collection('reviews')
+            .orderBy('createdAt', descending: true)
+            .get();
+
+        for (final reviewDoc in reviewsSnapshot.docs) {
+          final reviewData = reviewDoc.data();
+          reviewData['id'] = reviewDoc.id;
+          reviewData['productId'] = productDoc.id;
+          reviewData['productName'] = productData['name'] ?? 'Unknown Product';
+          if (reviewData['createdAt'] is Timestamp) {
+            reviewData['createdAt'] =
+                (reviewData['createdAt'] as Timestamp).toDate();
+          }
+          allReviews.add(reviewData);
+        }
+      }
+
+      // Sort by date
+      allReviews.sort((a, b) {
+        final dateA = a['createdAt'] as DateTime? ?? DateTime(2000);
+        final dateB = b['createdAt'] as DateTime? ?? DateTime(2000);
+        return dateB.compareTo(dateA);
+      });
+
+      setState(() {
+        _reviews = allReviews;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = 'Failed to load reviews: $e';
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _replyToReview(Map<String, dynamic> review) async {
+    final controller = TextEditingController(
+      text: review['adminReply'] as String? ?? '',
+    );
+
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.cardBackground,
+        title: const Text('Reply to Review',
+            style: TextStyle(color: AppColors.textPrimary)),
+        content: SizedBox(
+          width: 400,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Original review
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceColor,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(review['userName'] ?? 'Anonymous',
+                            style: AppTextStyles.labelLarge),
+                        const Spacer(),
+                        _buildRatingStars(
+                            (review['rating'] as num?)?.toDouble() ?? 0),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(review['comment'] ?? '',
+                        style: AppTextStyles.bodyMedium),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              // Reply input
+              TextField(
+                controller: controller,
+                maxLines: 4,
+                style: const TextStyle(color: AppColors.textPrimary),
+                decoration: InputDecoration(
+                  labelText: 'Your Reply',
+                  labelStyle: const TextStyle(color: AppColors.textSecondary),
+                  hintText: 'Write your response...',
+                  hintStyle: TextStyle(
+                      color: AppColors.textSecondary.withOpacity(0.5)),
+                  filled: true,
+                  fillColor: AppColors.surfaceColor,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, controller.text),
+            style: TextButton.styleFrom(foregroundColor: AppColors.primaryGold),
+            child: const Text('Save Reply'),
+          ),
+        ],
+      ),
+    );
+
+    if (result != null && result.isNotEmpty) {
+      try {
+        // Save the reply
+        await _firestore
+            .collection('products')
+            .doc(review['productId'])
+            .collection('reviews')
+            .doc(review['id'])
+            .update({
+          'adminReply': result,
+          'adminReplyAt': FieldValue.serverTimestamp(),
+        });
+
+        // Send notification to the user
+        final userId = review['userId'] as String?;
+        if (userId != null && userId.isNotEmpty) {
+          // In-app notification
+          await _firestore
+              .collection('users')
+              .doc(userId)
+              .collection('notifications')
+              .add({
+            'title': 'Reply to Your Review',
+            'message':
+                'WatchHub has replied to your review on ${review['productName']}',
+            'read': false,
+            'createdAt': FieldValue.serverTimestamp(),
+            'type': 'review_reply',
+            'productId': review['productId'],
+          });
+
+          // Push notification via OneSignal
+          await _sendPushNotification(
+            userId,
+            'Reply to Your Review',
+            'WatchHub has replied to your review on ${review['productName']}',
+            review['productId'] as String?,
+          );
+        }
+
+        AdminHelpers.showSuccessSnackbar(context, 'Reply saved successfully');
+        _fetchAllReviews();
+      } catch (e) {
+        AdminHelpers.showErrorSnackbar(context, 'Failed to save reply');
+      }
+    }
+  }
+
+  /// Send push notification via OneSignal
+  Future<void> _sendPushNotification(
+      String uid, String title, String body, String? productId) async {
+    try {
+      // 1. Get User's OneSignal ID
+      final userDoc = await _firestore.collection('users').doc(uid).get();
+      final playerId = userDoc.data()?['oneSignalPlayerId'];
+
+      if (playerId == null) {
+        debugPrint('ReviewsScreen: OneSignal Player ID not found for $uid');
+        return;
+      }
+
+      // 2. Get API Keys from .env
+      final appId = dotenv.env['ONESIGNAL_APP_ID'];
+      final restApiKey = dotenv.env['ONESIGNAL_REST_API_KEY'];
+
+      if (appId == null || restApiKey == null) {
+        debugPrint('ReviewsScreen: OneSignal keys not configured');
+        return;
+      }
+
+      // 3. Send Request to OneSignal REST API
+      final response = await http.post(
+        Uri.parse('https://onesignal.com/api/v1/notifications'),
+        headers: {
+          'Content-Type': 'application/json; charset=utf-8',
+          'Authorization': 'Basic $restApiKey',
+        },
+        body: jsonEncode({
+          'app_id': appId,
+          'include_player_ids': [playerId],
+          'headings': {'en': title},
+          'contents': {'en': body},
+          'data': {'type': 'review_reply', 'productId': productId},
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        debugPrint('ReviewsScreen: OneSignal Push sent successfully');
+      } else {
+        debugPrint('ReviewsScreen: OneSignal Push failed - ${response.body}');
+      }
+    } catch (e) {
+      debugPrint('ReviewsScreen: Error sending push - $e');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AdminScaffold(
+      title: 'Reviews',
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.refresh, color: AppColors.primaryGold),
+          onPressed: _fetchAllReviews,
+        ),
+      ],
+      body: _buildBody(),
+    );
+  }
+
+  Widget _buildBody() {
+    if (_isLoading) {
+      return const Center(
+          child: CircularProgressIndicator(color: AppColors.primaryGold));
+    }
+
+    if (_error != null) {
+      return Center(
+          child: Text(_error!, style: const TextStyle(color: AppColors.error)));
+    }
+
+    if (_reviews.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.rate_review_outlined,
+                size: 64, color: AppColors.textSecondary.withOpacity(0.5)),
+            const SizedBox(height: 16),
+            Text('No reviews yet', style: AppTextStyles.titleMedium),
+          ],
+        ),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(24),
+      itemCount: _reviews.length,
+      itemBuilder: (context, index) {
+        final review = _reviews[index];
+        return _buildReviewCard(review);
+      },
+    );
+  }
+
+  Widget _buildReviewCard(Map<String, dynamic> review) {
+    final date = review['createdAt'] as DateTime?;
+    final hasReply = (review['adminReply'] as String?)?.isNotEmpty ?? false;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.cardBackground,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.divider),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Row(
+            children: [
+              // Product name
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      review['productName'] ?? 'Unknown Product',
+                      style: AppTextStyles.titleSmall
+                          .copyWith(color: AppColors.primaryGold),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'by ${review['userName'] ?? 'Anonymous'}',
+                      style: AppTextStyles.bodySmall
+                          .copyWith(color: AppColors.textSecondary),
+                    ),
+                  ],
+                ),
+              ),
+              // Rating
+              _buildRatingStars((review['rating'] as num?)?.toDouble() ?? 0),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Comment
+          Text(
+            review['comment'] ?? '',
+            style: AppTextStyles.bodyMedium,
+          ),
+          const SizedBox(height: 8),
+
+          // Date
+          Text(
+            date != null
+                ? DateFormat('MMM d, yyyy').format(date)
+                : 'Unknown date',
+            style: AppTextStyles.labelSmall
+                .copyWith(color: AppColors.textSecondary),
+          ),
+
+          // Admin reply
+          if (hasReply) ...[
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.primaryGold.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border:
+                    Border.all(color: AppColors.primaryGold.withOpacity(0.3)),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.reply,
+                      color: AppColors.primaryGold, size: 18),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Admin Reply',
+                            style: AppTextStyles.labelSmall
+                                .copyWith(color: AppColors.primaryGold)),
+                        const SizedBox(height: 4),
+                        Text(review['adminReply'],
+                            style: AppTextStyles.bodySmall),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+
+          // Actions
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton.icon(
+                onPressed: () => _replyToReview(review),
+                icon: Icon(
+                  hasReply ? Icons.edit : Icons.reply,
+                  size: 18,
+                  color: AppColors.primaryGold,
+                ),
+                label: Text(
+                  hasReply ? 'Edit Reply' : 'Reply',
+                  style: const TextStyle(color: AppColors.primaryGold),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRatingStars(double rating) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: List.generate(5, (index) {
+        if (index < rating.floor()) {
+          return const Icon(Icons.star, color: AppColors.primaryGold, size: 16);
+        } else if (index < rating) {
+          return const Icon(Icons.star_half,
+              color: AppColors.primaryGold, size: 16);
+        } else {
+          return Icon(Icons.star_border,
+              color: AppColors.primaryGold.withOpacity(0.3), size: 16);
+        }
+      }),
+    );
+  }
+}

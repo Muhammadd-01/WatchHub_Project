@@ -50,6 +50,17 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
     setState(() => _isLoading = false);
   }
 
+  Future<void> _markHelpful(ReviewModel review) async {
+    try {
+      await _firestoreService.incrementHelpfulCount(
+        widget.productId,
+        review.id,
+      );
+    } catch (e) {
+      debugPrint('Error marking helpful: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -100,8 +111,11 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
                   itemCount: _reviews.length,
                   itemBuilder: (context, index) {
+                    final review = _reviews[index];
                     return _ReviewCard(
-                      review: _reviews[index],
+                      review: review,
+                      productId: widget.productId,
+                      onHelpful: () => _markHelpful(review),
                     ).animate().fadeIn(delay: (50 * index).ms);
                   },
                 ),
@@ -171,10 +185,23 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
   }
 }
 
-class _ReviewCard extends StatelessWidget {
+class _ReviewCard extends StatefulWidget {
   final ReviewModel review;
+  final String productId;
+  final VoidCallback onHelpful;
 
-  const _ReviewCard({required this.review});
+  const _ReviewCard({
+    required this.review,
+    required this.productId,
+    required this.onHelpful,
+  });
+
+  @override
+  State<_ReviewCard> createState() => _ReviewCardState();
+}
+
+class _ReviewCardState extends State<_ReviewCard> {
+  bool _hasVotedHelpful = false;
 
   @override
   Widget build(BuildContext context) {
@@ -202,8 +229,8 @@ class _ReviewCard extends StatelessWidget {
                 ),
                 child: Center(
                   child: Text(
-                    review.userName.isNotEmpty
-                        ? review.userName[0].toUpperCase()
+                    widget.review.userName.isNotEmpty
+                        ? widget.review.userName[0].toUpperCase()
                         : 'U',
                     style: AppTextStyles.titleSmall.copyWith(
                       color: AppColors.primaryGold,
@@ -217,13 +244,13 @@ class _ReviewCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      review.userName,
+                      widget.review.userName,
                       style: AppTextStyles.titleSmall.copyWith(
                         color: Theme.of(context).textTheme.titleMedium?.color,
                       ),
                     ),
                     Text(
-                      Helpers.formatRelativeTime(review.createdAt),
+                      Helpers.formatRelativeTime(widget.review.createdAt),
                       style: AppTextStyles.bodySmall.copyWith(
                         color: Theme.of(context).textTheme.bodySmall?.color,
                       ),
@@ -231,7 +258,7 @@ class _ReviewCard extends StatelessWidget {
                   ],
                 ),
               ),
-              if (review.isVerifiedPurchase)
+              if (widget.review.isVerifiedPurchase)
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 8,
@@ -256,17 +283,17 @@ class _ReviewCard extends StatelessWidget {
 
           // Rating
           RatingBarIndicator(
-            rating: review.rating,
+            rating: widget.review.rating,
             itemBuilder: (context, _) =>
                 const Icon(Icons.star_rounded, color: AppColors.ratingColor),
             itemSize: 18,
           ),
 
           // Title
-          if (review.title.isNotEmpty) ...[
+          if (widget.review.title.isNotEmpty) ...[
             const SizedBox(height: 12),
             Text(
-              review.title,
+              widget.review.title,
               style: AppTextStyles.titleSmall.copyWith(
                 color: Theme.of(context).textTheme.titleMedium?.color,
               ),
@@ -276,24 +303,75 @@ class _ReviewCard extends StatelessWidget {
           // Comment
           const SizedBox(height: 8),
           Text(
-            review.comment,
+            widget.review.comment,
             style: AppTextStyles.bodyMedium.copyWith(
               color: Theme.of(context).textTheme.bodyMedium?.color,
             ),
           ),
+
+          // Admin Reply
+          if (widget.review.adminReply != null &&
+              widget.review.adminReply!.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.primaryGold.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border:
+                    Border.all(color: AppColors.primaryGold.withOpacity(0.3)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.store,
+                          color: AppColors.primaryGold, size: 16),
+                      const SizedBox(width: 6),
+                      Text(
+                        'WatchHub Response',
+                        style: AppTextStyles.labelSmall.copyWith(
+                          color: AppColors.primaryGold,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    widget.review.adminReply!,
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: Theme.of(context).textTheme.bodyMedium?.color,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
 
           // Helpful
           const SizedBox(height: 12),
           Row(
             children: [
               TextButton.icon(
-                onPressed: () {
-                  // TODO: Mark as helpful
-                },
-                icon: const Icon(Icons.thumb_up_outlined, size: 16),
-                label: Text('Helpful (${review.helpfulCount})'),
+                onPressed: _hasVotedHelpful
+                    ? null
+                    : () {
+                        setState(() => _hasVotedHelpful = true);
+                        widget.onHelpful();
+                      },
+                icon: Icon(
+                  _hasVotedHelpful ? Icons.thumb_up : Icons.thumb_up_outlined,
+                  size: 16,
+                  color: _hasVotedHelpful ? AppColors.primaryGold : null,
+                ),
+                label: Text(
+                    'Helpful (${widget.review.helpfulCount + (_hasVotedHelpful ? 1 : 0)})'),
                 style: TextButton.styleFrom(
-                  foregroundColor: Theme.of(context).textTheme.bodySmall?.color,
+                  foregroundColor: _hasVotedHelpful
+                      ? AppColors.primaryGold
+                      : Theme.of(context).textTheme.bodySmall?.color,
                 ),
               ),
             ],

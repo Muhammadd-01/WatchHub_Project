@@ -17,6 +17,8 @@ import 'users/users_list_screen.dart';
 import 'categories/categories_screen.dart';
 import 'feedback/feedback_screen.dart';
 import 'carts/active_carts_screen.dart';
+import 'reviews/reviews_screen.dart';
+import 'profile/admin_profile_screen.dart';
 import 'settings/settings_screen.dart';
 
 class AdminMainScreen extends StatefulWidget {
@@ -34,8 +36,10 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
     const OrdersListScreen(), // 3
     const ActiveCartsScreen(), // 4
     const UsersListScreen(), // 5
-    const FeedbackScreen(), // 6
-    const SettingsScreen(), // 7
+    const ReviewsScreen(), // 6
+    const FeedbackScreen(), // 7
+    const AdminProfileScreen(), // 8
+    const SettingsScreen(), // 9
   ];
 
   @override

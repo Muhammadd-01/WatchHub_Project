@@ -550,94 +550,115 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         border: Border(top: BorderSide(color: Theme.of(context).dividerColor)),
       ),
       child: SafeArea(
-        child: Row(
-          children: [
-            // Quantity selector
-            Container(
-              decoration: BoxDecoration(
-                border: Border.all(color: Theme.of(context).dividerColor),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: Icon(Icons.remove,
-                        color: Theme.of(context).iconTheme.color),
-                    onPressed: _decrementQuantity,
-                    iconSize: 20,
-                  ),
-                  Text('$_quantity',
-                      style: AppTextStyles.titleMedium.copyWith(
-                        color: Theme.of(context).textTheme.titleMedium?.color,
-                      )),
-                  IconButton(
-                    icon: Icon(Icons.add,
-                        color: Theme.of(context).iconTheme.color),
-                    onPressed: () => _incrementQuantity(product),
-                    iconSize: 20,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 16),
-            // Buttons
-            Expanded(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            // Use vertical layout for narrow screens
+            final isNarrow = constraints.maxWidth < 360;
+
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Quantity and buttons row (or column for narrow screens)
+                if (isNarrow) ...[
+                  // Quantity selector on its own row for narrow screens
+                  _buildQuantitySelector(product),
+                  const SizedBox(height: 12),
+                  // Buttons stacked
+                  _buildAddToCartButton(product),
+                  const SizedBox(height: 8),
+                  _buildBuyNowButton(product),
+                ] else ...[
+                  // Normal horizontal layout
                   Row(
                     children: [
-                      Expanded(
-                        child: Consumer<CartProvider>(
-                          builder: (context, cartProvider, _) {
-                            return LoadingButton(
-                              onPressed: product.isInStock
-                                  ? () => _addToCart(product)
-                                  : null,
-                              isLoading: cartProvider.isLoading,
-                              text: 'Add to Cart',
-                              icon: Icons.shopping_cart_outlined,
-                              outlined: true,
-                              height: 54,
-                            );
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: LoadingButton(
-                          onPressed: product.isInStock
-                              ? () {
-                                  final authProvider =
-                                      context.read<AuthProvider>();
-                                  if (!authProvider.isAuthenticated) {
-                                    Navigator.pushNamed(
-                                        context, AppRoutes.login);
-                                    return;
-                                  }
-                                  Navigator.pushNamed(
-                                    context,
-                                    AppRoutes.checkout,
-                                    arguments: {
-                                      'product': product,
-                                      'quantity': _quantity,
-                                    },
-                                  );
-                                }
-                              : null,
-                          text: 'Buy Now',
-                          icon: Icons.flash_on_rounded,
-                          height: 54,
-                        ),
-                      ),
+                      // Quantity selector
+                      _buildQuantitySelector(product),
+                      const SizedBox(width: 12),
+                      // Buttons
+                      Expanded(child: _buildAddToCartButton(product)),
+                      const SizedBox(width: 8),
+                      Expanded(child: _buildBuyNowButton(product)),
                     ],
                   ),
                 ],
-              ),
-            ),
-          ],
+              ],
+            );
+          },
         ),
       ),
+    );
+  }
+
+  Widget _buildQuantitySelector(ProductModel product) {
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: Theme.of(context).dividerColor),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            icon: Icon(Icons.remove, color: Theme.of(context).iconTheme.color),
+            onPressed: _decrementQuantity,
+            iconSize: 20,
+            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Text('$_quantity',
+                style: AppTextStyles.titleMedium.copyWith(
+                  color: Theme.of(context).textTheme.titleMedium?.color,
+                )),
+          ),
+          IconButton(
+            icon: Icon(Icons.add, color: Theme.of(context).iconTheme.color),
+            onPressed: () => _incrementQuantity(product),
+            iconSize: 20,
+            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAddToCartButton(ProductModel product) {
+    return Consumer<CartProvider>(
+      builder: (context, cartProvider, _) {
+        return LoadingButton(
+          onPressed: product.isInStock ? () => _addToCart(product) : null,
+          isLoading: cartProvider.isLoading,
+          text: 'Add to Cart',
+          icon: Icons.shopping_cart_outlined,
+          outlined: true,
+          height: 48,
+        );
+      },
+    );
+  }
+
+  Widget _buildBuyNowButton(ProductModel product) {
+    return LoadingButton(
+      onPressed: product.isInStock
+          ? () {
+              final authProvider = context.read<AuthProvider>();
+              if (!authProvider.isAuthenticated) {
+                Navigator.pushNamed(context, AppRoutes.login);
+                return;
+              }
+              Navigator.pushNamed(
+                context,
+                AppRoutes.checkout,
+                arguments: {
+                  'product': product,
+                  'quantity': _quantity,
+                },
+              );
+            }
+          : null,
+      text: 'Buy Now',
+      icon: Icons.flash_on_rounded,
+      height: 48,
     );
   }
 }

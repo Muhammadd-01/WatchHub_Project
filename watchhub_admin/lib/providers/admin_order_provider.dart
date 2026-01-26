@@ -79,18 +79,21 @@ class AdminOrderProvider extends ChangeNotifier {
           String title = 'Order Update';
           String message = 'Your order status has been updated to $newStatus.';
 
-          if (newStatus == 'approved') {
-            title = 'Order Approved';
-            message = 'Your order has been approved and is being processed.';
+          if (newStatus == 'approved' || newStatus == 'processing') {
+            title = 'Order Processing';
+            message =
+                'Your order has been approved and is now being processed.';
           } else if (newStatus == 'shipped') {
             title = 'Order Shipped';
-            message = 'Your order is on its way!';
-          } else if (newStatus == 'delivered') {
-            title = 'Order Delivered';
-            message = 'Your order has been delivered. Enjoy!';
+            message = 'Great news! Your order is on its way to you.';
+          } else if (newStatus == 'completed' || newStatus == 'delivered') {
+            title = 'Order Completed';
+            message =
+                'Your order has been delivered. Thank you for shopping with us!';
           } else if (newStatus == 'cancelled') {
             title = 'Order Cancelled';
-            message = 'Your order was cancelled.';
+            message =
+                'Your order has been cancelled. Contact support if you have questions.';
           }
 
           await _sendNotification(userId, title, message);

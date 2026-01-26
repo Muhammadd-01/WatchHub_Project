@@ -81,12 +81,29 @@ class PushNotificationService {
       debugPrint(
           'OneSignal: Notification clicked: ${event.notification.title}');
 
-      // Navigate to Orders if it's an order notification (simple logic)
-      final title = event.notification.title?.toLowerCase() ?? '';
-      final body = event.notification.body?.toLowerCase() ?? '';
+      // Get additional data from notification
+      final data = event.notification.additionalData;
+      final type = data?['type'] as String?;
+      final productId = data?['productId'] as String?;
 
-      if (title.contains('order') || body.contains('order')) {
+      // Navigate based on notification type
+      if (type == 'review_reply' && productId != null) {
+        // Navigate to reviews screen for this product
+        navigatorKey.currentState?.pushNamed('/reviews', arguments: productId);
+      } else if (type == 'order_update') {
+        // Navigate to orders screen
         navigatorKey.currentState?.pushNamed('/orders');
+      } else {
+        // Fallback: check title/body for order-related keywords
+        final title = event.notification.title?.toLowerCase() ?? '';
+        final body = event.notification.body?.toLowerCase() ?? '';
+
+        if (title.contains('order') || body.contains('order')) {
+          navigatorKey.currentState?.pushNamed('/orders');
+        } else if (title.contains('review') || body.contains('review')) {
+          // Navigate to notifications screen as fallback
+          navigatorKey.currentState?.pushNamed('/notifications');
+        }
       }
     });
   }
