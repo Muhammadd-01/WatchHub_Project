@@ -22,29 +22,28 @@ class AdminScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Basic responsive check
-    final isDesktop = MediaQuery.of(context).size.width > 900;
+    // Responsive breakpoints
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isDesktop = screenWidth > 900;
+    final isTablet = screenWidth > 600 && screenWidth <= 900;
+    final isMobile = screenWidth <= 600;
 
-    // Use a simple Column layout.
-    // The overarching Scaffold comes from AdminMainScreen, unless this is a standalone page (like Login).
-    // However, if we claim to be a "Scaffold", we should probably return a Scaffold
-    // so things like Snackbars and FloatingActionButtons work if used here.
-    // BUT AdminMainScreen already provides a Scaffold. Nested Scaffolds are okay,
-    // but we want the drawer trigger to work.
+    // Responsive padding
+    final contentPadding = isMobile
+        ? const EdgeInsets.all(12)
+        : isTablet
+            ? const EdgeInsets.all(16)
+            : const EdgeInsets.all(24);
 
     return Column(
       children: [
         // Header
-        // In desktop, we always show header.
-        // In mobile, we show AppBar.
-        // Let's unify: We just render our custom header everywhere,
-        // but on mobile add a "Menu" button if we are inside the Shell.
-        _buildHeader(context, isDesktop),
+        _buildHeader(context, isDesktop, isMobile),
 
         // Main Content
         Expanded(
           child: Padding(
-            padding: const EdgeInsets.all(24),
+            padding: contentPadding,
             child: body,
           ),
         ),
@@ -52,10 +51,10 @@ class AdminScaffold extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader(BuildContext context, bool isDesktop) {
+  Widget _buildHeader(BuildContext context, bool isDesktop, bool isMobile) {
     return Container(
-      height: 80,
-      padding: const EdgeInsets.symmetric(horizontal: 32),
+      height: isMobile ? 60 : 80,
+      padding: EdgeInsets.symmetric(horizontal: isMobile ? 12 : 32),
       decoration: const BoxDecoration(
         color: AppColors.scaffoldBackground,
         border: Border(
@@ -65,35 +64,55 @@ class AdminScaffold extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Row(
-            children: [
-              if (!isDesktop)
-                Padding(
-                  padding: const EdgeInsets.only(right: 16),
-                  child: IconButton(
-                    icon: const Icon(Icons.menu),
-                    onPressed: () {
-                      Scaffold.of(context).openDrawer();
-                    },
+          Expanded(
+            child: Row(
+              children: [
+                if (!isDesktop)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: IconButton(
+                      icon: const Icon(Icons.menu),
+                      onPressed: () {
+                        Scaffold.of(context).openDrawer();
+                      },
+                    ),
+                  ),
+                if (Navigator.of(context).canPop())
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back),
+                    onPressed: () => Navigator.pop(context),
+                    tooltip: 'Go Back',
+                  ),
+                if (Navigator.of(context).canPop()) const SizedBox(width: 4),
+                Flexible(
+                  child: Text(
+                    title,
+                    style: isMobile
+                        ? AppTextStyles.titleLarge
+                        : AppTextStyles.displaySmall,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
-              // Back Button (only if can pop AND we are not at root of shell?)
-              // Since we are using IndexedStack, Navigator.canPop might be false for top level.
-              // For detail pages pushed on top, it will be true.
-              if (Navigator.of(context).canPop())
-                IconButton(
-                  icon: const Icon(Icons.arrow_back),
-                  onPressed: () => Navigator.pop(context),
-                  tooltip: 'Go Back',
-                ),
-              if (Navigator.of(context).canPop()) const SizedBox(width: 8),
-
-              Text(title, style: AppTextStyles.displaySmall),
-            ],
+              ],
+            ),
           ),
-          Row(
-            children: actions ?? [],
-          ),
+          // Actions - wrap on mobile
+          if (actions != null && actions!.isNotEmpty)
+            isMobile
+                ? actions!.length > 1
+                    ? PopupMenuButton<int>(
+                        icon: const Icon(Icons.more_vert),
+                        itemBuilder: (context) => actions!
+                            .asMap()
+                            .entries
+                            .map((e) => PopupMenuItem(
+                                  value: e.key,
+                                  child: e.value,
+                                ))
+                            .toList(),
+                      )
+                    : Row(children: actions!)
+                : Row(children: actions!),
         ],
       ),
     );

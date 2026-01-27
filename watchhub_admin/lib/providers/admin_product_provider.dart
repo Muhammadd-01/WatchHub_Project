@@ -121,6 +121,24 @@ class AdminProductProvider extends ChangeNotifier {
 
       updates['updatedAt'] = FieldValue.serverTimestamp();
 
+      // Check if stock is being explicitly set to 0 (out of stock)
+      if (updates.containsKey('stock')) {
+        final newStock = updates['stock'] as int?;
+        if (newStock != null && newStock <= 0) {
+          // Get product name from updates or fetch from Firestore
+          String productName = updates['name'] as String? ?? 'Product';
+          if (!updates.containsKey('name')) {
+            try {
+              final doc = await _productCollection.doc(id).get();
+              final docData = doc.data() as Map<String, dynamic>?;
+              productName = docData?['name'] ?? 'Product';
+            } catch (_) {}
+          }
+          // Find all users who have this product in their cart (non-blocking)
+          _notifyAndRemoveFromCarts(id, productName);
+        }
+      }
+
       await _productCollection.doc(id).update(updates);
 
       await fetchProducts();
@@ -134,14 +152,73 @@ class AdminProductProvider extends ChangeNotifier {
     }
   }
 
+  /// Find users with this product in cart and notify + remove
+  Future<void> _notifyAndRemoveFromCarts(
+      String productId, String productName) async {
+    try {
+      // Query all cart items collection group
+      final cartItems = await _firestore
+          .collectionGroup('items')
+          .where('productId', isEqualTo: productId)
+          .get();
+
+      for (final doc in cartItems.docs) {
+        try {
+          // Extract userId from path: carts/{userId}/items/{productId}
+          final pathParts = doc.reference.path.split('/');
+          if (pathParts.length >= 2 && pathParts[0] == 'carts') {
+            final userId = pathParts[1];
+
+            // Create notification for user at users/{userId}/notifications
+            await _firestore
+                .collection('users')
+                .doc(userId)
+                .collection('notifications')
+                .add({
+              'title': 'Item Out of Stock',
+              'message':
+                  '$productName in your cart is now out of stock and has been removed.',
+              'read': false,
+              'createdAt': FieldValue.serverTimestamp(),
+            });
+
+            // Remove from cart
+            await doc.reference.delete();
+            debugPrint('Removed $productName from cart for user $userId');
+          }
+        } catch (e) {
+          debugPrint('Error processing cart item: $e');
+        }
+      }
+    } catch (e) {
+      debugPrint('Error notifying users of out of stock: $e');
+    }
+  }
+
   // Delete Product
   Future<bool> deleteProduct(String id) async {
     _isLoading = true;
     notifyListeners();
 
     try {
+      // 1. Get product data to find images
+      final productDoc = await _productCollection.doc(id).get();
+      List<dynamic>? imagesToDelete;
+
+      if (productDoc.exists) {
+        final data = productDoc.data() as Map<String, dynamic>?;
+        imagesToDelete = data?['images'] as List<dynamic>?;
+      }
+
+      // 2. Delete from Firestore first (fast operation)
       await _productCollection.doc(id).delete();
       _products.removeWhere((p) => p['id'] == id);
+
+      // 3. Delete images from Supabase in background (non-blocking)
+      if (imagesToDelete != null && imagesToDelete.isNotEmpty) {
+        _deleteImagesInBackground(imagesToDelete);
+      }
+
       return true;
     } catch (e) {
       _errorMessage = 'Failed to delete product: $e';
@@ -150,6 +227,26 @@ class AdminProductProvider extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  /// Deletes images from Supabase storage in the background
+  void _deleteImagesInBackground(List<dynamic> images) {
+    Future.microtask(() async {
+      for (final imageUrl in images) {
+        try {
+          final uri = Uri.parse(imageUrl as String);
+          final pathSegments = uri.pathSegments;
+          final bucketIndex = pathSegments.indexOf('product-images');
+          if (bucketIndex != -1 && bucketIndex < pathSegments.length - 1) {
+            final filePath = pathSegments.sublist(bucketIndex + 1).join('/');
+            await _supabase.storage.from('product-images').remove([filePath]);
+            debugPrint('Deleted image: $filePath');
+          }
+        } catch (e) {
+          debugPrint('Failed to delete image from Supabase: $e');
+        }
+      }
+    });
   }
 
   Future<List<String>> _uploadImages(List<XFile> images) async {

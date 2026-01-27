@@ -26,17 +26,17 @@ class AdminSidebar extends StatelessWidget {
         Container(
           height: 100,
           alignment: Alignment.center,
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(16),
           child: Row(
             children: [
-              Container(
-                width: 32,
-                height: 32,
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: AppColors.goldGradient,
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.asset(
+                  'assets/images/watchhub_logo.png',
+                  width: 48,
+                  height: 48,
+                  fit: BoxFit.contain,
                 ),
-                child: const Icon(Icons.watch, color: Colors.black, size: 20),
               ),
               const SizedBox(width: 12),
               Text('WatchHub', style: AppTextStyles.headlineSmall),
@@ -59,10 +59,13 @@ class AdminSidebar extends StatelessWidget {
               _buildNavItem(context, 'Users', Icons.people_outline, 5),
               _buildNavItem(context, 'Reviews', Icons.rate_review_outlined, 6),
               _buildNavItem(context, 'Feedback', Icons.feedback_outlined, 7),
+              _buildNavItem(context, 'Wishlists', Icons.favorite_outline, 8),
+              _buildNavItem(
+                  context, 'Notifications', Icons.notifications_outlined, 9),
               const Divider(color: AppColors.divider, height: 32),
               _buildNavItem(
-                  context, 'Profile', Icons.account_circle_outlined, 8),
-              _buildNavItem(context, 'Settings', Icons.settings_outlined, 9),
+                  context, 'Profile', Icons.account_circle_outlined, 10),
+              _buildNavItem(context, 'Settings', Icons.settings_outlined, 11),
             ],
           ),
         ),

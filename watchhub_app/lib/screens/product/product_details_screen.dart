@@ -555,6 +555,59 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
             // Use vertical layout for narrow screens
             final isNarrow = constraints.maxWidth < 360;
 
+            // Show out of stock message
+            if (!product.isInStock) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.error.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border:
+                          Border.all(color: AppColors.error.withOpacity(0.3)),
+                    ),
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.remove_shopping_cart,
+                            color: AppColors.error),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'This item is currently out of stock',
+                            style: TextStyle(
+                              color: AppColors.error,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () => _toggleWishlist(product),
+                      icon: const Icon(Icons.favorite_outline),
+                      label: const Text('Add to Wishlist'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryGold,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            }
+
             return Column(
               mainAxisSize: MainAxisSize.min,
               children: [

@@ -1,12 +1,12 @@
 {
-    "name": "watchhub_admin",
-    "short_name": "watchhub_admin",
+    "name": "WatchHub Admin",
+    "short_name": "WatchHub",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
-    "orientation": "portrait-primary",
+    "background_color": "#0A1628",
+    "theme_color": "#00A3FF",
+    "description": "WatchHub Admin Panel - Manage your luxury watch store",
+    "orientation": "any",
     "prefer_related_applications": false,
     "icons": [
         {

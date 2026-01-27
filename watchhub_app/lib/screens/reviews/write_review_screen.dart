@@ -16,6 +16,7 @@ import '../../models/review_model.dart';
 import '../../widgets/common/glass_container.dart';
 import '../../widgets/common/custom_text_field.dart';
 import '../../widgets/common/loading_button.dart';
+import '../../services/admin_notification_service.dart';
 
 class WriteReviewScreen extends StatefulWidget {
   final String productId;
@@ -67,6 +68,16 @@ class _WriteReviewScreenState extends State<WriteReviewScreen> {
       );
 
       await _firestoreService.addReview(review);
+
+      // Notify admin panel
+      // Get product name for notification
+      final product = await _firestoreService.getProduct(widget.productId);
+      await AdminNotificationService.notifyReview(
+        userName: review.userName,
+        productName: product?.name ?? 'Product',
+        rating: review.rating.toInt(),
+        comment: review.comment,
+      );
 
       if (mounted) {
         Helpers.showSuccessSnackbar(context, 'Review submitted successfully!');

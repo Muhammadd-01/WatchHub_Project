@@ -18,6 +18,8 @@ import 'categories/categories_screen.dart';
 import 'feedback/feedback_screen.dart';
 import 'carts/active_carts_screen.dart';
 import 'reviews/reviews_screen.dart';
+import 'wishlists/wishlists_screen.dart';
+import 'notifications/notifications_screen.dart';
 import 'profile/admin_profile_screen.dart';
 import 'settings/settings_screen.dart';
 
@@ -38,8 +40,10 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
     const UsersListScreen(), // 5
     const ReviewsScreen(), // 6
     const FeedbackScreen(), // 7
-    const AdminProfileScreen(), // 8
-    const SettingsScreen(), // 9
+    const WishlistsScreen(), // 8
+    const NotificationsScreen(), // 9
+    const AdminProfileScreen(), // 10
+    const SettingsScreen(), // 11
   ];
 
   @override

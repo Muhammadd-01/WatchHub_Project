@@ -26,6 +26,7 @@ class AdminAuthProvider extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
   String? get adminName => _adminName;
   String? get adminEmail => _user?.email;
+  String? get userId => _user?.uid;
 
   AdminAuthProvider() {
     _auth.authStateChanges().listen(_onAuthStateChanged);

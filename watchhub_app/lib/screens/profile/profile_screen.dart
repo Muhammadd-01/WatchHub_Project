@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../core/routes/app_routes.dart';
@@ -201,6 +202,12 @@ class ProfileScreen extends StatelessWidget {
         'subtitle': 'App info & policies',
         'route': AppRoutes.about,
       },
+      {
+        'icon': Icons.share_outlined,
+        'title': 'Share App',
+        'subtitle': 'Invite friends',
+        'action': 'share',
+      },
     ];
 
     return GlassContainer(
@@ -240,9 +247,13 @@ class ProfileScreen extends StatelessWidget {
                   color: AppColors.textTertiary,
                 ),
                 onTap: () {
-                  final route = item['route'] as String?;
-                  if (route != null) {
-                    Navigator.pushNamed(context, route);
+                  if (item['action'] == 'share') {
+                    _shareApp();
+                  } else {
+                    final route = item['route'] as String?;
+                    if (route != null) {
+                      Navigator.pushNamed(context, route);
+                    }
                   }
                 },
               ),
@@ -253,6 +264,13 @@ class ProfileScreen extends StatelessWidget {
         }).toList(),
       ),
     ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.1);
+  }
+
+  void _shareApp() {
+    Share.share(
+      'Check out WatchHub - Your premier destination for luxury watches! Download now: https://play.google.com/store/apps/details?id=com.watchhub.app',
+      subject: 'WatchHub - Luxury Watches App',
+    );
   }
 
   Widget _buildLogoutButton(BuildContext context, AuthProvider authProvider) {

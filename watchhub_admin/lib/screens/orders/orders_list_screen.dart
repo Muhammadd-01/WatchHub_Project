@@ -14,6 +14,7 @@ import '../../core/constants/app_text_styles.dart';
 import '../../core/utils/admin_helpers.dart';
 import '../../widgets/admin_scaffold.dart';
 import '../../providers/admin_order_provider.dart';
+import '../../widgets/animated_reload_button.dart';
 
 class OrdersListScreen extends StatefulWidget {
   const OrdersListScreen({super.key});
@@ -55,8 +56,7 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
     return AdminScaffold(
       title: 'Orders',
       actions: [
-        IconButton(
-          icon: const Icon(Icons.refresh, color: AppColors.primaryGold),
+        AnimatedReloadButton(
           onPressed: () {
             context.read<AdminOrderProvider>().fetchOrders();
           },
@@ -79,6 +79,104 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
                     Text('No orders found', style: AppTextStyles.titleMedium));
           }
 
+          // Responsive layout - cards for mobile, data table for desktop
+          final isMobile = MediaQuery.of(context).size.width < 600;
+
+          if (isMobile) {
+            // Mobile card layout
+            return ListView.builder(
+              itemCount: provider.orders.length,
+              padding: const EdgeInsets.only(bottom: 16),
+              itemBuilder: (context, index) {
+                final order = provider.orders[index];
+                final date = order['createdAt'] != null
+                    ? (order['createdAt'] as Timestamp).toDate()
+                    : DateTime.now();
+                final currentStatus =
+                    _normalizeStatus(order['status'] as String?);
+                final items = (order['items'] as List?)?.length ?? 0;
+
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  color: AppColors.cardBackground,
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Order ID and Date row
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              '#${order['id'].toString().substring(0, 6)}',
+                              style: AppTextStyles.titleSmall,
+                            ),
+                            Text(
+                              DateFormat('MMM dd, yyyy').format(date),
+                              style: AppTextStyles.bodySmall.copyWith(
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        // Customer and Items
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                order['userId'] ?? 'Guest',
+                                style: AppTextStyles.bodyMedium,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            Text(
+                              '$items items',
+                              style: AppTextStyles.bodySmall.copyWith(
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        // Total and Status row
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              '\$${(order['totalAmount'] ?? 0).toStringAsFixed(2)}',
+                              style: AppTextStyles.titleMedium.copyWith(
+                                color: AppColors.primaryGold,
+                              ),
+                            ),
+                            _buildStatusBadge(currentStatus),
+                          ],
+                        ),
+                        if (currentStatus != 'completed' &&
+                            currentStatus != 'cancelled') ...[
+                          const SizedBox(height: 12),
+                          const Divider(color: AppColors.divider),
+                          // Status dropdown
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text('Update Status:',
+                                  style: AppTextStyles.bodySmall),
+                              _buildStatusDropdown(order, currentStatus),
+                            ],
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                );
+              },
+            );
+          }
+
+          // Desktop data table
           return Theme(
             data: Theme.of(context).copyWith(
               cardColor: AppColors.cardBackground,

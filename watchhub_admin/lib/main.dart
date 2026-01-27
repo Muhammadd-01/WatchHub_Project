@@ -110,14 +110,12 @@ class _AuthWrapperState extends State<AuthWrapper> {
   Widget build(BuildContext context) {
     return Consumer<AdminAuthProvider>(
       builder: (context, auth, _) {
-        // If we are still determining auth status (e.g. initial load)
-        // For now, we rely on the fact that Firebase emits an event quickly.
-        // real persistence might need a separate 'isInitialized' flag in provider.
-
-        if (auth.isAuthenticated) {
-          return const AdminMainScreen();
-        }
-        return const AdminLoginScreen();
+        // Wrap in SafeArea for mobile devices to prevent content going above status bar
+        return SafeArea(
+          child: auth.isAuthenticated
+              ? const AdminMainScreen()
+              : const AdminLoginScreen(),
+        );
       },
     );
   }

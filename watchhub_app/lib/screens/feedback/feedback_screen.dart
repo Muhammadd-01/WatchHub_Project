@@ -14,6 +14,7 @@ import '../../models/feedback_model.dart';
 import '../../widgets/common/glass_container.dart';
 import '../../widgets/common/custom_text_field.dart';
 import '../../widgets/common/loading_button.dart';
+import '../../services/admin_notification_service.dart';
 
 class FeedbackScreen extends StatefulWidget {
   const FeedbackScreen({super.key});
@@ -83,6 +84,12 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
       );
 
       await _firestoreService.submitFeedback(feedback);
+
+      // Notify admin panel
+      await AdminNotificationService.notifyFeedback(
+        userName: feedback.userName,
+        subject: feedback.subject,
+      );
 
       if (mounted) {
         Helpers.showSuccessSnackbar(

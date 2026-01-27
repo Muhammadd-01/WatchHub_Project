@@ -58,9 +58,11 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                     child: Icon(Icons.comment, color: AppColors.primaryGold),
                   ),
                   title: Text(fb['userName'] ?? 'Anonymous',
-                      style: AppTextStyles.titleSmall),
+                      style: AppTextStyles.titleSmall
+                          .copyWith(color: AppColors.textPrimary)),
                   subtitle: Text(fb['userEmail'] ?? 'No email',
-                      style: AppTextStyles.bodySmall),
+                      style: AppTextStyles.bodySmall
+                          .copyWith(color: AppColors.textSecondary)),
                   childrenPadding: const EdgeInsets.all(16),
                   children: [
                     Align(

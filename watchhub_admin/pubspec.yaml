@@ -38,8 +38,7 @@ dependencies:
   # UTILITIES
   # ============================================
   intl: ^0.19.0
-  image_picker_web: ^4.0.0
-  file_picker: ^6.1.1
+  file_picker: ^8.0.0+1
   
   # ============================================
   # ICONS
@@ -59,3 +58,4 @@ flutter:
   uses-material-design: true
   assets:
     - .env
+    - assets/images/

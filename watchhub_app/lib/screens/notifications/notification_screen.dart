@@ -168,6 +168,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
                       icon = Icons.check_circle;
                     } else if (title.contains('Cancelled')) {
                       icon = Icons.cancel_outlined;
+                    } else if (title.contains('Out of Stock')) {
+                      icon = Icons.remove_shopping_cart_outlined;
                     }
 
                     return Container(

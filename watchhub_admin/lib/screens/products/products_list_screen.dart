@@ -17,6 +17,7 @@ import '../../widgets/admin_scaffold.dart';
 import '../../providers/admin_product_provider.dart';
 import '../../providers/admin_category_provider.dart';
 import '../../widgets/reviews_dialog.dart';
+import '../../widgets/animated_reload_button.dart';
 
 class ProductsListScreen extends StatefulWidget {
   const ProductsListScreen({super.key});
@@ -26,6 +27,9 @@ class ProductsListScreen extends StatefulWidget {
 }
 
 class _ProductsListScreenState extends State<ProductsListScreen> {
+  final Set<String> _selectedIds = {};
+  bool _isSelectionMode = false;
+
   @override
   void initState() {
     super.initState();
@@ -35,26 +39,153 @@ class _ProductsListScreenState extends State<ProductsListScreen> {
     });
   }
 
+  void _toggleSelection(String id) {
+    setState(() {
+      if (_selectedIds.contains(id)) {
+        _selectedIds.remove(id);
+      } else {
+        _selectedIds.add(id);
+      }
+      // Exit selection mode if nothing selected
+      if (_selectedIds.isEmpty) {
+        _isSelectionMode = false;
+      }
+    });
+  }
+
+  void _selectAll(List<Map<String, dynamic>> products) {
+    setState(() {
+      if (_selectedIds.length == products.length) {
+        _selectedIds.clear();
+        _isSelectionMode = false;
+      } else {
+        _selectedIds.clear();
+        for (var p in products) {
+          _selectedIds.add(p['id']);
+        }
+      }
+    });
+  }
+
+  Future<void> _deleteSelected() async {
+    if (_selectedIds.isEmpty) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.cardBackground,
+        title: const Text('Delete Selected',
+            style: TextStyle(color: AppColors.textPrimary)),
+        content: Text(
+            'Are you sure you want to delete ${_selectedIds.length} products?',
+            style: const TextStyle(color: AppColors.textSecondary)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      final provider = context.read<AdminProductProvider>();
+      int successCount = 0;
+      for (final id in _selectedIds.toList()) {
+        final success = await provider.deleteProduct(id);
+        if (success) successCount++;
+      }
+      setState(() {
+        _selectedIds.clear();
+        _isSelectionMode = false;
+      });
+      if (mounted) {
+        AdminHelpers.showSuccessSnackbar(
+            context, '$successCount products deleted');
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return AdminScaffold(
-      title: 'Products',
+      title: _isSelectionMode ? '${_selectedIds.length} Selected' : 'Products',
       actions: [
-        ElevatedButton.icon(
-          onPressed: () {
-            // Navigate to Add Product (Use same route with no arguments)
-            // Or create a dedicated Add Screen. For now, we'll assume a dialog or new screen.
-            // Let's create a placeholder route or widget for editing.
-            _showAddEditProductDialog(context);
-          },
-          icon: const Icon(Icons.add),
-          label: const Text('Add Product'),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.primaryGold,
-            foregroundColor: AppColors.scaffoldBackground,
+        if (_isSelectionMode) ...[
+          // Select all button - shown immediately in selection mode
+          Consumer<AdminProductProvider>(
+            builder: (context, provider, _) => IconButton(
+              onPressed: () => _selectAll(provider.products),
+              icon: Icon(
+                _selectedIds.length == provider.products.length
+                    ? Icons.deselect
+                    : Icons.select_all,
+                size: 22,
+              ),
+              tooltip: _selectedIds.length == provider.products.length
+                  ? 'Deselect All'
+                  : 'Select All',
+              color: AppColors.primaryGold,
+            ),
           ),
-        ),
-        const SizedBox(width: 16),
+          // Delete selected button
+          IconButton(
+            onPressed: _selectedIds.isEmpty ? null : _deleteSelected,
+            icon: const Icon(Icons.delete_sweep, size: 22),
+            tooltip: 'Delete Selected',
+            color: _selectedIds.isEmpty
+                ? AppColors.textSecondary
+                : AppColors.error,
+          ),
+          // Cancel selection
+          IconButton(
+            onPressed: () {
+              setState(() {
+                _isSelectionMode = false;
+                _selectedIds.clear();
+              });
+            },
+            icon: const Icon(Icons.close, size: 22),
+            tooltip: 'Cancel',
+            color: AppColors.error,
+          ),
+        ] else ...[
+          // Selection mode toggle
+          IconButton(
+            onPressed: () {
+              setState(() {
+                _isSelectionMode = true;
+              });
+            },
+            icon: const Icon(Icons.checklist, size: 22),
+            tooltip: 'Select Multiple',
+            color: AppColors.textSecondary,
+          ),
+          AnimatedReloadButton(
+            onPressed: () {
+              context.read<AdminProductProvider>().fetchProducts();
+            },
+          ),
+          const SizedBox(width: 4),
+          ElevatedButton.icon(
+            onPressed: () {
+              _showAddEditProductDialog(context);
+            },
+            icon: const Icon(Icons.add, size: 18),
+            label: const Text('Add'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryGold,
+              foregroundColor: AppColors.scaffoldBackground,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            ),
+          ),
+        ],
+        const SizedBox(width: 8),
       ],
       body: Consumer<AdminProductProvider>(
         builder: (context, provider, _) {
@@ -83,6 +214,165 @@ class _ProductsListScreenState extends State<ProductsListScreen> {
             );
           }
 
+          // Responsive layout - cards for mobile, data table for desktop
+          final isMobile = MediaQuery.of(context).size.width < 600;
+
+          if (isMobile) {
+            // Mobile card layout
+            return ListView.builder(
+              itemCount: provider.products.length,
+              padding: const EdgeInsets.only(bottom: 16),
+              itemBuilder: (context, index) {
+                final product = provider.products[index];
+                final images = product['images'] as List<dynamic>?;
+                final imageUrl = (images != null && images.isNotEmpty)
+                    ? images.first as String
+                    : null;
+
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  color: _selectedIds.contains(product['id'])
+                      ? AppColors.primaryGold.withValues(alpha: 0.1)
+                      : AppColors.cardBackground,
+                  child: InkWell(
+                    onLongPress: () {
+                      setState(() {
+                        _isSelectionMode = true;
+                        _toggleSelection(product['id']);
+                      });
+                    },
+                    onTap: _isSelectionMode
+                        ? () => _toggleSelection(product['id'])
+                        : null,
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Row(
+                        children: [
+                          // Checkbox in selection mode
+                          if (_isSelectionMode)
+                            Checkbox(
+                              value: _selectedIds.contains(product['id']),
+                              onChanged: (_) => _toggleSelection(product['id']),
+                              activeColor: AppColors.primaryGold,
+                            ),
+                          // Product image
+                          Container(
+                            width: 70,
+                            height: 70,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(8),
+                              color: AppColors.surfaceColor,
+                            ),
+                            child: imageUrl != null
+                                ? ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: CachedNetworkImage(
+                                      imageUrl: imageUrl,
+                                      fit: BoxFit.cover,
+                                      placeholder: (_, __) => const Center(
+                                          child: Icon(Icons.image,
+                                              size: 24,
+                                              color: AppColors.textTertiary)),
+                                      errorWidget: (_, __, ___) => const Icon(
+                                          Icons.broken_image,
+                                          size: 24),
+                                    ),
+                                  )
+                                : const Icon(Icons.image_not_supported,
+                                    size: 24, color: AppColors.textTertiary),
+                          ),
+                          const SizedBox(width: 12),
+                          // Product info
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  product['name'] ?? 'Unknown',
+                                  style: AppTextStyles.titleSmall,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  product['brand'] ?? '-',
+                                  style: AppTextStyles.bodySmall.copyWith(
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    Text(
+                                      '\$${(product['price'] ?? 0)}',
+                                      style: AppTextStyles.bodyMedium.copyWith(
+                                        color: AppColors.primaryGold,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: (product['stock'] ?? 0) > 0
+                                            ? AppColors.success.withOpacity(0.1)
+                                            : AppColors.error.withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: Text(
+                                        'Stock: ${product['stock'] ?? 0}',
+                                        style:
+                                            AppTextStyles.labelSmall.copyWith(
+                                          color: (product['stock'] ?? 0) > 0
+                                              ? AppColors.success
+                                              : AppColors.error,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                          // Actions
+                          PopupMenuButton<String>(
+                            icon: const Icon(Icons.more_vert),
+                            onSelected: (value) {
+                              switch (value) {
+                                case 'edit':
+                                  _showAddEditProductDialog(context,
+                                      product: product);
+                                  break;
+                                case 'reviews':
+                                  _showReviewsDialog(context, product['id'],
+                                      product['name'] ?? 'Product');
+                                  break;
+                                case 'delete':
+                                  _confirmDelete(
+                                      context, product['id'], product['name']);
+                                  break;
+                              }
+                            },
+                            itemBuilder: (context) => [
+                              const PopupMenuItem(
+                                  value: 'edit', child: Text('Edit')),
+                              const PopupMenuItem(
+                                  value: 'reviews', child: Text('Reviews')),
+                              const PopupMenuItem(
+                                  value: 'delete', child: Text('Delete')),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            );
+          }
+
+          // Desktop data table
           return Theme(
             data: Theme.of(context).copyWith(
               cardColor: AppColors.cardBackground,
@@ -338,7 +628,26 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
 
   final ImagePicker _picker = ImagePicker();
   List<XFile> _selectedImages = [];
+  List<String> _existingImages = []; // URLs of existing images
   bool _isUploading = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Initialize existing images from product data
+    if (widget.product != null && _existingImages.isEmpty) {
+      final images = widget.product!['images'] as List<dynamic>?;
+      if (images != null) {
+        _existingImages = images.cast<String>().toList();
+      }
+    }
+  }
+
+  void _removeExistingImage(int index) {
+    setState(() {
+      _existingImages.removeAt(index);
+    });
+  }
 
   Future<void> _pickImages() async {
     try {
@@ -381,7 +690,65 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
               // Image Picker UI
               Text('Product Images', style: AppTextStyles.titleMedium),
               const SizedBox(height: 8),
-              if (_selectedImages.isNotEmpty)
+              // Show existing images (from URLs)
+              if (_existingImages.isNotEmpty) ...[
+                Text('Current Images',
+                    style: AppTextStyles.bodySmall
+                        .copyWith(color: AppColors.textSecondary)),
+                const SizedBox(height: 8),
+                Container(
+                  height: 100,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: _existingImages.length,
+                    separatorBuilder: (_, __) => const SizedBox(width: 8),
+                    itemBuilder: (context, index) {
+                      return Stack(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: CachedNetworkImage(
+                              imageUrl: _existingImages[index],
+                              width: 100,
+                              height: 100,
+                              fit: BoxFit.cover,
+                              placeholder: (_, __) => Container(
+                                  width: 100,
+                                  height: 100,
+                                  color: Colors.grey[800]),
+                              errorWidget: (_, __, ___) => Container(
+                                  width: 100, height: 100, color: Colors.grey),
+                            ),
+                          ),
+                          Positioned(
+                            top: 0,
+                            right: 0,
+                            child: GestureDetector(
+                              onTap: () => _removeExistingImage(index),
+                              child: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: const BoxDecoration(
+                                  color: Colors.red,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(Icons.close,
+                                    size: 16, color: Colors.white),
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+              ],
+              // Show new images (from picker)
+              if (_selectedImages.isNotEmpty) ...[
+                Text('New Images',
+                    style: AppTextStyles.bodySmall
+                        .copyWith(color: AppColors.textSecondary)),
+                const SizedBox(height: 8),
                 Container(
                   height: 100,
                   margin: const EdgeInsets.only(bottom: 16),
@@ -395,8 +762,7 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
                           ClipRRect(
                             borderRadius: BorderRadius.circular(8),
                             child: Image.network(
-                              _selectedImages[index]
-                                  .path, // For web/desktop this path works or use bytes
+                              _selectedImages[index].path,
                               width: 100,
                               height: 100,
                               fit: BoxFit.cover,
@@ -425,6 +791,7 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
                     },
                   ),
                 ),
+              ],
               OutlinedButton.icon(
                 onPressed: _pickImages,
                 icon: const Icon(Icons.add_photo_alternate),
@@ -438,18 +805,31 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
                     child: TextFormField(
                       controller: _nameCtrl,
                       decoration:
-                          const InputDecoration(labelText: 'Product Name'),
+                          const InputDecoration(labelText: 'Product Name *'),
                       style: const TextStyle(color: AppColors.textPrimary),
-                      validator: (v) => v!.isEmpty ? 'Required' : null,
+                      validator: (v) {
+                        if (v == null || v.trim().isEmpty) {
+                          return 'Product name is required';
+                        }
+                        if (v.trim().length < 3) {
+                          return 'Name must be at least 3 characters';
+                        }
+                        return null;
+                      },
                     ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
                     child: TextFormField(
                       controller: _brandCtrl,
-                      decoration: const InputDecoration(labelText: 'Brand'),
+                      decoration: const InputDecoration(labelText: 'Brand *'),
                       style: const TextStyle(color: AppColors.textPrimary),
-                      validator: (v) => v!.isEmpty ? 'Required' : null,
+                      validator: (v) {
+                        if (v == null || v.trim().isEmpty) {
+                          return 'Brand is required';
+                        }
+                        return null;
+                      },
                     ),
                   ),
                 ],
@@ -461,24 +841,42 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
                     child: TextFormField(
                       controller: _priceCtrl,
                       decoration: const InputDecoration(
-                          labelText: 'Price', prefixText: '\$ '),
+                          labelText: 'Price *', prefixText: '\$ '),
                       style: const TextStyle(color: AppColors.textPrimary),
                       keyboardType: TextInputType.number,
                       inputFormatters: [
                         FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))
                       ],
-                      validator: (v) => v!.isEmpty ? 'Required' : null,
+                      validator: (v) {
+                        if (v == null || v.trim().isEmpty) {
+                          return 'Price is required';
+                        }
+                        final price = double.tryParse(v);
+                        if (price == null || price <= 0) {
+                          return 'Enter a valid price greater than 0';
+                        }
+                        return null;
+                      },
                     ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
                     child: TextFormField(
                       controller: _stockCtrl,
-                      decoration: const InputDecoration(labelText: 'Stock'),
+                      decoration: const InputDecoration(labelText: 'Stock *'),
                       style: const TextStyle(color: AppColors.textPrimary),
                       keyboardType: TextInputType.number,
                       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                      validator: (v) => v!.isEmpty ? 'Required' : null,
+                      validator: (v) {
+                        if (v == null || v.trim().isEmpty) {
+                          return 'Stock is required';
+                        }
+                        final stock = int.tryParse(v);
+                        if (stock == null || stock < 0) {
+                          return 'Enter a valid stock quantity';
+                        }
+                        return null;
+                      },
                     ),
                   ),
                 ],
@@ -510,23 +908,78 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
                 },
               ),
               const SizedBox(height: 16),
+              // Description with template button
+              Row(
+                children: [
+                  Text('Description', style: AppTextStyles.labelMedium),
+                  const Spacer(),
+                  TextButton.icon(
+                    onPressed: () {
+                      _descCtrl.text =
+                          '''A stunning luxury timepiece that combines elegant design with exceptional craftsmanship. This watch features a premium quality build with attention to every detail.
+
+Key Features:
+• Swiss-made automatic movement
+• Scratch-resistant sapphire crystal
+• Premium leather/stainless steel strap
+• Luminous hands and hour markers
+• Date display at 3 o'clock position
+
+Perfect for both formal occasions and everyday wear, this watch is a statement of refined taste and sophisticated style.''';
+                      setState(() {});
+                    },
+                    icon: const Icon(Icons.auto_fix_high, size: 16),
+                    label: const Text('Use Template'),
+                    style: TextButton.styleFrom(
+                        foregroundColor: AppColors.primaryGold),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
               TextFormField(
                 controller: _descCtrl,
-                decoration: const InputDecoration(labelText: 'Description'),
+                decoration: const InputDecoration(
+                  hintText: 'Enter product description...',
+                ),
                 style: const TextStyle(color: AppColors.textPrimary),
-                maxLines: 3,
+                maxLines: 5,
               ),
               const SizedBox(height: 16),
+              // Specifications with template button
+              Row(
+                children: [
+                  Text('Specifications', style: AppTextStyles.labelMedium),
+                  const Spacer(),
+                  TextButton.icon(
+                    onPressed: () {
+                      _specsCtrl.text = '''Movement: Automatic
+Case Material: Stainless Steel
+Case Size: 42mm
+Dial Color: Black
+Strap Material: Genuine Leather
+Water Resistance: 100m (10 ATM)
+Crystal: Sapphire
+Power Reserve: 40 hours
+Warranty: 2 Years International''';
+                      setState(() {});
+                    },
+                    icon: const Icon(Icons.auto_fix_high, size: 16),
+                    label: const Text('Use Template'),
+                    style: TextButton.styleFrom(
+                        foregroundColor: AppColors.primaryGold),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
               TextFormField(
                 controller: _specsCtrl,
                 decoration: const InputDecoration(
-                  labelText: 'Specifications',
                   hintText:
                       'Movement: Automatic\nCase Size: 42mm\nWater Resistance: 100m',
                   hintStyle: TextStyle(fontSize: 12),
                 ),
                 style: const TextStyle(color: AppColors.textPrimary),
-                maxLines: 5,
+                maxLines: 6,
               ),
               const SizedBox(height: 24),
               Row(
@@ -580,17 +1033,22 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
 
     bool success;
     if (widget.product != null) {
-      // Update
-      success = await provider.updateProduct(id: widget.product!['id'], data: {
-        'name': name,
-        'brand': brand,
-        'price': price,
-        'stock': stock,
-        'description': desc,
-        'category': _category,
-        'specifications': specsMap,
-      });
-      // Handle image updates separately if needed, but for now we focused on creating with images
+      // Update - include existing images array and any new images
+      success = await provider.updateProduct(
+        id: widget.product!['id'],
+        data: {
+          'name': name,
+          'brand': brand,
+          'price': price,
+          'stock': stock,
+          'description': desc,
+          'category': _category,
+          'specifications': specsMap,
+          'images':
+              _existingImages, // Pass existing (possibly modified) images list
+        },
+        newImages: _selectedImages.isNotEmpty ? _selectedImages : null,
+      );
     } else {
       success = await provider.addProduct(
         name: name,

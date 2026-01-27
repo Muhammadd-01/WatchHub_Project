@@ -1,10 +1,11 @@
 // =============================================================================
 // FILE: order_details_screen.dart
 // PURPOSE: Order details screen for WatchHub
-// DESCRIPTION: Shows detailed order information.
+// DESCRIPTION: Shows detailed order information with cancel option.
 // =============================================================================
 
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../core/utils/helpers.dart';
@@ -25,6 +26,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
   final FirestoreCrudService _firestoreService = FirestoreCrudService();
   OrderModel? _order;
   bool _isLoading = true;
+  bool _isCancelling = false;
 
   @override
   void initState() {
@@ -44,6 +46,114 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
     setState(() => _isLoading = false);
   }
 
+  Future<void> _cancelOrder() async {
+    if (_order == null) return;
+
+    // Show confirmation dialog
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.cardBackground,
+        title: const Text('Cancel Order',
+            style: TextStyle(color: AppColors.textPrimary)),
+        content: const Text(
+          'Are you sure you want to cancel this order? This action cannot be undone.',
+          style: TextStyle(color: AppColors.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('No, Keep Order'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
+            child: const Text('Yes, Cancel Order'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    setState(() => _isCancelling = true);
+
+    try {
+      // Update order status to cancelled
+      await FirebaseFirestore.instance
+          .collection('orders')
+          .doc(widget.orderId)
+          .update({
+        'status': 'cancelled',
+        'cancelledAt': FieldValue.serverTimestamp(),
+      });
+
+      // Restore product stock for each item
+      for (final item in _order!.items) {
+        final productDoc = await FirebaseFirestore.instance
+            .collection('products')
+            .doc(item.productId)
+            .get();
+
+        if (productDoc.exists) {
+          final currentStock = productDoc.data()?['stock'] ?? 0;
+          await FirebaseFirestore.instance
+              .collection('products')
+              .doc(item.productId)
+              .update({
+            'stock': currentStock + item.quantity,
+          });
+        }
+      }
+
+      // Send notification to admin panel
+      await FirebaseFirestore.instance.collection('admin_notifications').add({
+        'type': 'order_cancelled',
+        'title': 'Order Cancelled: ${_order!.orderNumber}',
+        'message': 'A user cancelled their order',
+        'orderId': widget.orderId,
+        'isRead': false,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      // Reload order to reflect new status
+      await _loadOrder();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Order cancelled successfully'),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('Error cancelling order: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to cancel order: $e'),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isCancelling = false);
+    }
+  }
+
+  bool get _canCancel {
+    if (_order == null) return false;
+    final status = _order!.status.toLowerCase();
+    return status == 'pending' || status == 'processing';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -61,8 +171,8 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
               ),
             )
           : _order == null
-          ? _buildNotFound()
-          : _buildOrderDetails(),
+              ? _buildNotFound()
+              : _buildOrderDetails(),
     );
   }
 
@@ -214,6 +324,63 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
               ],
             ),
           ),
+
+          // Cancel order button (only for pending/processing orders)
+          if (_canCancel) ...[
+            const SizedBox(height: 32),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: _isCancelling ? null : _cancelOrder,
+                icon: _isCancelling
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AppColors.error,
+                        ),
+                      )
+                    : const Icon(Icons.cancel_outlined),
+                label: Text(_isCancelling ? 'Cancelling...' : 'Cancel Order'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.error,
+                  side: const BorderSide(color: AppColors.error),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+          ],
+
+          // Cancelled message
+          if (_order!.status.toLowerCase() == 'cancelled') ...[
+            const SizedBox(height: 24),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.error.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.error.withOpacity(0.3)),
+              ),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.cancel, color: AppColors.error),
+                  SizedBox(width: 8),
+                  Text(
+                    'This order has been cancelled',
+                    style: TextStyle(
+                        color: AppColors.error, fontWeight: FontWeight.w500),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          const SizedBox(height: 32),
         ],
       ),
     );

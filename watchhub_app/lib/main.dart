@@ -24,7 +24,6 @@ import 'providers/search_provider.dart';
 
 // Services
 import 'services/supabase_service.dart';
-import 'services/seeder_service.dart';
 import 'services/push_notification_service.dart';
 
 // Screens
@@ -74,10 +73,6 @@ void main() async {
     url: dotenv.env['SUPABASE_URL'] ?? '',
     anonKey: dotenv.env['SUPABASE_ANON_KEY'] ?? '',
   );
-
-  // Seed database with sample products if needed
-  final seeder = SeederService();
-  await seeder.seedIfNeeded();
 
   // Run the app
   runApp(

@@ -184,7 +184,17 @@ class _SearchScreenState extends State<SearchScreen> {
       );
     }
 
-    if (_searchController.text.isNotEmpty && _searchResults.isEmpty) {
+    // Get products from provider
+    final productProvider = context.watch<ProductProvider>();
+    final allProducts = productProvider.products;
+
+    // Determine which products to show
+    List<ProductModel> displayProducts;
+    if (_searchController.text.isEmpty) {
+      // Show all products when no search query
+      displayProducts = allProducts;
+    } else if (_searchResults.isEmpty) {
+      // Show no results message
       return Center(
         key: const ValueKey('no_results'),
         child: Column(
@@ -202,60 +212,87 @@ class _SearchScreenState extends State<SearchScreen> {
           ],
         ),
       );
+    } else {
+      // Show search results
+      displayProducts = _searchResults;
     }
 
-    if (_searchController.text.isEmpty) {
-      return Container(
-        key: const ValueKey('recent_searches'),
-        child: _buildRecentSearches(),
+    // Show loading if products are still loading
+    if (displayProducts.isEmpty && productProvider.isLoading) {
+      return Center(
+        key: const ValueKey('loading'),
+        child: CircularProgressIndicator(
+          color: Theme.of(context).primaryColor,
+        ),
       );
     }
 
-    return GridView.builder(
-      key: ValueKey('results_${_searchResults.length}'),
-      padding: const EdgeInsets.all(16),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        childAspectRatio: 0.7,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
-      ),
-      itemCount: _searchResults.length,
-      itemBuilder: (context, index) {
-        return ProductCard(product: _searchResults[index])
-            .animate()
-            .fadeIn(delay: (100 * index).ms, duration: 400.ms)
-            .slideY(begin: 0.1, end: 0, curve: Curves.easeOutBack);
-      },
+    // Show empty state if no products available
+    if (displayProducts.isEmpty) {
+      return Center(
+        key: const ValueKey('empty'),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.watch_off,
+                size: 64, color: Theme.of(context).disabledColor),
+            const SizedBox(height: 16),
+            Text(
+              'No products available',
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: Theme.of(context).textTheme.bodyMedium?.color,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      key: ValueKey(
+          'products_${_searchController.text.isEmpty ? "all" : "search"}'),
+      children: [
+        // Recent searches chips (only when search field is expanded but empty)
+        if (_isSearchExpanded && _searchController.text.isEmpty)
+          _buildRecentSearchesChips(),
+
+        // Products grid
+        Expanded(
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 300),
+            child: GridView.builder(
+              key: ValueKey(
+                  'grid_${displayProducts.length}_${_searchController.text}'),
+              padding: const EdgeInsets.all(16),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                childAspectRatio: 0.7,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+              ),
+              itemCount: displayProducts.length,
+              itemBuilder: (context, index) {
+                return ProductCard(product: displayProducts[index])
+                    .animate()
+                    .fadeIn(delay: (50 * (index % 10)).ms, duration: 300.ms)
+                    .slideY(begin: 0.05, end: 0, curve: Curves.easeOut);
+              },
+            ),
+          ),
+        ),
+      ],
     );
   }
 
-  Widget _buildRecentSearches() {
+  Widget _buildRecentSearchesChips() {
     return Consumer<SearchProvider>(
       builder: (context, searchProvider, _) {
         final searches = searchProvider.recentSearches;
 
-        if (searches.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.search,
-                    size: 64, color: Theme.of(context).disabledColor),
-                const SizedBox(height: 16),
-                Text(
-                  'Search for premium timepieces',
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: Theme.of(context).textTheme.bodyMedium?.color,
-                  ),
-                ),
-              ],
-            ),
-          );
-        }
+        if (searches.isEmpty) return const SizedBox.shrink();
 
         return Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -264,15 +301,18 @@ class _SearchScreenState extends State<SearchScreen> {
                 children: [
                   Text(
                     'Recent Searches',
-                    style: AppTextStyles.titleMedium.copyWith(
-                      color: Theme.of(context).textTheme.titleMedium?.color,
+                    style: AppTextStyles.labelMedium.copyWith(
+                      color: Theme.of(context).textTheme.bodySmall?.color,
                     ),
                   ),
-                  TextButton(
-                    onPressed: () => searchProvider.clearHistory(),
+                  GestureDetector(
+                    onTap: () => searchProvider.clearHistory(),
                     child: Text(
                       'Clear',
-                      style: TextStyle(color: Theme.of(context).primaryColor),
+                      style: TextStyle(
+                        color: Theme.of(context).primaryColor,
+                        fontSize: 12,
+                      ),
                     ),
                   ),
                 ],
@@ -281,15 +321,12 @@ class _SearchScreenState extends State<SearchScreen> {
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
-                children: searches.map((query) {
+                children: searches.take(5).map((query) {
                   return ActionChip(
-                    label: Text(query),
+                    label: Text(query, style: const TextStyle(fontSize: 12)),
                     onPressed: () {
                       _searchController.text = query;
                       _performSearch(query);
-                      setState(() {
-                        _isSearchExpanded = true;
-                      });
                     },
                     backgroundColor: Theme.of(context).cardColor,
                     shape: RoundedRectangleBorder(
@@ -298,9 +335,11 @@ class _SearchScreenState extends State<SearchScreen> {
                         color: Theme.of(context).dividerColor.withOpacity(0.1),
                       ),
                     ),
+                    visualDensity: VisualDensity.compact,
                   );
                 }).toList(),
               ),
+              const SizedBox(height: 8),
             ],
           ),
         );

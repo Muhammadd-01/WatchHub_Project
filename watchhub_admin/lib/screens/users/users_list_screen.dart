@@ -4,6 +4,7 @@
 // DESCRIPTION: Displays users and allows role management.
 // =============================================================================
 
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:data_table_2/data_table_2.dart';
@@ -11,11 +12,13 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../core/utils/admin_helpers.dart';
 import '../../widgets/admin_scaffold.dart';
 import '../../providers/admin_user_provider.dart';
+import '../../widgets/animated_reload_button.dart';
 
 class UsersListScreen extends StatelessWidget {
   const UsersListScreen({super.key});
@@ -25,6 +28,19 @@ class UsersListScreen extends StatelessWidget {
     return AdminScaffold(
       title: 'Users',
       actions: [
+        AnimatedReloadButton(
+          onPressed: () {
+            // StreamBuilder auto-refreshes, but we can trigger a rebuild
+            // by navigating away and back or just use the animation feedback
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Users list refreshed'),
+                duration: Duration(seconds: 1),
+              ),
+            );
+          },
+        ),
+        const SizedBox(width: 8),
         IconButton(
           icon: const Icon(Icons.person_add, color: AppColors.primaryGold),
           onPressed: () => _showAddUserDialog(context),
@@ -55,6 +71,146 @@ class UsersListScreen extends StatelessWidget {
 
           final users = snapshot.data!.docs;
 
+          // Responsive layout - cards for mobile, data table for desktop
+          final isMobile = MediaQuery.of(context).size.width < 600;
+
+          if (isMobile) {
+            // Mobile card layout
+            return ListView.builder(
+              itemCount: users.length,
+              padding: const EdgeInsets.only(bottom: 16),
+              itemBuilder: (context, index) {
+                final doc = users[index];
+                final data = doc.data() as Map<String, dynamic>;
+                final date = data['createdAt'] != null
+                    ? (data['createdAt'] as Timestamp).toDate()
+                    : DateTime.now();
+                final role = data['role'] ?? 'customer';
+                final isSuperAdmin = data['email'] == 'admin@watchhub.com';
+
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  color: AppColors.cardBackground,
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Row(
+                      children: [
+                        // Profile image
+                        data['profileImageUrl'] != null &&
+                                (data['profileImageUrl'] as String).isNotEmpty
+                            ? CircleAvatar(
+                                radius: 24,
+                                backgroundImage:
+                                    NetworkImage(data['profileImageUrl']),
+                                backgroundColor: AppColors.surfaceColor,
+                              )
+                            : CircleAvatar(
+                                radius: 24,
+                                backgroundColor: AppColors.primaryGold,
+                                child: Text(
+                                  (data['name'] as String? ?? 'U')
+                                      .substring(0, 1)
+                                      .toUpperCase(),
+                                  style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 18),
+                                ),
+                              ),
+                        const SizedBox(width: 12),
+                        // User info
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                data['name'] ?? 'Unknown',
+                                style: AppTextStyles.titleSmall,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                data['email'] ?? '-',
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  color: AppColors.textSecondary,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 4),
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: (role == 'admin')
+                                          ? AppColors.error.withOpacity(0.2)
+                                          : AppColors.success.withOpacity(0.2),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Text(
+                                      role.toString().toUpperCase(),
+                                      style: AppTextStyles.labelSmall.copyWith(
+                                        color: (role == 'admin')
+                                            ? AppColors.error
+                                            : AppColors.success,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    DateFormat('MMM dd, yyyy').format(date),
+                                    style: AppTextStyles.labelSmall.copyWith(
+                                      color: AppColors.textTertiary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                        // Actions
+                        if (isSuperAdmin)
+                          const Icon(Icons.shield,
+                              color: AppColors.primaryGold, size: 20)
+                        else
+                          PopupMenuButton<String>(
+                            icon: const Icon(Icons.more_vert),
+                            onSelected: (value) {
+                              switch (value) {
+                                case 'toggle':
+                                  _toggleRole(context, doc.id, role);
+                                  break;
+                                case 'delete':
+                                  _confirmDelete(
+                                      context, doc.id, data['email']);
+                                  break;
+                              }
+                            },
+                            itemBuilder: (context) => [
+                              PopupMenuItem(
+                                value: 'toggle',
+                                child: Text(role == 'admin'
+                                    ? 'Demote to Customer'
+                                    : 'Promote to Admin'),
+                              ),
+                              const PopupMenuItem(
+                                value: 'delete',
+                                child: Text('Delete User'),
+                              ),
+                            ],
+                          ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            );
+          }
+
+          // Desktop data table
           return Theme(
             data: Theme.of(context).copyWith(
               cardColor: AppColors.cardBackground,
@@ -85,18 +241,27 @@ class UsersListScreen extends StatelessWidget {
                   cells: [
                     DataCell(Row(
                       children: [
-                        CircleAvatar(
-                          radius: 16,
-                          backgroundColor: AppColors.primaryGold,
-                          child: Text(
-                            (data['name'] as String? ?? 'U')
-                                .substring(0, 1)
-                                .toUpperCase(),
-                            style: const TextStyle(
-                                color: Colors.black,
-                                fontWeight: FontWeight.bold),
-                          ),
-                        ),
+                        // Profile image or initials
+                        data['profileImageUrl'] != null &&
+                                (data['profileImageUrl'] as String).isNotEmpty
+                            ? CircleAvatar(
+                                radius: 16,
+                                backgroundImage:
+                                    NetworkImage(data['profileImageUrl']),
+                                backgroundColor: AppColors.surfaceColor,
+                              )
+                            : CircleAvatar(
+                                radius: 16,
+                                backgroundColor: AppColors.primaryGold,
+                                child: Text(
+                                  (data['name'] as String? ?? 'U')
+                                      .substring(0, 1)
+                                      .toUpperCase(),
+                                  style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold),
+                                ),
+                              ),
                         const SizedBox(width: 8),
                         Text(data['name'] ?? 'Unknown',
                             style: AppTextStyles.bodyMedium),
@@ -226,6 +391,7 @@ class UsersListScreen extends StatelessWidget {
     final nameController = TextEditingController();
     String selectedRole = 'customer';
     bool isLoading = false;
+    XFile? selectedImage;
 
     showDialog(
       context: context,
@@ -237,50 +403,110 @@ class UsersListScreen extends StatelessWidget {
                 style: TextStyle(color: AppColors.textPrimary)),
             content: SizedBox(
               width: 400,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: nameController,
-                    style: const TextStyle(color: AppColors.textPrimary),
-                    decoration: const InputDecoration(labelText: 'Full Name'),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: emailController,
-                    style: const TextStyle(color: AppColors.textPrimary),
-                    decoration: const InputDecoration(labelText: 'Email'),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: passwordController,
-                    obscureText: true,
-                    style: const TextStyle(color: AppColors.textPrimary),
-                    decoration: const InputDecoration(labelText: 'Password'),
-                  ),
-                  const SizedBox(height: 16),
-                  DropdownButtonFormField<String>(
-                    value: selectedRole,
-                    dropdownColor: AppColors.cardBackground,
-                    items: const [
-                      DropdownMenuItem(
-                          value: 'customer',
-                          child: Text('Customer',
-                              style: TextStyle(color: AppColors.textPrimary))),
-                      DropdownMenuItem(
-                          value: 'admin',
-                          child: Text('Admin',
-                              style: TextStyle(color: AppColors.textPrimary))),
-                    ],
-                    onChanged: (val) => setState(() => selectedRole = val!),
-                    decoration: const InputDecoration(labelText: 'Role'),
-                  ),
-                  if (isLoading)
-                    const Padding(
-                      padding: EdgeInsets.only(top: 16.0),
-                      child: CircularProgressIndicator(),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Profile Image Picker
+                    GestureDetector(
+                      onTap: () async {
+                        final ImagePicker picker = ImagePicker();
+                        final XFile? image = await picker.pickImage(
+                          source: ImageSource.gallery,
+                          maxWidth: 512,
+                          maxHeight: 512,
+                        );
+                        if (image != null) {
+                          setState(() => selectedImage = image);
+                        }
+                      },
+                      child: Container(
+                        width: 100,
+                        height: 100,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppColors.surfaceColor,
+                          border: Border.all(
+                            color: AppColors.primaryGold,
+                            width: 2,
+                          ),
+                        ),
+                        child: selectedImage != null
+                            ? FutureBuilder<Uint8List>(
+                                future: selectedImage!.readAsBytes(),
+                                builder: (context, snapshot) {
+                                  if (snapshot.hasData) {
+                                    return ClipOval(
+                                      child: Image.memory(
+                                        snapshot.data!,
+                                        fit: BoxFit.cover,
+                                        width: 100,
+                                        height: 100,
+                                      ),
+                                    );
+                                  }
+                                  return const CircularProgressIndicator();
+                                },
+                              )
+                            : const Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.add_a_photo,
+                                      color: AppColors.primaryGold, size: 32),
+                                  SizedBox(height: 4),
+                                  Text('Add Photo',
+                                      style: TextStyle(
+                                          color: AppColors.textSecondary,
+                                          fontSize: 10)),
+                                ],
+                              ),
+                      ),
                     ),
-                ],
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: nameController,
+                      style: const TextStyle(color: AppColors.textPrimary),
+                      decoration: const InputDecoration(labelText: 'Full Name'),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: emailController,
+                      style: const TextStyle(color: AppColors.textPrimary),
+                      decoration: const InputDecoration(labelText: 'Email'),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: passwordController,
+                      obscureText: true,
+                      style: const TextStyle(color: AppColors.textPrimary),
+                      decoration: const InputDecoration(labelText: 'Password'),
+                    ),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<String>(
+                      value: selectedRole,
+                      dropdownColor: AppColors.cardBackground,
+                      items: const [
+                        DropdownMenuItem(
+                            value: 'customer',
+                            child: Text('Customer',
+                                style:
+                                    TextStyle(color: AppColors.textPrimary))),
+                        DropdownMenuItem(
+                            value: 'admin',
+                            child: Text('Admin',
+                                style:
+                                    TextStyle(color: AppColors.textPrimary))),
+                      ],
+                      onChanged: (val) => setState(() => selectedRole = val!),
+                      decoration: const InputDecoration(labelText: 'Role'),
+                    ),
+                    if (isLoading)
+                      const Padding(
+                        padding: EdgeInsets.only(top: 16.0),
+                        child: CircularProgressIndicator(),
+                      ),
+                  ],
+                ),
               ),
             ),
             actions: [
@@ -300,6 +526,14 @@ class UsersListScreen extends StatelessWidget {
                         }
 
                         setState(() => isLoading = true);
+
+                        // Upload profile image if selected
+                        String? profileImageUrl;
+                        if (selectedImage != null) {
+                          profileImageUrl = await context
+                              .read<AdminUserProvider>()
+                              .uploadProfileImage(selectedImage!);
+                        }
 
                         // Create user via Secondary App
                         try {
@@ -327,6 +561,7 @@ class UsersListScreen extends StatelessWidget {
                                 'role': selectedRole,
                                 'createdAt': FieldValue.serverTimestamp(),
                                 'phone': '',
+                                'profileImageUrl': profileImageUrl ?? '',
                               });
                             }
 

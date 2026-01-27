@@ -10,6 +10,8 @@ import 'package:flutter/foundation.dart';
 import '../models/wishlist_model.dart';
 import '../models/product_model.dart';
 import '../services/firestore_crud_service.dart';
+import '../services/admin_notification_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 /// Wishlist state provider
 ///
@@ -59,26 +61,24 @@ class WishlistProvider extends ChangeNotifier {
   void _startWishlistStream(String uid) {
     _wishlistSubscription?.cancel();
 
-    _wishlistSubscription = _firestoreService
-        .wishlistStream(uid)
-        .listen(
-          (items) async {
-            final populatedItems = <WishlistItemModel>[];
+    _wishlistSubscription = _firestoreService.wishlistStream(uid).listen(
+      (items) async {
+        final populatedItems = <WishlistItemModel>[];
 
-            for (final item in items) {
-              final product = await _firestoreService.getProduct(
-                item.productId,
-              );
-              populatedItems.add(item.copyWith(product: product));
-            }
+        for (final item in items) {
+          final product = await _firestoreService.getProduct(
+            item.productId,
+          );
+          populatedItems.add(item.copyWith(product: product));
+        }
 
-            _items = populatedItems;
-            notifyListeners();
-          },
-          onError: (error) {
-            debugPrint('WishlistProvider: Wishlist stream error - $error');
-          },
-        );
+        _items = populatedItems;
+        notifyListeners();
+      },
+      onError: (error) {
+        debugPrint('WishlistProvider: Wishlist stream error - $error');
+      },
+    );
   }
 
   /// Clears wishlist state (on logout)
@@ -136,6 +136,13 @@ class WishlistProvider extends ChangeNotifier {
       }
 
       debugPrint('WishlistProvider: Added ${product.name} to wishlist');
+
+      // Notify admin
+      final user = FirebaseAuth.instance.currentUser;
+      AdminNotificationService.notifyWishlist(
+        userName: user?.displayName ?? 'A user',
+        productName: product.name,
+      );
 
       notifyListeners();
       return true;
