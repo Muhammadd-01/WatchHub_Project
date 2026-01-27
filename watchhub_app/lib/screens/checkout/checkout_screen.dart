@@ -178,6 +178,17 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       // Save to Firestore
       await firestoreService.createOrder(order);
 
+      // Decrement stock for each item
+      for (final item in orderItems) {
+        final product = item.product;
+        if (product != null) {
+          final newStock = product.stock - item.quantity;
+          await firestoreService.updateProduct(item.productId, {
+            'stock': newStock >= 0 ? newStock : 0,
+          });
+        }
+      }
+
       // Clear Cart only if it wasn't a Buy Now
       if (buyNowItem == null) {
         await cartProvider.clearCart(user.uid);

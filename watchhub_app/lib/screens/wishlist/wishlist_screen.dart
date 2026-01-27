@@ -173,99 +173,135 @@ class _WishlistItemCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: Theme.of(context).dividerColor),
           ),
-          child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              // Image
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: CachedNetworkImage(
-                  imageUrl: product?.imageUrl ?? '',
-                  width: 80,
-                  height: 80,
-                  fit: BoxFit.cover,
-                  placeholder: (context, url) => Container(
-                    width: 80,
-                    height: 80,
-                    color: Theme.of(context).cardColor,
-                  ),
-                  errorWidget: (context, url, error) => Container(
-                    width: 80,
-                    height: 80,
-                    color: Theme.of(context).cardColor,
-                    child: const Icon(Icons.watch_rounded),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              // Details
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (product != null) ...[
-                      Text(
-                        product.brand.toUpperCase(),
-                        style: AppTextStyles.brandName.copyWith(fontSize: 10),
+              Row(
+                children: [
+                  // Image
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: CachedNetworkImage(
+                      imageUrl: product?.imageUrl ?? '',
+                      width: 80,
+                      height: 80,
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) => Container(
+                        width: 80,
+                        height: 80,
+                        color: Theme.of(context).cardColor,
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        product.name,
-                        style: AppTextStyles.titleSmall.copyWith(
-                          color: Theme.of(context).textTheme.titleSmall?.color,
+                      errorWidget: (context, url, error) => Container(
+                        width: 80,
+                        height: 80,
+                        color: Theme.of(context).cardColor,
+                        child: const Icon(Icons.watch_rounded),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  // Details
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (product != null) ...[
+                          Text(
+                            product.brand.toUpperCase(),
+                            style:
+                                AppTextStyles.brandName.copyWith(fontSize: 10),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            product.name,
+                            style: AppTextStyles.titleSmall.copyWith(
+                              color:
+                                  Theme.of(context).textTheme.titleSmall?.color,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            Helpers.formatCurrency(product.price),
+                            style: AppTextStyles.priceSmall,
+                          ),
+                        ] else ...[
+                          Text('Loading...',
+                              style: AppTextStyles.bodyMedium.copyWith(
+                                color: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.color,
+                              )),
+                        ],
+                      ],
+                    ),
+                  ),
+                  // Actions
+                  Column(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.shopping_bag_outlined),
+                        onPressed: (product != null && product.isInStock)
+                            ? () async {
+                                final success = await context
+                                    .read<WishlistProvider>()
+                                    .moveToCart(uid, item.productId);
+                                if (success && context.mounted) {
+                                  Helpers.showSuccessSnackbar(
+                                      context, 'Moved to cart');
+                                }
+                              }
+                            : null,
+                        tooltip: product?.isInStock == true
+                            ? 'Move to cart'
+                            : 'Out of stock',
+                        style: IconButton.styleFrom(
+                          foregroundColor: AppColors.primaryGold,
+                          backgroundColor:
+                              AppColors.primaryGold.withOpacity(0.1),
+                          disabledForegroundColor: AppColors.textTertiary,
+                          disabledBackgroundColor: AppColors.divider,
                         ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 8),
-                      Text(
-                        Helpers.formatCurrency(product.price),
-                        style: AppTextStyles.priceSmall,
+                      IconButton(
+                        icon: const Icon(Icons.delete_outline, size: 20),
+                        onPressed: () {
+                          context.read<WishlistProvider>().removeFromWishlist(
+                                uid,
+                                item.productId,
+                              );
+                        },
+                        tooltip: 'Remove',
+                        style: IconButton.styleFrom(
+                          foregroundColor: AppColors.error,
+                        ),
                       ),
-                    ] else ...[
-                      Text('Loading...',
-                          style: AppTextStyles.bodyMedium.copyWith(
-                            color:
-                                Theme.of(context).textTheme.bodyMedium?.color,
-                          )),
                     ],
-                  ],
-                ),
-              ),
-              // Actions
-              Column(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.shopping_bag_outlined),
-                    onPressed: () async {
-                      final success = await context
-                          .read<WishlistProvider>()
-                          .moveToCart(uid, item.productId);
-                      if (success && context.mounted) {
-                        Helpers.showSuccessSnackbar(context, 'Moved to cart');
-                      }
-                    },
-                    tooltip: 'Move to cart',
-                    style: IconButton.styleFrom(
-                      foregroundColor: AppColors.primaryGold,
-                      backgroundColor: AppColors.primaryGold.withOpacity(0.1),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  IconButton(
-                    icon: const Icon(Icons.delete_outline, size: 20),
-                    onPressed: () {
-                      context.read<WishlistProvider>().removeFromWishlist(
-                            uid,
-                            item.productId,
-                          );
-                    },
-                    tooltip: 'Remove',
-                    style: IconButton.styleFrom(
-                      foregroundColor: AppColors.error,
-                    ),
                   ),
                 ],
               ),
+              if (product != null && !product.isInStock)
+                Container(
+                  margin: const EdgeInsets.only(top: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.error.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: const Text(
+                    'OUT OF STOCK',
+                    style: TextStyle(
+                      color: AppColors.error,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
             ],
           ),
         ),

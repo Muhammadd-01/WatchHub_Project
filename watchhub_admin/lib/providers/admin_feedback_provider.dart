@@ -40,4 +40,18 @@ class AdminFeedbackProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  Future<bool> resolveFeedback(String feedbackId) async {
+    try {
+      await _firestore.collection('feedbacks').doc(feedbackId).update({
+        'isResolved': true,
+        'respondedAt': FieldValue.serverTimestamp(),
+      });
+      await fetchFeedbacks();
+      return true;
+    } catch (e) {
+      debugPrint('Error resolving feedback: $e');
+      return false;
+    }
+  }
 }

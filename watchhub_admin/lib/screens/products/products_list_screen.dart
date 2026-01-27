@@ -15,6 +15,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../core/utils/admin_helpers.dart';
 import '../../widgets/admin_scaffold.dart';
 import '../../providers/admin_product_provider.dart';
+import '../../providers/admin_category_provider.dart';
 import '../../widgets/reviews_dialog.dart';
 
 class ProductsListScreen extends StatefulWidget {
@@ -314,6 +315,14 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
                 .join('\n')
             : '');
     if (p != null) _category = p['category'] ?? 'Men';
+
+    // Fetch categories if needed
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final categoryProvider = context.read<AdminCategoryProvider>();
+      if (categoryProvider.categories.isEmpty) {
+        categoryProvider.fetchCategories();
+      }
+    });
   }
 
   @override
@@ -475,15 +484,30 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
                 ],
               ),
               const SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                value: _category,
-                dropdownColor: AppColors.surfaceColor,
-                decoration: const InputDecoration(labelText: 'Category'),
-                style: const TextStyle(color: AppColors.textPrimary),
-                items: ['Men', 'Women', 'Unisex', 'Smart', 'Luxury']
-                    .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-                    .toList(),
-                onChanged: (v) => setState(() => _category = v!),
+              Consumer<AdminCategoryProvider>(
+                builder: (context, categoryProvider, _) {
+                  final categories = categoryProvider.categories
+                      .map((c) => c['name'] as String)
+                      .toList();
+
+                  // Ensure _category exists in the list, if not add it or pick first
+                  if (categories.isNotEmpty &&
+                      !categories.contains(_category)) {
+                    _category = categories.first;
+                  }
+
+                  return DropdownButtonFormField<String>(
+                    value: categories.contains(_category) ? _category : null,
+                    dropdownColor: AppColors.surfaceColor,
+                    menuMaxHeight: 300,
+                    decoration: const InputDecoration(labelText: 'Category'),
+                    style: const TextStyle(color: AppColors.textPrimary),
+                    items: categories
+                        .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                        .toList(),
+                    onChanged: (v) => setState(() => _category = v!),
+                  );
+                },
               ),
               const SizedBox(height: 16),
               TextFormField(

@@ -52,41 +52,115 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: AppColors.divider),
                 ),
-                child: ListTile(
+                child: ExpansionTile(
                   leading: const CircleAvatar(
                     backgroundColor: AppColors.surfaceColor,
                     child: Icon(Icons.comment, color: AppColors.primaryGold),
                   ),
                   title: Text(fb['userName'] ?? 'Anonymous',
                       style: AppTextStyles.titleSmall),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 4),
-                      Text(fb['message'] ?? fb['comment'] ?? '',
-                          style: AppTextStyles.bodyMedium),
-                      const SizedBox(height: 4),
-                      if (fb['rating'] != null)
-                        Row(
-                          children: List.generate(
-                              5,
-                              (i) => Icon(
-                                    i < (fb['rating'] as num)
-                                        ? Icons.star
-                                        : Icons.star_border,
-                                    size: 16,
+                  subtitle: Text(fb['userEmail'] ?? 'No email',
+                      style: AppTextStyles.bodySmall),
+                  childrenPadding: const EdgeInsets.all(16),
+                  children: [
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (fb['subject'] != null) ...[
+                            Text('Subject: ${fb['subject']}',
+                                style: AppTextStyles.titleSmall.copyWith(
                                     color: AppColors.primaryGold,
-                                  )),
-                        ),
-                    ],
-                  ),
-                  trailing: Text(
-                    fb['createdAt'] != null
-                        ? fb['createdAt'].toDate().toString().substring(0, 10)
-                        : '',
-                    style: AppTextStyles.bodySmall
-                        .copyWith(color: AppColors.textSecondary),
-                  ),
+                                    fontSize: 14)),
+                            const SizedBox(height: 8),
+                          ],
+                          if (fb['type'] != null) ...[
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryGold.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                fb['type'].toString().toUpperCase(),
+                                style: AppTextStyles.labelSmall
+                                    .copyWith(color: AppColors.primaryGold),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                          ],
+                          Text(fb['message'] ?? fb['comment'] ?? '',
+                              style: AppTextStyles.bodyMedium),
+                          const SizedBox(height: 12),
+                          if (fb['rating'] != null)
+                            Row(
+                              children: List.generate(
+                                  5,
+                                  (i) => Icon(
+                                        i < (fb['rating'] as num)
+                                            ? Icons.star
+                                            : Icons.star_border,
+                                        size: 16,
+                                        color: AppColors.primaryGold,
+                                      )),
+                            ),
+                          const SizedBox(height: 12),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Sent on: ${fb['createdAt'] != null ? fb['createdAt'].toDate().toString().substring(0, 16) : 'Unknown'}',
+                                style: AppTextStyles.bodySmall
+                                    .copyWith(color: AppColors.textSecondary),
+                              ),
+                              if (fb['isResolved'] == true)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.success.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    'RESOLVED',
+                                    style: AppTextStyles.labelSmall
+                                        .copyWith(color: AppColors.success),
+                                  ),
+                                )
+                              else
+                                ElevatedButton(
+                                  onPressed: () async {
+                                    final success = await context
+                                        .read<AdminFeedbackProvider>()
+                                        .resolveFeedback(fb['id']);
+                                    if (success) {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(const SnackBar(
+                                              content: Text(
+                                                  'Feedback marked as resolved')));
+                                    }
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.primaryGold,
+                                    foregroundColor:
+                                        AppColors.scaffoldBackground,
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 12, vertical: 8),
+                                    minimumSize: Size.zero,
+                                    tapTargetSize:
+                                        MaterialTapTargetSize.shrinkWrap,
+                                  ),
+                                  child: const Text('Mark Resolved',
+                                      style: TextStyle(fontSize: 12)),
+                                ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               );
             },

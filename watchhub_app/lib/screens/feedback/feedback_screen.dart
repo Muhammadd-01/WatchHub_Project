@@ -79,7 +79,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
         subject: _subjectController.text.trim(),
         message: _messageController.text.trim(),
         createdAt: DateTime.now(),
-        userName: '',
+        userName: authProvider.user?.name ?? 'User',
       );
 
       await _firestoreService.submitFeedback(feedback);
