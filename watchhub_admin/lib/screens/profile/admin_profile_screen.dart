@@ -11,6 +11,7 @@ import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../core/utils/admin_helpers.dart';
@@ -446,6 +447,48 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                         ),
                       ],
                       const SizedBox(height: 24),
+
+                      // Reset Password button
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: () async {
+                            final email = auth.adminEmail;
+                            if (email != null && email.isNotEmpty) {
+                              try {
+                                await FirebaseAuth.instance
+                                    .sendPasswordResetEmail(email: email);
+                                if (mounted) {
+                                  AdminHelpers.showSuccessSnackbar(
+                                    context,
+                                    'Password reset email sent to $email',
+                                  );
+                                }
+                              } catch (e) {
+                                if (mounted) {
+                                  AdminHelpers.showErrorSnackbar(
+                                    context,
+                                    'Failed to send reset email',
+                                  );
+                                }
+                              }
+                            }
+                          },
+                          icon: const Icon(Icons.lock_reset,
+                              color: AppColors.primaryGold),
+                          label: const Text('Reset Password',
+                              style: TextStyle(color: AppColors.primaryGold)),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            side:
+                                const BorderSide(color: AppColors.primaryGold),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
 
                       // Logout button
                       SizedBox(

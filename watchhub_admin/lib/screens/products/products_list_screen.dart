@@ -606,6 +606,7 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
                 .join('\n')
             : '');
     if (p != null) _category = p['category'] ?? 'Men';
+    if (p != null) _isExclusive = p['isExclusive'] ?? false;
 
     // Fetch categories if needed
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -631,6 +632,7 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
   List<XFile> _selectedImages = [];
   List<String> _existingImages = []; // URLs of existing images
   bool _isUploading = false;
+  bool _isExclusive = false; // Admin-marked exclusive
 
   @override
   void didChangeDependencies() {
@@ -990,6 +992,21 @@ Perfect for both formal occasions and everyday wear, this watch is a statement o
                 maxLines: 5,
               ),
               const SizedBox(height: 16),
+              // Exclusive checkbox
+              CheckboxListTile(
+                value: _isExclusive,
+                onChanged: (v) => setState(() => _isExclusive = v ?? false),
+                title: const Text('Mark as Exclusive',
+                    style: TextStyle(color: AppColors.textPrimary)),
+                subtitle: Text(
+                  'Exclusive items appear in a special section on home',
+                  style:
+                      TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                ),
+                activeColor: AppColors.primaryGold,
+                contentPadding: EdgeInsets.zero,
+              ),
+              const SizedBox(height: 16),
               // Specifications with template button
               Row(
                 children: [
@@ -1089,6 +1106,7 @@ Warranty: 2 Years International''';
           'description': desc,
           'category': _category,
           'specifications': specsMap,
+          'isExclusive': _isExclusive,
           'images':
               _existingImages, // Pass existing (possibly modified) images list
         },
@@ -1104,6 +1122,7 @@ Warranty: 2 Years International''';
         category: _category,
         images: _selectedImages,
         specs: specsMap,
+        isExclusive: _isExclusive,
       );
     }
 

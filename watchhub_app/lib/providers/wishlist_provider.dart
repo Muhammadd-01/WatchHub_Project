@@ -64,12 +64,26 @@ class WishlistProvider extends ChangeNotifier {
     _wishlistSubscription = _firestoreService.wishlistStream(uid).listen(
       (items) async {
         final populatedItems = <WishlistItemModel>[];
+        final itemsToRemove = <String>[]; // Track deleted product IDs
 
         for (final item in items) {
           final product = await _firestoreService.getProduct(
             item.productId,
           );
-          populatedItems.add(item.copyWith(product: product));
+
+          // If product was deleted, mark for removal
+          if (product == null) {
+            itemsToRemove.add(item.productId);
+            debugPrint(
+                'WishlistProvider: Product ${item.productId} was deleted, removing from wishlist');
+          } else {
+            populatedItems.add(item.copyWith(product: product));
+          }
+        }
+
+        // Auto-remove deleted products from wishlist in Firestore
+        for (final productId in itemsToRemove) {
+          await _firestoreService.removeFromWishlist(uid, productId);
         }
 
         _items = populatedItems;

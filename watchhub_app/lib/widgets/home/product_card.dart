@@ -109,17 +109,27 @@ class ProductCard extends StatelessWidget {
                   // Price
                   Row(
                     children: [
-                      Text(
-                        Helpers.formatCurrencyCompact(product.price),
-                        style: AppTextStyles.priceSmall.copyWith(fontSize: 16),
+                      Flexible(
+                        child: Text(
+                          Helpers.formatCurrencyCompact(product.price),
+                          style:
+                              AppTextStyles.priceSmall.copyWith(fontSize: 16),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                       if (product.isOnSale) ...[
                         const SizedBox(width: 8),
-                        Text(
-                          Helpers.formatCurrencyCompact(product.originalPrice!),
-                          style: AppTextStyles.bodySmall.copyWith(
-                            decoration: TextDecoration.lineThrough,
-                            color: AppColors.textTertiary,
+                        Flexible(
+                          child: Text(
+                            Helpers.formatCurrencyCompact(
+                                product.originalPrice!),
+                            style: AppTextStyles.bodySmall.copyWith(
+                              decoration: TextDecoration.lineThrough,
+                              color: AppColors.textTertiary,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],

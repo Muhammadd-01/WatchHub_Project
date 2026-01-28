@@ -129,23 +129,62 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
   @override
   Widget build(BuildContext context) {
     return AdminScaffold(
-      title: 'Orders',
+      title:
+          _isSelectionMode ? '${_selectedOrderIds.length} Selected' : 'Orders',
       actions: [
-        // Selection mode toggle
-        IconButton(
-          icon: Icon(
-            _isSelectionMode ? Icons.close : Icons.checklist,
-            color: _isSelectionMode ? AppColors.error : AppColors.textPrimary,
-            size: 20,
+        if (_isSelectionMode) ...[
+          // Select all button
+          Consumer<AdminOrderProvider>(
+            builder: (context, provider, _) => IconButton(
+              onPressed: () => _selectAll(provider.orders),
+              icon: Icon(
+                _selectedOrderIds.length == provider.orders.length
+                    ? Icons.deselect
+                    : Icons.select_all,
+                size: 22,
+              ),
+              tooltip: _selectedOrderIds.length == provider.orders.length
+                  ? 'Deselect All'
+                  : 'Select All',
+              color: AppColors.primaryGold,
+            ),
           ),
-          tooltip: _isSelectionMode ? 'Cancel Selection' : 'Select Multiple',
-          onPressed: _toggleSelectionMode,
-        ),
-        AnimatedReloadButton(
-          onPressed: () {
-            context.read<AdminOrderProvider>().fetchOrders();
-          },
-        ),
+          // Delete selected button
+          IconButton(
+            onPressed: _selectedOrderIds.isEmpty ? null : _deleteSelected,
+            icon: const Icon(Icons.delete_sweep, size: 22),
+            tooltip: 'Delete Selected',
+            color: _selectedOrderIds.isEmpty
+                ? AppColors.textSecondary
+                : AppColors.error,
+          ),
+          // Cancel selection
+          IconButton(
+            onPressed: () {
+              setState(() {
+                _isSelectionMode = false;
+                _selectedOrderIds.clear();
+              });
+            },
+            icon: const Icon(Icons.close, size: 22),
+            tooltip: 'Cancel',
+            color: AppColors.error,
+          ),
+        ] else ...[
+          // Selection mode toggle
+          IconButton(
+            icon: const Icon(Icons.checklist, size: 20),
+            color: AppColors.textPrimary,
+            tooltip: 'Select Multiple',
+            onPressed: _toggleSelectionMode,
+          ),
+          AnimatedReloadButton(
+            onPressed: () {
+              context.read<AdminOrderProvider>().fetchOrders();
+            },
+          ),
+        ],
+        const SizedBox(width: 8),
       ],
       body: Consumer<AdminOrderProvider>(
         builder: (context, provider, _) {
@@ -169,42 +208,6 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
 
           return Column(
             children: [
-              // Selection action bar
-              if (_isSelectionMode)
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  color: AppColors.surfaceColor,
-                  child: Row(
-                    children: [
-                      TextButton.icon(
-                        onPressed: () => _selectAll(provider.orders),
-                        icon: Icon(
-                          _selectedOrderIds.length == provider.orders.length
-                              ? Icons.check_box
-                              : Icons.check_box_outline_blank,
-                          size: 20,
-                        ),
-                        label: Text(
-                          _selectedOrderIds.length == provider.orders.length
-                              ? 'Deselect All'
-                              : 'Select All',
-                        ),
-                      ),
-                      const Spacer(),
-                      if (_selectedOrderIds.isNotEmpty)
-                        ElevatedButton.icon(
-                          onPressed: _deleteSelected,
-                          icon: const Icon(Icons.delete, size: 18),
-                          label: Text('Delete (${_selectedOrderIds.length})'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.error,
-                            foregroundColor: Colors.white,
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
               // Content
               Expanded(
                 child: isMobile

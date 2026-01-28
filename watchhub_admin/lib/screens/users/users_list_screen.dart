@@ -50,11 +50,17 @@ class _UsersListScreenState extends State<UsersListScreen> {
 
   void _selectAll(List<QueryDocumentSnapshot> users) {
     setState(() {
-      if (_selectedUserIds.length == users.length) {
+      // Filter out superadmin users
+      final selectableUsers = users.where((user) {
+        final data = user.data() as Map<String, dynamic>;
+        return data['email'] != 'admin@watchhub.com';
+      }).toList();
+
+      if (_selectedUserIds.length == selectableUsers.length) {
         _selectedUserIds.clear();
       } else {
         _selectedUserIds.clear();
-        for (var user in users) {
+        for (var user in selectableUsers) {
           _selectedUserIds.add(user.id);
         }
       }
@@ -109,32 +115,91 @@ class _UsersListScreenState extends State<UsersListScreen> {
     return AdminScaffold(
       title: _isSelectionMode ? '${_selectedUserIds.length} Selected' : 'Users',
       actions: [
-        // Selection mode toggle
-        IconButton(
-          icon: Icon(
-            _isSelectionMode ? Icons.close : Icons.checklist,
-            color: _isSelectionMode ? AppColors.error : AppColors.textPrimary,
-            size: 20,
+        if (_isSelectionMode) ...[
+          // Select all button - shown immediately in selection mode
+          StreamBuilder<QuerySnapshot>(
+            stream: FirebaseFirestore.instance
+                .collection('users')
+                .orderBy('createdAt', descending: true)
+                .snapshots(),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) return const SizedBox.shrink();
+              final users = snapshot.data!.docs;
+              // Exclude superadmin from count
+              final selectableCount = users.where((user) {
+                final data = user.data() as Map<String, dynamic>;
+                return data['email'] != 'admin@watchhub.com';
+              }).length;
+              final allSelected = _selectedUserIds.length == selectableCount &&
+                  selectableCount > 0;
+
+              return IconButton(
+                onPressed: () => _selectAll(users),
+                icon: Icon(
+                  allSelected ? Icons.deselect : Icons.select_all,
+                  size: 22,
+                ),
+                tooltip: allSelected ? 'Deselect All' : 'Select All',
+                color: AppColors.primaryGold,
+              );
+            },
           ),
-          tooltip: _isSelectionMode ? 'Cancel Selection' : 'Select Multiple',
-          onPressed: _toggleSelectionMode,
-        ),
-        AnimatedReloadButton(
-          onPressed: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Users list refreshed'),
-                duration: Duration(seconds: 1),
-              ),
-            );
-          },
-        ),
-        const SizedBox(width: 8),
-        IconButton(
-          icon: const Icon(Icons.person_add, color: AppColors.primaryGold),
-          onPressed: () => _showAddUserDialog(context),
-          tooltip: 'Add User/Admin',
-        ),
+          // Delete selected button
+          StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('users')
+                  .orderBy('createdAt', descending: true)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                final users = snapshot.data?.docs ?? [];
+                return IconButton(
+                  onPressed: _selectedUserIds.isEmpty
+                      ? null
+                      : () => _deleteSelected(users),
+                  icon: const Icon(Icons.delete_sweep, size: 22),
+                  tooltip: 'Delete Selected',
+                  color: _selectedUserIds.isEmpty
+                      ? AppColors.textSecondary
+                      : AppColors.error,
+                );
+              }),
+          // Cancel selection
+          IconButton(
+            onPressed: () {
+              setState(() {
+                _isSelectionMode = false;
+                _selectedUserIds.clear();
+              });
+            },
+            icon: const Icon(Icons.close, size: 22),
+            tooltip: 'Cancel',
+            color: AppColors.error,
+          ),
+        ] else ...[
+          // Selection mode toggle
+          IconButton(
+            icon: const Icon(Icons.checklist, size: 20),
+            color: AppColors.textPrimary,
+            tooltip: 'Select Multiple',
+            onPressed: _toggleSelectionMode,
+          ),
+          AnimatedReloadButton(
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Users list refreshed'),
+                  duration: Duration(seconds: 1),
+                ),
+              );
+            },
+          ),
+          const SizedBox(width: 8),
+          IconButton(
+            icon: const Icon(Icons.person_add, color: AppColors.primaryGold),
+            onPressed: () => _showAddUserDialog(context),
+            tooltip: 'Add User/Admin',
+          ),
+        ],
         const SizedBox(width: 16),
       ],
       body: StreamBuilder<QuerySnapshot>(
@@ -163,42 +228,6 @@ class _UsersListScreenState extends State<UsersListScreen> {
 
           return Column(
             children: [
-              // Selection action bar
-              if (_isSelectionMode)
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  color: AppColors.surfaceColor,
-                  child: Row(
-                    children: [
-                      TextButton.icon(
-                        onPressed: () => _selectAll(users),
-                        icon: Icon(
-                          _selectedUserIds.length == users.length
-                              ? Icons.check_box
-                              : Icons.check_box_outline_blank,
-                          size: 20,
-                        ),
-                        label: Text(
-                          _selectedUserIds.length == users.length
-                              ? 'Deselect All'
-                              : 'Select All',
-                        ),
-                      ),
-                      const Spacer(),
-                      if (_selectedUserIds.isNotEmpty)
-                        ElevatedButton.icon(
-                          onPressed: () => _deleteSelected(users),
-                          icon: const Icon(Icons.delete, size: 18),
-                          label: Text('Delete (${_selectedUserIds.length})'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.error,
-                            foregroundColor: Colors.white,
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
               // Main content
               Expanded(
                 child: isMobile

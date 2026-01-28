@@ -58,6 +58,9 @@ class ProductModel {
   /// Whether the product is new arrival
   final bool isNewArrival;
 
+  /// Whether the product is marked as exclusive by admin
+  final bool isExclusive;
+
   /// Product creation timestamp
   final DateTime createdAt;
 
@@ -81,6 +84,7 @@ class ProductModel {
     this.reviewCount = 0,
     this.isFeatured = false,
     this.isNewArrival = false,
+    this.isExclusive = false,
     required this.createdAt,
     this.updatedAt,
   });
@@ -124,6 +128,7 @@ class ProductModel {
       reviewCount: data['reviewCount'] ?? 0,
       isFeatured: data['isFeatured'] ?? false,
       isNewArrival: data['isNewArrival'] ?? false,
+      isExclusive: data['isExclusive'] ?? false,
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       updatedAt: (data['updatedAt'] as Timestamp?)?.toDate(),
     );
@@ -162,6 +167,7 @@ class ProductModel {
       reviewCount: map['reviewCount'] ?? 0,
       isFeatured: map['isFeatured'] ?? false,
       isNewArrival: map['isNewArrival'] ?? false,
+      isExclusive: map['isExclusive'] ?? false,
       createdAt: map['createdAt'] is Timestamp
           ? (map['createdAt'] as Timestamp).toDate()
           : (map['createdAt'] as DateTime?) ?? DateTime.now(),
@@ -188,6 +194,7 @@ class ProductModel {
       'reviewCount': reviewCount,
       'isFeatured': isFeatured,
       'isNewArrival': isNewArrival,
+      'isExclusive': isExclusive,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': updatedAt != null ? Timestamp.fromDate(updatedAt!) : null,
     };

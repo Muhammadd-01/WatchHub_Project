@@ -130,9 +130,11 @@ class ProductProvider extends ChangeNotifier {
         sortBy: 'newest',
         limit: 12,
       );
-      // Filter out exclusive items (products with 3+ reviews)
-      _newArrivals =
-          allNewArrivals.where((p) => p.reviewCount < 3).take(6).toList();
+      // Filter out exclusive items (admin-marked OR products with 3+ reviews)
+      _newArrivals = allNewArrivals
+          .where((p) => !p.isExclusive && p.reviewCount < 3)
+          .take(6)
+          .toList();
       notifyListeners();
     } catch (e) {
       debugPrint('ProductProvider: Error loading new arrivals - $e');
@@ -155,9 +157,11 @@ class ProductProvider extends ChangeNotifier {
         sortBy: 'rating',
         limit: 20,
       );
-      // Filter for products with 3+ reviews
-      _exclusiveProducts =
-          allProducts.where((p) => p.reviewCount >= 3).take(6).toList();
+      // Filter for admin-marked exclusive OR products with 3+ reviews
+      _exclusiveProducts = allProducts
+          .where((p) => p.isExclusive || p.reviewCount >= 3)
+          .take(6)
+          .toList();
       notifyListeners();
     } catch (e) {
       debugPrint('ProductProvider: Error loading exclusive products - $e');
@@ -513,10 +517,10 @@ class ProductProvider extends ChangeNotifier {
         sortBy: 'newest',
         limit: 12,
       );
-      // Deduplicate by product ID and filter out exclusive items (3+ reviews)
+      // Deduplicate by product ID and filter out exclusive items (admin-marked OR 3+ reviews)
       final seen = <String>{};
       _newArrivals = rawProducts
-          .where((p) => seen.add(p.id) && p.reviewCount < 3)
+          .where((p) => seen.add(p.id) && !p.isExclusive && p.reviewCount < 3)
           .take(6)
           .toList();
     } catch (e) {
@@ -530,10 +534,10 @@ class ProductProvider extends ChangeNotifier {
         sortBy: 'rating',
         limit: 20,
       );
-      // Filter for products with 3+ reviews (exclusive)
+      // Filter for admin-marked exclusive OR products with 3+ reviews
       final seen = <String>{};
       _exclusiveProducts = allProducts
-          .where((p) => seen.add(p.id) && p.reviewCount >= 3)
+          .where((p) => seen.add(p.id) && (p.isExclusive || p.reviewCount >= 3))
           .take(6)
           .toList();
     } catch (e) {

@@ -9,6 +9,7 @@ import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:image_picker/image_picker.dart';
+import '../services/notification_service.dart';
 
 class AdminProductProvider extends ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -58,6 +59,7 @@ class AdminProductProvider extends ChangeNotifier {
     required List<XFile> images,
     required Map<String, dynamic> specs,
     required int stock,
+    bool isExclusive = false,
   }) async {
     _isLoading = true;
     _errorMessage = null;
@@ -83,9 +85,17 @@ class AdminProductProvider extends ChangeNotifier {
         'updatedAt': FieldValue.serverTimestamp(),
         'isFeatured': false,
         'isNewArrival': true,
+        'isExclusive': isExclusive,
       };
 
-      await _productCollection.add(data);
+      final docRef = await _productCollection.add(data);
+
+      // 3. Send push notification to all users
+      await NotificationService.notifyNewProduct(
+        productName: name,
+        productBrand: brand,
+        productId: docRef.id,
+      );
 
       // Refresh list
       await fetchProducts();

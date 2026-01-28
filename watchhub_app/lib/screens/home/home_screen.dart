@@ -596,9 +596,18 @@ class _HomeScreenState extends State<HomeScreen> {
                     }
                   }
 
-                  // Handle single product case
-                  if (list2.isEmpty && list1.isNotEmpty) {
-                    list2.add(list1[0]);
+                  // Handle single product case - show single centered card
+                  if (newArrivals.length == 1) {
+                    return Center(
+                      child: SizedBox(
+                        width: MediaQuery.of(context).size.width * 0.5,
+                        child: AutoLoopingProductCard(
+                          products: list1,
+                          interval: const Duration(seconds: 6),
+                          height: 300,
+                        ),
+                      ),
+                    );
                   }
 
                   return Row(
