@@ -93,6 +93,20 @@ class ProductModel {
   factory ProductModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
 
+    // Handle admin panel format: 'images' array where first is main, rest are additional
+    String mainImageUrl = data['imageUrl'] ?? '';
+    List<String>? additionalImgs;
+
+    if (data['images'] != null && (data['images'] as List).isNotEmpty) {
+      final imagesList = List<String>.from(data['images']);
+      mainImageUrl = imagesList.first;
+      if (imagesList.length > 1) {
+        additionalImgs = imagesList.sublist(1);
+      }
+    } else if (data['additionalImages'] != null) {
+      additionalImgs = List<String>.from(data['additionalImages']);
+    }
+
     return ProductModel(
       id: doc.id,
       name: data['name'] ?? '',
@@ -100,13 +114,12 @@ class ProductModel {
       description: data['description'] ?? '',
       price: (data['price'] ?? 0).toDouble(),
       originalPrice: data['originalPrice']?.toDouble(),
-      imageUrl: data['imageUrl'] ?? '',
-      additionalImages: data['additionalImages'] != null
-          ? List<String>.from(data['additionalImages'])
-          : null,
+      imageUrl: mainImageUrl,
+      additionalImages: additionalImgs,
       category: data['category'] ?? '',
       stock: data['stock'] ?? 0,
-      specifications: Map<String, dynamic>.from(data['specifications'] ?? {}),
+      specifications: Map<String, dynamic>.from(
+          data['specs'] ?? data['specifications'] ?? {}),
       rating: (data['rating'] ?? 0).toDouble(),
       reviewCount: data['reviewCount'] ?? 0,
       isFeatured: data['isFeatured'] ?? false,
@@ -118,6 +131,20 @@ class ProductModel {
 
   /// Creates a ProductModel from a Map
   factory ProductModel.fromMap(Map<String, dynamic> map) {
+    // Handle admin panel format: 'images' array where first is main, rest are additional
+    String mainImageUrl = map['imageUrl'] ?? '';
+    List<String>? additionalImgs;
+
+    if (map['images'] != null && (map['images'] as List).isNotEmpty) {
+      final imagesList = List<String>.from(map['images']);
+      mainImageUrl = imagesList.first;
+      if (imagesList.length > 1) {
+        additionalImgs = imagesList.sublist(1);
+      }
+    } else if (map['additionalImages'] != null) {
+      additionalImgs = List<String>.from(map['additionalImages']);
+    }
+
     return ProductModel(
       id: map['id'] ?? '',
       name: map['name'] ?? '',
@@ -125,13 +152,12 @@ class ProductModel {
       description: map['description'] ?? '',
       price: (map['price'] ?? 0).toDouble(),
       originalPrice: map['originalPrice']?.toDouble(),
-      imageUrl: map['imageUrl'] ?? '',
-      additionalImages: map['additionalImages'] != null
-          ? List<String>.from(map['additionalImages'])
-          : null,
+      imageUrl: mainImageUrl,
+      additionalImages: additionalImgs,
       category: map['category'] ?? '',
       stock: map['stock'] ?? 0,
-      specifications: Map<String, dynamic>.from(map['specifications'] ?? {}),
+      specifications: Map<String, dynamic>.from(
+          map['specs'] ?? map['specifications'] ?? {}),
       rating: (map['rating'] ?? 0).toDouble(),
       reviewCount: map['reviewCount'] ?? 0,
       isFeatured: map['isFeatured'] ?? false,

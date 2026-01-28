@@ -115,6 +115,19 @@ class AdminOrderProvider extends ChangeNotifier {
     }
   }
 
+  /// Delete an order by ID
+  Future<bool> deleteOrder(String orderId) async {
+    try {
+      await _orderCollection.doc(orderId).delete();
+      _orders.removeWhere((o) => o['id'] == orderId);
+      notifyListeners();
+      return true;
+    } catch (e) {
+      debugPrint('AdminOrderProvider: Error deleting order - $e');
+      return false;
+    }
+  }
+
   /// Sends a notification to a user
   Future<void> _sendNotification(
       String uid, String title, String message) async {

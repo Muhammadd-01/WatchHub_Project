@@ -20,18 +20,107 @@ import '../../widgets/admin_scaffold.dart';
 import '../../providers/admin_user_provider.dart';
 import '../../widgets/animated_reload_button.dart';
 
-class UsersListScreen extends StatelessWidget {
+class UsersListScreen extends StatefulWidget {
   const UsersListScreen({super.key});
+
+  @override
+  State<UsersListScreen> createState() => _UsersListScreenState();
+}
+
+class _UsersListScreenState extends State<UsersListScreen> {
+  bool _isSelectionMode = false;
+  final Set<String> _selectedUserIds = {};
+
+  void _toggleSelectionMode() {
+    setState(() {
+      _isSelectionMode = !_isSelectionMode;
+      _selectedUserIds.clear();
+    });
+  }
+
+  void _toggleUserSelection(String uid) {
+    setState(() {
+      if (_selectedUserIds.contains(uid)) {
+        _selectedUserIds.remove(uid);
+      } else {
+        _selectedUserIds.add(uid);
+      }
+    });
+  }
+
+  void _selectAll(List<QueryDocumentSnapshot> users) {
+    setState(() {
+      if (_selectedUserIds.length == users.length) {
+        _selectedUserIds.clear();
+      } else {
+        _selectedUserIds.clear();
+        for (var user in users) {
+          _selectedUserIds.add(user.id);
+        }
+      }
+    });
+  }
+
+  Future<void> _deleteSelected(List<QueryDocumentSnapshot> users) async {
+    if (_selectedUserIds.isEmpty) return;
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.cardBackground,
+        title: Text('Delete ${_selectedUserIds.length} user(s)?',
+            style: AppTextStyles.titleMedium),
+        content: const Text(
+          'This action cannot be undone.',
+          style: TextStyle(color: AppColors.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      final provider = context.read<AdminUserProvider>();
+      for (final uid in _selectedUserIds.toList()) {
+        final email = users.firstWhere((u) => u.id == uid).get('email') ?? '';
+        await provider.deleteUser(uid, email);
+      }
+      setState(() {
+        _isSelectionMode = false;
+        _selectedUserIds.clear();
+      });
+      if (mounted) {
+        AdminHelpers.showSuccessSnackbar(context, 'Users deleted');
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return AdminScaffold(
-      title: 'Users',
+      title: _isSelectionMode ? '${_selectedUserIds.length} Selected' : 'Users',
       actions: [
+        // Selection mode toggle
+        IconButton(
+          icon: Icon(
+            _isSelectionMode ? Icons.close : Icons.checklist,
+            color: _isSelectionMode ? AppColors.error : AppColors.textPrimary,
+            size: 20,
+          ),
+          tooltip: _isSelectionMode ? 'Cancel Selection' : 'Select Multiple',
+          onPressed: _toggleSelectionMode,
+        ),
         AnimatedReloadButton(
           onPressed: () {
-            // StreamBuilder auto-refreshes, but we can trigger a rebuild
-            // by navigating away and back or just use the animation feedback
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text('Users list refreshed'),
@@ -70,259 +159,359 @@ class UsersListScreen extends StatelessWidget {
           }
 
           final users = snapshot.data!.docs;
-
-          // Responsive layout - cards for mobile, data table for desktop
           final isMobile = MediaQuery.of(context).size.width < 600;
 
-          if (isMobile) {
-            // Mobile card layout
-            return ListView.builder(
-              itemCount: users.length,
-              padding: const EdgeInsets.only(bottom: 16),
-              itemBuilder: (context, index) {
-                final doc = users[index];
-                final data = doc.data() as Map<String, dynamic>;
-                final date = data['createdAt'] != null
-                    ? (data['createdAt'] as Timestamp).toDate()
-                    : DateTime.now();
-                final role = data['role'] ?? 'customer';
-                final isSuperAdmin = data['email'] == 'admin@watchhub.com';
-
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  color: AppColors.cardBackground,
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Row(
-                      children: [
-                        // Profile image
-                        data['profileImageUrl'] != null &&
-                                (data['profileImageUrl'] as String).isNotEmpty
-                            ? CircleAvatar(
-                                radius: 24,
-                                backgroundImage:
-                                    NetworkImage(data['profileImageUrl']),
-                                backgroundColor: AppColors.surfaceColor,
-                              )
-                            : CircleAvatar(
-                                radius: 24,
-                                backgroundColor: AppColors.primaryGold,
-                                child: Text(
-                                  (data['name'] as String? ?? 'U')
-                                      .substring(0, 1)
-                                      .toUpperCase(),
-                                  style: const TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 18),
-                                ),
-                              ),
-                        const SizedBox(width: 12),
-                        // User info
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                data['name'] ?? 'Unknown',
-                                style: AppTextStyles.titleSmall,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                data['email'] ?? '-',
-                                style: AppTextStyles.bodySmall.copyWith(
-                                  color: AppColors.textSecondary,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 4),
-                              Row(
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 6, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: (role == 'admin')
-                                          ? AppColors.error.withOpacity(0.2)
-                                          : AppColors.success.withOpacity(0.2),
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    child: Text(
-                                      role.toString().toUpperCase(),
-                                      style: AppTextStyles.labelSmall.copyWith(
-                                        color: (role == 'admin')
-                                            ? AppColors.error
-                                            : AppColors.success,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    DateFormat('MMM dd, yyyy').format(date),
-                                    style: AppTextStyles.labelSmall.copyWith(
-                                      color: AppColors.textTertiary,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
+          return Column(
+            children: [
+              // Selection action bar
+              if (_isSelectionMode)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  color: AppColors.surfaceColor,
+                  child: Row(
+                    children: [
+                      TextButton.icon(
+                        onPressed: () => _selectAll(users),
+                        icon: Icon(
+                          _selectedUserIds.length == users.length
+                              ? Icons.check_box
+                              : Icons.check_box_outline_blank,
+                          size: 20,
+                        ),
+                        label: Text(
+                          _selectedUserIds.length == users.length
+                              ? 'Deselect All'
+                              : 'Select All',
+                        ),
+                      ),
+                      const Spacer(),
+                      if (_selectedUserIds.isNotEmpty)
+                        ElevatedButton.icon(
+                          onPressed: () => _deleteSelected(users),
+                          icon: const Icon(Icons.delete, size: 18),
+                          label: Text('Delete (${_selectedUserIds.length})'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.error,
+                            foregroundColor: Colors.white,
                           ),
                         ),
-                        // Actions
-                        if (isSuperAdmin)
-                          const Icon(Icons.shield,
-                              color: AppColors.primaryGold, size: 20)
-                        else
-                          PopupMenuButton<String>(
-                            icon: const Icon(Icons.more_vert),
-                            onSelected: (value) {
-                              switch (value) {
-                                case 'toggle':
-                                  _toggleRole(context, doc.id, role);
-                                  break;
-                                case 'delete':
-                                  _confirmDelete(
-                                      context, doc.id, data['email']);
-                                  break;
-                              }
-                            },
-                            itemBuilder: (context) => [
-                              PopupMenuItem(
-                                value: 'toggle',
-                                child: Text(role == 'admin'
-                                    ? 'Demote to Customer'
-                                    : 'Promote to Admin'),
-                              ),
-                              const PopupMenuItem(
-                                value: 'delete',
-                                child: Text('Delete User'),
-                              ),
-                            ],
-                          ),
-                      ],
-                    ),
+                    ],
                   ),
-                );
-              },
-            );
-          }
+                ),
+              // Main content
+              Expanded(
+                child: isMobile
+                    ? ListView.builder(
+                        itemCount: users.length,
+                        padding: const EdgeInsets.only(bottom: 16),
+                        itemBuilder: (context, index) {
+                          final doc = users[index];
+                          final uid = doc.id;
+                          final data = doc.data() as Map<String, dynamic>;
+                          final date = data['createdAt'] != null
+                              ? (data['createdAt'] as Timestamp).toDate()
+                              : DateTime.now();
+                          final role = data['role'] ?? 'customer';
+                          final isSuperAdmin =
+                              data['email'] == 'admin@watchhub.com';
 
-          // Desktop data table
-          return Theme(
-            data: Theme.of(context).copyWith(
-              cardColor: AppColors.cardBackground,
-              dividerColor: AppColors.divider,
-            ),
-            child: DataTable2(
-              columnSpacing: 12,
-              horizontalMargin: 12,
-              minWidth: 900,
-              headingRowColor: WidgetStateColor.resolveWith(
-                  (states) => AppColors.surfaceColor),
-              columns: const [
-                DataColumn2(label: Text('Name'), size: ColumnSize.L),
-                DataColumn2(label: Text('Email'), size: ColumnSize.L),
-                DataColumn2(label: Text('Role'), size: ColumnSize.S),
-                DataColumn2(label: Text('Joined'), size: ColumnSize.M),
-                DataColumn2(label: Text('Actions'), fixedWidth: 150),
-              ],
-              rows: users.map((doc) {
-                final data = doc.data() as Map<String, dynamic>;
-                final date = data['createdAt'] != null
-                    ? (data['createdAt'] as Timestamp).toDate()
-                    : DateTime.now();
-                final role = data['role'] ?? 'customer';
-                final isSuperAdmin = data['email'] == 'admin@watchhub.com';
-
-                return DataRow(
-                  cells: [
-                    DataCell(Row(
-                      children: [
-                        // Profile image or initials
-                        data['profileImageUrl'] != null &&
-                                (data['profileImageUrl'] as String).isNotEmpty
-                            ? CircleAvatar(
-                                radius: 16,
-                                backgroundImage:
-                                    NetworkImage(data['profileImageUrl']),
-                                backgroundColor: AppColors.surfaceColor,
-                              )
-                            : CircleAvatar(
-                                radius: 16,
-                                backgroundColor: AppColors.primaryGold,
-                                child: Text(
-                                  (data['name'] as String? ?? 'U')
-                                      .substring(0, 1)
-                                      .toUpperCase(),
-                                  style: const TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold),
+                          return Card(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            color: _isSelectionMode &&
+                                    _selectedUserIds.contains(uid)
+                                ? AppColors.primaryGold.withOpacity(0.1)
+                                : AppColors.cardBackground,
+                            child: InkWell(
+                              onTap: _isSelectionMode && !isSuperAdmin
+                                  ? () => _toggleUserSelection(uid)
+                                  : null,
+                              child: Padding(
+                                padding: const EdgeInsets.all(12),
+                                child: Row(
+                                  children: [
+                                    // Checkbox for selection
+                                    if (_isSelectionMode && !isSuperAdmin)
+                                      Checkbox(
+                                        value: _selectedUserIds.contains(uid),
+                                        onChanged: (_) =>
+                                            _toggleUserSelection(uid),
+                                        activeColor: AppColors.primaryGold,
+                                      ),
+                                    // Profile image
+                                    data['profileImageUrl'] != null &&
+                                            (data['profileImageUrl'] as String)
+                                                .isNotEmpty
+                                        ? CircleAvatar(
+                                            radius: 24,
+                                            backgroundImage: NetworkImage(
+                                                data['profileImageUrl']),
+                                            backgroundColor:
+                                                AppColors.surfaceColor,
+                                          )
+                                        : CircleAvatar(
+                                            radius: 24,
+                                            backgroundColor:
+                                                AppColors.primaryGold,
+                                            child: Text(
+                                              (data['name'] as String? ?? 'U')
+                                                  .substring(0, 1)
+                                                  .toUpperCase(),
+                                              style: const TextStyle(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 18),
+                                            ),
+                                          ),
+                                    const SizedBox(width: 12),
+                                    // User info
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            data['name'] ?? 'Unknown',
+                                            style: AppTextStyles.titleSmall,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            data['email'] ?? '-',
+                                            style: AppTextStyles.bodySmall
+                                                .copyWith(
+                                              color: AppColors.textSecondary,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Row(
+                                            children: [
+                                              Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                        horizontal: 6,
+                                                        vertical: 2),
+                                                decoration: BoxDecoration(
+                                                  color: (role == 'admin')
+                                                      ? AppColors.error
+                                                          .withOpacity(0.2)
+                                                      : AppColors.success
+                                                          .withOpacity(0.2),
+                                                  borderRadius:
+                                                      BorderRadius.circular(4),
+                                                ),
+                                                child: Text(
+                                                  role.toString().toUpperCase(),
+                                                  style: AppTextStyles
+                                                      .labelSmall
+                                                      .copyWith(
+                                                    color: (role == 'admin')
+                                                        ? AppColors.error
+                                                        : AppColors.success,
+                                                  ),
+                                                ),
+                                              ),
+                                              const SizedBox(width: 8),
+                                              Text(
+                                                DateFormat('MMM dd, yyyy')
+                                                    .format(date),
+                                                style: AppTextStyles.labelSmall
+                                                    .copyWith(
+                                                  color: AppColors.textTertiary,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    // Actions
+                                    if (isSuperAdmin)
+                                      const Icon(Icons.shield,
+                                          color: AppColors.primaryGold,
+                                          size: 20)
+                                    else
+                                      PopupMenuButton<String>(
+                                        icon: const Icon(Icons.more_vert),
+                                        onSelected: (value) {
+                                          switch (value) {
+                                            case 'toggle':
+                                              _toggleRole(
+                                                  context, doc.id, role);
+                                              break;
+                                            case 'delete':
+                                              _confirmDelete(context, doc.id,
+                                                  data['email']);
+                                              break;
+                                          }
+                                        },
+                                        itemBuilder: (context) => [
+                                          PopupMenuItem(
+                                            value: 'toggle',
+                                            child: Text(role == 'admin'
+                                                ? 'Demote to Customer'
+                                                : 'Promote to Admin'),
+                                          ),
+                                          const PopupMenuItem(
+                                            value: 'delete',
+                                            child: Text('Delete User'),
+                                          ),
+                                        ],
+                                      ),
+                                  ],
                                 ),
                               ),
-                        const SizedBox(width: 8),
-                        Text(data['name'] ?? 'Unknown',
-                            style: AppTextStyles.bodyMedium),
-                      ],
-                    )),
-                    DataCell(Text(data['email'] ?? '-',
-                        style: AppTextStyles.bodyMedium)),
-                    DataCell(Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: (role == 'admin')
-                            ? AppColors.error.withOpacity(0.2)
-                            : AppColors.success.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(4),
+                            ),
+                          );
+                        },
+                      )
+                    : Theme(
+                        data: Theme.of(context).copyWith(
+                          cardColor: AppColors.cardBackground,
+                          dividerColor: AppColors.divider,
+                        ),
+                        child: DataTable2(
+                          columnSpacing: 12,
+                          horizontalMargin: 12,
+                          minWidth: 900,
+                          headingRowColor: WidgetStateColor.resolveWith(
+                              (states) => AppColors.surfaceColor),
+                          columns: [
+                            if (_isSelectionMode)
+                              const DataColumn2(
+                                  label: Text(''), fixedWidth: 50),
+                            const DataColumn2(
+                                label: Text('Name'), size: ColumnSize.L),
+                            const DataColumn2(
+                                label: Text('Email'), size: ColumnSize.L),
+                            const DataColumn2(
+                                label: Text('Role'), size: ColumnSize.S),
+                            const DataColumn2(
+                                label: Text('Joined'), size: ColumnSize.M),
+                            const DataColumn2(
+                                label: Text('Actions'), fixedWidth: 150),
+                          ],
+                          rows: users.map((doc) {
+                            final uid = doc.id;
+                            final data = doc.data() as Map<String, dynamic>;
+                            final date = data['createdAt'] != null
+                                ? (data['createdAt'] as Timestamp).toDate()
+                                : DateTime.now();
+                            final role = data['role'] ?? 'customer';
+                            final isSuperAdmin =
+                                data['email'] == 'admin@watchhub.com';
+
+                            return DataRow(
+                              selected: _selectedUserIds.contains(uid),
+                              color: _selectedUserIds.contains(uid)
+                                  ? WidgetStatePropertyAll(
+                                      AppColors.primaryGold.withOpacity(0.1))
+                                  : null,
+                              cells: [
+                                if (_isSelectionMode)
+                                  DataCell(
+                                    isSuperAdmin
+                                        ? const SizedBox()
+                                        : Checkbox(
+                                            value:
+                                                _selectedUserIds.contains(uid),
+                                            onChanged: (_) =>
+                                                _toggleUserSelection(uid),
+                                            activeColor: AppColors.primaryGold,
+                                          ),
+                                  ),
+                                DataCell(Row(
+                                  children: [
+                                    // Profile image or initials
+                                    data['profileImageUrl'] != null &&
+                                            (data['profileImageUrl'] as String)
+                                                .isNotEmpty
+                                        ? CircleAvatar(
+                                            radius: 16,
+                                            backgroundImage: NetworkImage(
+                                                data['profileImageUrl']),
+                                            backgroundColor:
+                                                AppColors.surfaceColor,
+                                          )
+                                        : CircleAvatar(
+                                            radius: 16,
+                                            backgroundColor:
+                                                AppColors.primaryGold,
+                                            child: Text(
+                                              (data['name'] as String? ?? 'U')
+                                                  .substring(0, 1)
+                                                  .toUpperCase(),
+                                              style: const TextStyle(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.bold),
+                                            ),
+                                          ),
+                                    const SizedBox(width: 8),
+                                    Text(data['name'] ?? 'Unknown',
+                                        style: AppTextStyles.bodyMedium),
+                                  ],
+                                )),
+                                DataCell(Text(data['email'] ?? '-',
+                                    style: AppTextStyles.bodyMedium)),
+                                DataCell(Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: (role == 'admin')
+                                        ? AppColors.error.withOpacity(0.2)
+                                        : AppColors.success.withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(role.toString().toUpperCase(),
+                                      style: AppTextStyles.labelSmall.copyWith(
+                                          color: (role == 'admin')
+                                              ? AppColors.error
+                                              : AppColors.success)),
+                                )),
+                                DataCell(Text(
+                                    DateFormat('MMM dd, yyyy').format(date),
+                                    style: AppTextStyles.bodyMedium)),
+                                DataCell(isSuperAdmin
+                                    ? const Text('Super Admin',
+                                        style: TextStyle(
+                                            color: AppColors.textSecondary,
+                                            fontStyle: FontStyle.italic))
+                                    : Row(
+                                        children: [
+                                          IconButton(
+                                            icon: Icon(
+                                              role == 'admin'
+                                                  ? Icons.remove_moderator
+                                                  : Icons.add_moderator,
+                                              color: role == 'admin'
+                                                  ? AppColors.warning
+                                                  : AppColors.success,
+                                            ),
+                                            tooltip: role == 'admin'
+                                                ? 'Demote to Customer'
+                                                : 'Promote to Admin',
+                                            onPressed: () => _toggleRole(
+                                                context, doc.id, role),
+                                          ),
+                                          IconButton(
+                                            icon: const Icon(Icons.delete,
+                                                color: AppColors.error),
+                                            tooltip: 'Delete User',
+                                            onPressed: () => _confirmDelete(
+                                                context, doc.id, data['email']),
+                                          ),
+                                        ],
+                                      )),
+                              ],
+                            );
+                          }).toList(),
+                        ),
                       ),
-                      child: Text(role.toString().toUpperCase(),
-                          style: AppTextStyles.labelSmall.copyWith(
-                              color: (role == 'admin')
-                                  ? AppColors.error
-                                  : AppColors.success)),
-                    )),
-                    DataCell(Text(DateFormat('MMM dd, yyyy').format(date),
-                        style: AppTextStyles.bodyMedium)),
-                    DataCell(isSuperAdmin
-                        ? const Text('Super Admin',
-                            style: TextStyle(
-                                color: AppColors.textSecondary,
-                                fontStyle: FontStyle.italic))
-                        : Row(
-                            children: [
-                              // Promote/Demote
-                              IconButton(
-                                icon: Icon(
-                                  role == 'admin'
-                                      ? Icons.remove_moderator
-                                      : Icons.add_moderator,
-                                  color: role == 'admin'
-                                      ? AppColors.warning
-                                      : AppColors.success,
-                                ),
-                                tooltip: role == 'admin'
-                                    ? 'Demote to Customer'
-                                    : 'Promote to Admin',
-                                onPressed: () =>
-                                    _toggleRole(context, doc.id, role),
-                              ),
-                              // Delete
-                              IconButton(
-                                icon: const Icon(Icons.delete,
-                                    color: AppColors.error),
-                                tooltip: 'Delete User',
-                                onPressed: () => _confirmDelete(
-                                    context, doc.id, data['email']),
-                              ),
-                            ],
-                          )),
-                  ],
-                );
-              }).toList(),
-            ),
+              ),
+            ],
           );
         },
       ),

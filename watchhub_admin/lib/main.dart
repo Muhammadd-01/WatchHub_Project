@@ -110,6 +110,15 @@ class _AuthWrapperState extends State<AuthWrapper> {
   Widget build(BuildContext context) {
     return Consumer<AdminAuthProvider>(
       builder: (context, auth, _) {
+        // Show loading while checking auth status
+        if (!auth.isInitialized) {
+          return const Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
+
         // Wrap in SafeArea for mobile devices to prevent content going above status bar
         return SafeArea(
           child: auth.isAuthenticated

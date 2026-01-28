@@ -16,6 +16,7 @@ class AdminAuthProvider extends ChangeNotifier {
   User? _user;
   bool _isLoading = false;
   bool _isAdmin = false;
+  bool _isInitialized = false; // Track if initial auth check is complete
   String? _errorMessage;
   String? _adminName;
 
@@ -23,6 +24,7 @@ class AdminAuthProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   bool get isAuthenticated => _user != null && _isAdmin;
   bool get isAdmin => _isAdmin;
+  bool get isInitialized => _isInitialized; // New getter
   String? get errorMessage => _errorMessage;
   String? get adminName => _adminName;
   String? get adminEmail => _user?.email;
@@ -40,6 +42,7 @@ class AdminAuthProvider extends ChangeNotifier {
       _isAdmin = false;
       _adminName = null;
     }
+    _isInitialized = true; // Mark as initialized after first check
     notifyListeners();
   }
 

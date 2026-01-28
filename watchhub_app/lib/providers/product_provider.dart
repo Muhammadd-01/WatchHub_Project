@@ -25,12 +25,14 @@ class ProductProvider extends ChangeNotifier {
   List<ProductModel> _filteredProducts = [];
   List<ProductModel> _featuredProducts = [];
   List<ProductModel> _newArrivals = [];
+  List<ProductModel> _exclusiveProducts = [];
   List<ProductModel> _searchResults = [];
   ProductModel? _selectedProduct;
 
   bool _isLoading = false;
   bool _isFeaturedLoading = false;
   bool _isNewArrivalsLoading = false;
+  bool _isExclusiveLoading = false;
   String? _errorMessage;
 
   // Filters
@@ -47,12 +49,14 @@ class ProductProvider extends ChangeNotifier {
   List<ProductModel> get allProducts => _products;
   List<ProductModel> get featuredProducts => _featuredProducts;
   List<ProductModel> get newArrivals => _newArrivals;
+  List<ProductModel> get exclusiveProducts => _exclusiveProducts;
   List<ProductModel> get searchResults => _searchResults;
   ProductModel? get selectedProduct => _selectedProduct;
 
   bool get isLoading => _isLoading;
   bool get isFeaturedLoading => _isFeaturedLoading;
   bool get isNewArrivalsLoading => _isNewArrivalsLoading;
+  bool get isExclusiveLoading => _isExclusiveLoading;
   String? get errorMessage => _errorMessage;
   bool get hasProducts => _products.isNotEmpty;
   bool get hasFilters =>
@@ -114,24 +118,52 @@ class ProductProvider extends ChangeNotifier {
     }
   }
 
-  /// Loads new arrival products
+  /// Loads new arrival products (excludes items with 3+ reviews - those go to exclusive)
   Future<void> loadNewArrivals() async {
     try {
       _isNewArrivalsLoading = true;
       _clearError();
       notifyListeners();
 
-      _newArrivals = await _firestoreService.getProducts(
+      final allNewArrivals = await _firestoreService.getProducts(
         isNewArrival: true,
         sortBy: 'newest',
-        limit: 6,
+        limit: 12,
       );
+      // Filter out exclusive items (products with 3+ reviews)
+      _newArrivals =
+          allNewArrivals.where((p) => p.reviewCount < 3).take(6).toList();
       notifyListeners();
     } catch (e) {
       debugPrint('ProductProvider: Error loading new arrivals - $e');
       _setError('New Arrivals error: $e');
     } finally {
       _isNewArrivalsLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Loads exclusive products (items with 3+ reviews or high popularity)
+  Future<void> loadExclusiveProducts() async {
+    try {
+      _isExclusiveLoading = true;
+      _clearError();
+      notifyListeners();
+
+      // Get products sorted by review count descending
+      final allProducts = await _firestoreService.getProducts(
+        sortBy: 'rating',
+        limit: 20,
+      );
+      // Filter for products with 3+ reviews
+      _exclusiveProducts =
+          allProducts.where((p) => p.reviewCount >= 3).take(6).toList();
+      notifyListeners();
+    } catch (e) {
+      debugPrint('ProductProvider: Error loading exclusive products - $e');
+      _setError('Exclusive products error: $e');
+    } finally {
+      _isExclusiveLoading = false;
       notifyListeners();
     }
   }
@@ -435,6 +467,7 @@ class ProductProvider extends ChangeNotifier {
         _loadProductsNoNotify(),
         _loadFeaturedProductsNoNotify(),
         _loadNewArrivalsNoNotify(),
+        _loadExclusiveProductsNoNotify(),
       ]);
 
       debugPrint('ProductProvider: Refresh complete');
@@ -448,7 +481,10 @@ class ProductProvider extends ChangeNotifier {
 
   Future<void> _loadProductsNoNotify() async {
     try {
-      _products = await _firestoreService.getProducts(sortBy: _sortBy);
+      final rawProducts = await _firestoreService.getProducts(sortBy: _sortBy);
+      // Deduplicate by product ID to prevent duplicates
+      final seen = <String>{};
+      _products = rawProducts.where((p) => seen.add(p.id)).toList();
       _applyFilters();
     } catch (e) {
       debugPrint('ProductProvider: Error loading products - $e');
@@ -458,10 +494,13 @@ class ProductProvider extends ChangeNotifier {
 
   Future<void> _loadFeaturedProductsNoNotify() async {
     try {
-      _featuredProducts = await _firestoreService.getProducts(
+      final rawProducts = await _firestoreService.getProducts(
         isFeatured: true,
         limit: 6,
       );
+      // Deduplicate by product ID
+      final seen = <String>{};
+      _featuredProducts = rawProducts.where((p) => seen.add(p.id)).toList();
     } catch (e) {
       debugPrint('ProductProvider: Error loading featured products - $e');
     }
@@ -469,13 +508,36 @@ class ProductProvider extends ChangeNotifier {
 
   Future<void> _loadNewArrivalsNoNotify() async {
     try {
-      _newArrivals = await _firestoreService.getProducts(
+      final rawProducts = await _firestoreService.getProducts(
         isNewArrival: true,
         sortBy: 'newest',
-        limit: 6,
+        limit: 12,
       );
+      // Deduplicate by product ID and filter out exclusive items (3+ reviews)
+      final seen = <String>{};
+      _newArrivals = rawProducts
+          .where((p) => seen.add(p.id) && p.reviewCount < 3)
+          .take(6)
+          .toList();
     } catch (e) {
       debugPrint('ProductProvider: Error loading new arrivals - $e');
+    }
+  }
+
+  Future<void> _loadExclusiveProductsNoNotify() async {
+    try {
+      final allProducts = await _firestoreService.getProducts(
+        sortBy: 'rating',
+        limit: 20,
+      );
+      // Filter for products with 3+ reviews (exclusive)
+      final seen = <String>{};
+      _exclusiveProducts = allProducts
+          .where((p) => seen.add(p.id) && p.reviewCount >= 3)
+          .take(6)
+          .toList();
+    } catch (e) {
+      debugPrint('ProductProvider: Error loading exclusive products - $e');
     }
   }
 }

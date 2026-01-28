@@ -39,12 +39,14 @@ class AboutScreen extends StatelessWidget {
               child: Container(
                 decoration: const BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.black,
+                  color: Colors.white,
                 ),
-                padding: const EdgeInsets.all(16),
-                child: Image.asset(
-                  'assets/images/app_icon.png',
-                  fit: BoxFit.contain,
+                padding: const EdgeInsets.all(8),
+                child: ClipOval(
+                  child: Image.asset(
+                    'assets/images/watchhub_logo_new.png',
+                    fit: BoxFit.contain,
+                  ),
                 ),
               ),
             ),

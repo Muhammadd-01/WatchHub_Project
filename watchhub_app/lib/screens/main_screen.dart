@@ -152,8 +152,8 @@ class _MainScreenState extends State<MainScreen> {
       icon: Consumer<CartProvider>(
         builder: (context, cart, child) {
           return Badge(
-            label: Text('${cart.totalItems}'),
-            isLabelVisible: cart.totalItems > 0,
+            label: Text('${cart.uniqueItems}'),
+            isLabelVisible: cart.uniqueItems > 0,
             backgroundColor: AppColors.primaryGold,
             textColor: Colors.white,
             child: const Icon(Icons.shopping_bag_outlined,
@@ -164,8 +164,8 @@ class _MainScreenState extends State<MainScreen> {
       selectedIcon: Consumer<CartProvider>(
         builder: (context, cart, child) {
           return Badge(
-            label: Text('${cart.totalItems}'),
-            isLabelVisible: cart.totalItems > 0,
+            label: Text('${cart.uniqueItems}'),
+            isLabelVisible: cart.uniqueItems > 0,
             backgroundColor: AppColors.primaryGold,
             textColor: Colors.white,
             child: const Icon(Icons.shopping_bag_rounded,

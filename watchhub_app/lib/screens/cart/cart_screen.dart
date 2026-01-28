@@ -346,6 +346,22 @@ class _CartItemCard extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
+                    // Compact specifications
+                    if (product.specifications.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        product.specifications.entries
+                            .take(2)
+                            .map((e) => '${e.key}: ${e.value}')
+                            .join(' • '),
+                        style: AppTextStyles.labelSmall.copyWith(
+                          color: Theme.of(context).hintColor,
+                          fontSize: 10,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ] else ...[
                     Text('Loading...',
                         style: AppTextStyles.bodyMedium.copyWith(

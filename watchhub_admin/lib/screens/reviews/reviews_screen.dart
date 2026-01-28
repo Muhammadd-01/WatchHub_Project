@@ -41,34 +41,61 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
     });
 
     try {
-      // Get all products
-      final productsSnapshot = await _firestore.collection('products').get();
-      final allReviews = <Map<String, dynamic>>[];
+      // Fetch all reviews without orderBy to avoid index requirement on web
+      final reviewsSnapshot = await _firestore.collectionGroup('reviews').get();
 
-      for (final productDoc in productsSnapshot.docs) {
-        final productData = productDoc.data();
-        final reviewsSnapshot = await productDoc.reference
-            .collection('reviews')
-            .orderBy('createdAt', descending: true)
+      if (reviewsSnapshot.docs.isEmpty) {
+        setState(() {
+          _reviews = [];
+          _isLoading = false;
+        });
+        return;
+      }
+
+      // Get unique product IDs
+      final productIds = <String>{};
+      for (final doc in reviewsSnapshot.docs) {
+        final parentId = doc.reference.parent.parent?.id;
+        if (parentId != null) productIds.add(parentId);
+      }
+
+      // Fetch products in batches of 10 (Firestore whereIn limit)
+      final productsMap = <String, Map<String, dynamic>>{};
+      final idsList = productIds.toList();
+      for (var i = 0; i < idsList.length; i += 10) {
+        final batchIds = idsList.skip(i).take(10).toList();
+        final batch = await _firestore
+            .collection('products')
+            .where(FieldPath.documentId, whereIn: batchIds)
             .get();
-
-        for (final reviewDoc in reviewsSnapshot.docs) {
-          final reviewData = reviewDoc.data();
-          reviewData['id'] = reviewDoc.id;
-          reviewData['productId'] = productDoc.id;
-          reviewData['productName'] = productData['name'] ?? 'Unknown Product';
-          if (reviewData['createdAt'] is Timestamp) {
-            reviewData['createdAt'] =
-                (reviewData['createdAt'] as Timestamp).toDate();
-          }
-          allReviews.add(reviewData);
+        for (final doc in batch.docs) {
+          productsMap[doc.id] = doc.data();
         }
       }
 
-      // Sort by date
+      // Build reviews list
+      final allReviews = <Map<String, dynamic>>[];
+      for (final reviewDoc in reviewsSnapshot.docs) {
+        final data = Map<String, dynamic>.from(reviewDoc.data());
+        final productId = reviewDoc.reference.parent.parent?.id ?? '';
+
+        data['id'] = reviewDoc.id;
+        data['productId'] = productId;
+        data['productName'] =
+            productsMap[productId]?['name'] ?? 'Unknown Product';
+
+        if (data['createdAt'] is Timestamp) {
+          data['createdAt'] = (data['createdAt'] as Timestamp).toDate();
+        } else {
+          data['createdAt'] = DateTime(2000);
+        }
+        allReviews.add(data);
+      }
+
+      // Sort client-side by date
       allReviews.sort((a, b) {
-        final dateA = a['createdAt'] as DateTime? ?? DateTime(2000);
-        final dateB = b['createdAt'] as DateTime? ?? DateTime(2000);
+        final dateA = a['createdAt'] as DateTime;
+        final dateB = b['createdAt'] as DateTime;
         return dateB.compareTo(dateA);
       });
 

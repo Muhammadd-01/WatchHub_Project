@@ -9,6 +9,7 @@ import '../../models/order_model.dart';
 import '../../models/product_model.dart';
 import '../../models/cart_model.dart';
 import '../../services/firestore_crud_service.dart';
+import '../../services/admin_notification_service.dart';
 import '../../widgets/common/loading_button.dart';
 import '../../widgets/common/glass_container.dart';
 import 'package:geolocator/geolocator.dart';
@@ -193,6 +194,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       if (buyNowItem == null) {
         await cartProvider.clearCart(user.uid);
       }
+
+      // Notify admin of new order
+      await AdminNotificationService.notifyOrderPlaced(
+        orderNumber: orderNumber,
+        userName: user.name.isNotEmpty ? user.name : 'Customer',
+        total: totalAmount,
+      );
 
       if (mounted) {
         Helpers.showSuccessSnackbar(context, 'Order placed successfully!');

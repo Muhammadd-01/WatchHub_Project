@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../core/constants/app_constants.dart';
@@ -42,6 +43,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
       if (!productProvider.hasProducts) {
         productProvider.refresh();
+        productProvider.loadExclusiveProducts();
       }
       if (categoryProvider.categories.isEmpty) {
         categoryProvider.refresh();
@@ -71,6 +73,7 @@ class _HomeScreenState extends State<HomeScreen> {
             const SliverToBoxAdapter(child: _ErrorBanner()),
             SliverToBoxAdapter(child: _buildCategories()),
             SliverToBoxAdapter(child: _buildFeaturedSection()),
+            SliverToBoxAdapter(child: _buildExclusiveSection()),
             SliverToBoxAdapter(child: _buildNewArrivalsSection()),
             SliverToBoxAdapter(child: _buildBrandsSection()),
             const SliverToBoxAdapter(child: SizedBox(height: 100)),
@@ -397,6 +400,121 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Widget _buildExclusiveSection() {
+    return Consumer<ProductProvider>(
+      builder: (context, productProvider, _) {
+        final exclusive = productProvider.exclusiveProducts;
+        final isLoading = productProvider.isExclusiveLoading;
+
+        if (isLoading && exclusive.isEmpty) {
+          return _buildSectionLoading('Exclusive');
+        }
+
+        if (exclusive.isEmpty) {
+          return const SizedBox.shrink();
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Text('Exclusive', style: AppTextStyles.titleLarge),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryGold,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          '★ TOP',
+                          style: AppTextStyles.labelSmall.copyWith(
+                            color: AppColors.scaffoldBackground,
+                            fontSize: 8,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pushNamed(
+                        context,
+                        AppRoutes.products,
+                        arguments: {'title': 'Exclusive Collection'},
+                      );
+                    },
+                    child: Text(
+                      'See All',
+                      style: AppTextStyles.labelMedium.copyWith(
+                        color: AppColors.primaryGold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: SizedBox(
+                height: 320,
+                child: Builder(builder: (context) {
+                  // Split products into two lists
+                  final list1 = <ProductModel>[];
+                  final list2 = <ProductModel>[];
+
+                  for (var i = 0; i < exclusive.length; i++) {
+                    if (i % 2 == 0) {
+                      list1.add(exclusive[i]);
+                    } else {
+                      list2.add(exclusive[i]);
+                    }
+                  }
+
+                  // Handle single product case
+                  if (list2.isEmpty && list1.isNotEmpty) {
+                    list2.add(list1[0]);
+                  }
+
+                  return Row(
+                    children: [
+                      Expanded(
+                        child: AutoLoopingProductCard(
+                          products: list1,
+                          interval: const Duration(seconds: 5),
+                          height: 300,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: AutoLoopingProductCard(
+                          products: list2,
+                          interval: const Duration(seconds: 7),
+                          height: 300,
+                        ),
+                      ),
+                    ],
+                  );
+                }),
+              ),
+            ),
+            const SizedBox(height: 24),
+          ],
+        );
+      },
+    );
+  }
+
   Widget _buildNewArrivalsSection() {
     return Consumer<ProductProvider>(
       builder: (context, productProvider, _) {
@@ -554,40 +672,88 @@ class _HomeScreenState extends State<HomeScreen> {
         const SizedBox(height: 20),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            children: AppConstants.watchBrands.map((brand) {
-              return GlassContainer(
-                borderRadius: 12,
-                opacity: 0.05,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 14,
-                ),
-                child: InkWell(
-                  onTap: () {
-                    Navigator.pushNamed(
-                      context,
-                      AppRoutes.products,
-                      arguments: {'title': brand, 'brand': brand},
-                    );
-                  },
-                  child: Text(
-                    brand,
-                    style: AppTextStyles.labelLarge.copyWith(
-                      color:
-                          theme.textTheme.titleMedium?.color?.withOpacity(0.9),
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
+          child: StreamBuilder<QuerySnapshot>(
+            stream: FirebaseFirestore.instance
+                .collection('brands')
+                .orderBy('name')
+                .snapshots(),
+            builder: (context, snapshot) {
+              // Show shimmer while loading
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(
+                  child:
+                      CircularProgressIndicator(color: AppColors.primaryGold),
+                );
+              }
+
+              final brands = snapshot.data?.docs ?? [];
+
+              // Fallback to constants if no brands in DB
+              if (brands.isEmpty) {
+                return Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: AppConstants.watchBrands.map((brand) {
+                    return _buildBrandChip(brand, null, theme);
+                  }).toList(),
+                );
+              }
+
+              return Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: brands.map((doc) {
+                  final data = doc.data() as Map<String, dynamic>;
+                  final name = data['name'] as String? ?? '';
+                  final logoUrl = data['logoUrl'] as String?;
+                  return _buildBrandChip(name, logoUrl, theme);
+                }).toList(),
               );
-            }).toList(),
+            },
           ),
         ),
       ],
     ).animate().fadeIn(delay: 400.ms, duration: 600.ms).slideY(begin: 0.1);
+  }
+
+  Widget _buildBrandChip(String brand, String? logoUrl, ThemeData theme) {
+    return GlassContainer(
+      borderRadius: 12,
+      opacity: 0.05,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: InkWell(
+        onTap: () {
+          Navigator.pushNamed(
+            context,
+            AppRoutes.products,
+            arguments: {'title': brand, 'brand': brand},
+          );
+        },
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (logoUrl != null && logoUrl.isNotEmpty) ...[
+              CachedNetworkImage(
+                imageUrl: logoUrl,
+                width: 24,
+                height: 24,
+                fit: BoxFit.contain,
+                errorWidget: (_, __, ___) => const SizedBox.shrink(),
+              ),
+              const SizedBox(width: 8),
+            ],
+            Text(
+              brand.toUpperCase(),
+              style: AppTextStyles.labelLarge.copyWith(
+                color: theme.textTheme.titleMedium?.color?.withOpacity(0.9),
+                fontWeight: FontWeight.w600,
+                letterSpacing: 1,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
@@ -721,11 +887,12 @@ class _AutoScrollingCategoriesState extends State<_AutoScrollingCategories> {
 
   @override
   Widget build(BuildContext context) {
-    // Duplicate categories for seamless loop effect
+    // Deduplicate categories then triple for seamless loop effect
+    final uniqueCategories = widget.categories.toSet().toList();
     final loopedCategories = [
-      ...widget.categories,
-      ...widget.categories,
-      ...widget.categories,
+      ...uniqueCategories,
+      ...uniqueCategories,
+      ...uniqueCategories,
     ];
 
     return NotificationListener<ScrollNotification>(

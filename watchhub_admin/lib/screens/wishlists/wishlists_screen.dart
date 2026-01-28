@@ -19,12 +19,23 @@ class WishlistsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return AdminScaffold(
       title: 'User Wishlists',
-      body: StreamBuilder<QuerySnapshot>(
-        // Use collectionGroup to query all 'items' subcollections across all users' wishlists
+      body: StreamBuilder<List<QueryDocumentSnapshot>>(
+        // Use collectionGroup without orderBy to avoid index requirement
+        // Sort client-side after fetching
         stream: FirebaseFirestore.instance
             .collectionGroup('items')
-            .orderBy('addedAt', descending: true)
-            .snapshots(),
+            .snapshots()
+            .map((snapshot) {
+          final docs = snapshot.docs.toList();
+          docs.sort((a, b) {
+            final aTime =
+                (a.data()['addedAt'] as Timestamp?)?.toDate() ?? DateTime(2000);
+            final bTime =
+                (b.data()['addedAt'] as Timestamp?)?.toDate() ?? DateTime(2000);
+            return bTime.compareTo(aTime);
+          });
+          return docs;
+        }),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
             return Center(
@@ -39,7 +50,7 @@ class WishlistsScreen extends StatelessWidget {
             );
           }
 
-          final wishlists = snapshot.data?.docs ?? [];
+          final wishlists = snapshot.data ?? [];
 
           if (wishlists.isEmpty) {
             return Center(

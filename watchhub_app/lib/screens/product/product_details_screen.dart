@@ -4,6 +4,7 @@
 // DESCRIPTION: Full product information with images, specs, reviews, add to cart.
 // =============================================================================
 
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -31,14 +32,40 @@ class ProductDetailsScreen extends StatefulWidget {
 
 class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   int _quantity = 1;
+  int _currentImageIndex = 0;
+  PageController? _imagePageController;
+  Timer? _imageAutoScrollTimer;
 
   @override
   void initState() {
     super.initState();
+    _imagePageController = PageController();
     // Use addPostFrameCallback to avoid "setState() or markNeedsBuild() called during build"
     // error when providers notify listeners (update selected product) during initialization.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadProduct();
+    });
+  }
+
+  @override
+  void dispose() {
+    _imageAutoScrollTimer?.cancel();
+    _imagePageController?.dispose();
+    super.dispose();
+  }
+
+  void _startImageAutoScroll(int imageCount) {
+    if (imageCount <= 1) return;
+    _imageAutoScrollTimer?.cancel();
+    _imageAutoScrollTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
+      if (_imagePageController?.hasClients ?? false) {
+        final nextPage = (_currentImageIndex + 1) % imageCount;
+        _imagePageController?.animateToPage(
+          nextPage,
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeInOut,
+        );
+      }
     });
   }
 
@@ -85,7 +112,18 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     }
 
     final wishlistProvider = context.read<WishlistProvider>();
+    final wasInWishlist = wishlistProvider.isInWishlist(product.id);
     await wishlistProvider.toggleWishlist(authProvider.uid!, product);
+
+    if (mounted) {
+      if (wasInWishlist) {
+        Helpers.showInfoSnackbar(
+            context, '${product.name} removed from wishlist');
+      } else {
+        Helpers.showSuccessSnackbar(
+            context, '${product.name} added to wishlist');
+      }
+    }
   }
 
   @override
@@ -128,6 +166,15 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   }
 
   Widget _buildAppBar(ProductModel product) {
+    final allImages = product.allImages;
+
+    // Start auto-scroll timer if not started yet
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_imageAutoScrollTimer == null && allImages.length > 1) {
+        _startImageAutoScroll(allImages.length);
+      }
+    });
+
     return SliverAppBar(
       expandedHeight: 400,
       pinned: true,
@@ -136,20 +183,67 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         background: Stack(
           fit: StackFit.expand,
           children: [
-            Hero(
-              tag: 'product_${product.id}',
-              child: CachedNetworkImage(
-                imageUrl: product.imageUrl,
-                fit: BoxFit.cover,
-                placeholder: (context, url) =>
-                    Container(color: Theme.of(context).cardColor),
-                errorWidget: (context, url, error) => Container(
-                  color: Theme.of(context).cardColor,
-                  child: Icon(Icons.watch_rounded,
-                      size: 64, color: Theme.of(context).disabledColor),
+            // Image carousel
+            allImages.length > 1
+                ? PageView.builder(
+                    controller: _imagePageController,
+                    onPageChanged: (index) {
+                      setState(() => _currentImageIndex = index);
+                    },
+                    itemCount: allImages.length,
+                    itemBuilder: (context, index) {
+                      return CachedNetworkImage(
+                        imageUrl: allImages[index],
+                        fit: BoxFit.cover,
+                        placeholder: (context, url) =>
+                            Container(color: Theme.of(context).cardColor),
+                        errorWidget: (context, url, error) => Container(
+                          color: Theme.of(context).cardColor,
+                          child: Icon(Icons.watch_rounded,
+                              size: 64, color: Theme.of(context).disabledColor),
+                        ),
+                      );
+                    },
+                  )
+                : Hero(
+                    tag: 'product_${product.id}',
+                    child: CachedNetworkImage(
+                      imageUrl: product.imageUrl,
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) =>
+                          Container(color: Theme.of(context).cardColor),
+                      errorWidget: (context, url, error) => Container(
+                        color: Theme.of(context).cardColor,
+                        child: Icon(Icons.watch_rounded,
+                            size: 64, color: Theme.of(context).disabledColor),
+                      ),
+                    ),
+                  ),
+            // Page indicator dots
+            if (allImages.length > 1)
+              Positioned(
+                bottom: 60,
+                left: 0,
+                right: 0,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(
+                    allImages.length,
+                    (index) => AnimatedContainer(
+                      duration: const Duration(milliseconds: 300),
+                      margin: const EdgeInsets.symmetric(horizontal: 4),
+                      width: _currentImageIndex == index ? 24 : 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(4),
+                        color: _currentImageIndex == index
+                            ? AppColors.primaryGold
+                            : Colors.white.withOpacity(0.5),
+                      ),
+                    ),
+                  ),
                 ),
               ),
-            ),
             // Gradient overlay
             Positioned(
               bottom: 0,

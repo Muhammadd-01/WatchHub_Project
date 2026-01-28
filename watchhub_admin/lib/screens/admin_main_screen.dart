@@ -15,6 +15,7 @@ import 'products/products_list_screen.dart';
 import 'orders/orders_list_screen.dart';
 import 'users/users_list_screen.dart';
 import 'categories/categories_screen.dart';
+import 'brands/brands_screen.dart';
 import 'feedback/feedback_screen.dart';
 import 'carts/active_carts_screen.dart';
 import 'reviews/reviews_screen.dart';
@@ -35,15 +36,16 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
     const DashboardScreen(), // 0
     const ProductsListScreen(), // 1
     const CategoriesScreen(), // 2
-    const OrdersListScreen(), // 3
-    const ActiveCartsScreen(), // 4
-    const UsersListScreen(), // 5
-    const ReviewsScreen(), // 6
-    const FeedbackScreen(), // 7
-    const WishlistsScreen(), // 8
-    const NotificationsScreen(), // 9
-    const AdminProfileScreen(), // 10
-    const SettingsScreen(), // 11
+    const BrandsScreen(), // 3
+    const OrdersListScreen(), // 4
+    const ActiveCartsScreen(), // 5
+    const UsersListScreen(), // 6
+    const ReviewsScreen(), // 7
+    const FeedbackScreen(), // 8
+    const WishlistsScreen(), // 9
+    const NotificationsScreen(), // 10
+    const AdminProfileScreen(), // 11
+    const SettingsScreen(), // 12
   ];
 
   @override

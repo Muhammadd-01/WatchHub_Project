@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import 'package:data_table_2/data_table_2.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/services.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
 import 'package:image_picker/image_picker.dart';
@@ -820,15 +821,59 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
                   ),
                   const SizedBox(width: 16),
                   Expanded(
-                    child: TextFormField(
-                      controller: _brandCtrl,
-                      decoration: const InputDecoration(labelText: 'Brand *'),
-                      style: const TextStyle(color: AppColors.textPrimary),
-                      validator: (v) {
-                        if (v == null || v.trim().isEmpty) {
-                          return 'Brand is required';
+                    child: StreamBuilder<QuerySnapshot>(
+                      stream: FirebaseFirestore.instance
+                          .collection('brands')
+                          .orderBy('name')
+                          .snapshots(),
+                      builder: (context, snapshot) {
+                        final brands = snapshot.data?.docs ?? [];
+                        final brandNames = brands
+                            .map((b) => (b.data() as Map)['name'] as String)
+                            .toList();
+
+                        // If we have brands in DB, show dropdown
+                        if (brandNames.isNotEmpty) {
+                          // Ensure current value exists in list
+                          if (!brandNames.contains(_brandCtrl.text) &&
+                              _brandCtrl.text.isNotEmpty) {
+                            brandNames.insert(0, _brandCtrl.text);
+                          }
+                          return DropdownButtonFormField<String>(
+                            value: brandNames.contains(_brandCtrl.text)
+                                ? _brandCtrl.text
+                                : null,
+                            dropdownColor: AppColors.surfaceColor,
+                            menuMaxHeight: 300,
+                            decoration:
+                                const InputDecoration(labelText: 'Brand *'),
+                            style:
+                                const TextStyle(color: AppColors.textPrimary),
+                            items: brandNames
+                                .map((b) => DropdownMenuItem(
+                                    value: b, child: Text(b.toUpperCase())))
+                                .toList(),
+                            onChanged: (v) {
+                              if (v != null) _brandCtrl.text = v;
+                            },
+                            validator: (v) => v == null || v.isEmpty
+                                ? 'Brand is required'
+                                : null,
+                          );
                         }
-                        return null;
+                        // Fallback to text input if no brands configured
+                        return TextFormField(
+                          controller: _brandCtrl,
+                          decoration:
+                              const InputDecoration(labelText: 'Brand *'),
+                          style: const TextStyle(color: AppColors.textPrimary),
+                          validator: (v) {
+                            if (v == null || v.trim().isEmpty) {
+                              return 'Brand is required';
+                            }
+                            return null;
+                          },
+                        );
                       },
                     ),
                   ),

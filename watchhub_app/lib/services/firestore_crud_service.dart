@@ -258,6 +258,10 @@ class FirestoreCrudService {
         }
       }
 
+      // Deduplicate by product ID to prevent duplicates
+      final seen = <String>{};
+      products = products.where((p) => seen.add(p.id)).toList();
+
       return products;
     } catch (e) {
       debugPrint('FirestoreCrudService: Error getting products - $e');
@@ -419,12 +423,34 @@ class FirestoreCrudService {
     int quantity = 1,
   }) async {
     try {
+      // Real-time stock check before adding to cart
+      final productDoc = await _productsCollection.doc(productId).get();
+      if (!productDoc.exists) {
+        throw Exception('Product not found');
+      }
+
+      final productData = productDoc.data()!;
+      final currentStock = productData['stock'] ?? 0;
+
+      // Get current cart quantity for this item
       final cartItemRef = _cartsCollection
           .doc(uid)
           .collection(AppConstants.cartItemsSubcollection)
           .doc(productId);
 
       final existingItem = await cartItemRef.get();
+      final currentCartQty = existingItem.exists
+          ? (existingItem.data()?['quantity'] ?? 0) as int
+          : 0;
+
+      // Check if adding quantity would exceed stock
+      if (currentStock <= 0) {
+        throw Exception('This product is out of stock');
+      }
+
+      if (currentCartQty + quantity > currentStock) {
+        throw Exception('Only $currentStock items available in stock');
+      }
 
       if (existingItem.exists) {
         // Update quantity if already in cart
