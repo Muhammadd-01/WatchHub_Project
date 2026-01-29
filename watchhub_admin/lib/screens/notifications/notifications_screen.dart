@@ -293,6 +293,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         icon = Icons.check_circle_outline;
         iconColor = AppColors.success;
         break;
+      case 'restock_alert':
+        icon = Icons.inventory_2_outlined;
+        iconColor = AppColors.error;
+        break;
       default:
         icon = Icons.notifications_outlined;
         iconColor = AppColors.textSecondary;

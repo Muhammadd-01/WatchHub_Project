@@ -41,15 +41,16 @@ post_install do |installer|
     flutter_additional_ios_build_settings(target)
     
     target.build_configurations.each do |config|
-      # Force iOS 13.0 for all pods to avoid -G flag issues on older targets
-      if config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'].to_f < 13.0
-        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
-      end
+      # Aggressively force the deployment target to match the platform VERSION
+      # This resolves the 'unsupported option -G for target arm64-apple-ios10.0' error
+      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '16.0'
       
-      # Explicitly remove the problematic flag if it exists in any target
-      # Especially for BoringSSL-GRPC
+      # Suppress all warnings in pods to bypass compiler flag issues like -G
+      config.build_settings['GCC_WARN_INHIBIT_ALL_WARNINGS'] = 'YES'
+      
+      # Additional flags for gRPC/BoringSSL compatibility if needed
       if target.name == 'BoringSSL-GRPC'
-        config.build_settings['GCC_WARN_INHIBIT_ALL_WARNINGS'] = 'YES'
+        config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= ['$(inherited)', 'GRPC_BAZEL_BUILD=1']
       end
     end
   end

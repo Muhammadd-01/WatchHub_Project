@@ -38,8 +38,11 @@ class NotificationService {
         body: jsonEncode({
           'app_id': _oneSignalAppId,
           'included_segments': ['All'], // Send to all subscribed users
-          'headings': {'en': '🆕 New Watch Added!'},
-          'contents': {'en': 'Check out the new $productBrand $productName!'},
+          'headings': {'en': '💎 New Arrived: $productName'},
+          'contents': {
+            'en':
+                'Experience the luxury of $productBrand. Explore our latest $productName masterpiece now!'
+          },
           'data': {
             'type': 'new_product',
             'productId': productId,

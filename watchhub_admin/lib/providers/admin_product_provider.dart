@@ -131,11 +131,13 @@ class AdminProductProvider extends ChangeNotifier {
 
       updates['updatedAt'] = FieldValue.serverTimestamp();
 
-      // Check if stock is being explicitly set to 0 (out of stock)
       if (updates.containsKey('stock')) {
         final newStock = updates['stock'] as int?;
         if (newStock != null && newStock <= 0) {
-          // Get product name from updates or fetch from Firestore
+          // 1. Trigger admin restock alert
+          _triggerRestockAlert(id, updates['name'] as String?);
+
+          // 2. Find all users who have this product in their cart/wishlist (non-blocking)
           String productName = updates['name'] as String? ?? 'Product';
           if (!updates.containsKey('name')) {
             try {
@@ -144,7 +146,6 @@ class AdminProductProvider extends ChangeNotifier {
               productName = docData?['name'] ?? 'Product';
             } catch (_) {}
           }
-          // Find all users who have this product in their cart/wishlist (non-blocking)
           _cleanupUserCollections(id, productName);
         }
       }
@@ -304,6 +305,30 @@ class AdminProductProvider extends ChangeNotifier {
     } catch (e) {
       debugPrint('AdminProductProvider: Unexpected error during upload - $e');
       throw Exception('Failed to upload images: $e');
+    }
+  }
+
+  /// Trigger a restock alert in admin_notifications
+  Future<void> _triggerRestockAlert(
+      String productId, String? productName) async {
+    try {
+      String name = productName ?? 'A product';
+      if (productName == null) {
+        final doc = await _productCollection.doc(productId).get();
+        name = (doc.data() as Map<String, dynamic>?)?['name'] ?? 'A product';
+      }
+
+      await _firestore.collection('admin_notifications').add({
+        'type': 'restock_alert',
+        'title': 'Out of Stock Alert',
+        'message': '$name is currently out of stock. Please restock it soon.',
+        'productId': productId,
+        'isRead': false,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+      debugPrint('Restock alert triggered for $name');
+    } catch (e) {
+      debugPrint('Error triggering restock alert: $e');
     }
   }
 
