@@ -146,7 +146,11 @@ class CartScreen extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 32),
-            LoadingButton(onPressed: () {}, text: 'Browse Watches', width: 200),
+            LoadingButton(
+              onPressed: () => Navigator.pushNamed(context, AppRoutes.products),
+              text: 'Browse Watches',
+              width: 200,
+            ),
           ],
         ),
       ),

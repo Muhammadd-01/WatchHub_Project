@@ -42,16 +42,16 @@ class ProductCard extends StatelessWidget {
         width: width ?? 180,
         decoration: BoxDecoration(
           color: theme.cardTheme.color ?? theme.cardColor,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(20), // More rounded
           border: Border.all(
-            color: theme.dividerColor.withValues(alpha: 0.1),
+            color: theme.dividerColor.withValues(alpha: 0.08),
           ),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(
-                  theme.brightness == Brightness.dark ? 0.3 : 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
+                  theme.brightness == Brightness.dark ? 0.4 : 0.08),
+              blurRadius: 15,
+              offset: const Offset(0, 6),
             ),
           ],
         ),
@@ -62,26 +62,33 @@ class ProductCard extends StatelessWidget {
             _buildImage(),
             // Details
             Padding(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Brand
                   Text(
                     product.brand.toUpperCase(),
-                    style: AppTextStyles.brandName.copyWith(fontSize: 10),
+                    style: AppTextStyles.brandName.copyWith(
+                      fontSize: 9,
+                      letterSpacing: 1.2,
+                      color: AppColors.primaryGold,
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 6),
                   // Name
                   Text(
                     product.name,
-                    style: AppTextStyles.titleSmall,
+                    style: AppTextStyles.titleSmall.copyWith(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 10),
                   // Rating
                   if (showRating && product.rating > 0) ...[
                     Row(
@@ -94,45 +101,46 @@ class ProductCard extends StatelessWidget {
                         const SizedBox(width: 4),
                         Text(
                           product.rating.toStringAsFixed(1),
-                          style: AppTextStyles.bodySmall,
+                          style: AppTextStyles.bodySmall.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
+                        const SizedBox(width: 4),
                         Text(
-                          ' (${product.reviewCount})',
+                          '(${product.reviewCount})',
                           style: AppTextStyles.bodySmall.copyWith(
                             color: AppColors.textTertiary,
+                            fontSize: 10,
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 10),
                   ],
                   // Price
-                  Row(
+                  Wrap(
+                    // Use Wrap to handle potential overflow gracefully
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 8,
+                    runSpacing: 4,
                     children: [
-                      Flexible(
-                        child: Text(
-                          Helpers.formatCurrencyCompact(product.price),
-                          style:
-                              AppTextStyles.priceSmall.copyWith(fontSize: 16),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                      Text(
+                        Helpers.formatCurrencyCompact(product.price),
+                        style: AppTextStyles.priceSmall.copyWith(
+                          fontSize: 17,
+                          color: AppColors.primaryGold,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                      if (product.isOnSale) ...[
-                        const SizedBox(width: 8),
-                        Flexible(
-                          child: Text(
-                            Helpers.formatCurrencyCompact(
-                                product.originalPrice!),
-                            style: AppTextStyles.bodySmall.copyWith(
-                              decoration: TextDecoration.lineThrough,
-                              color: AppColors.textTertiary,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                      if (product.isOnSale)
+                        Text(
+                          Helpers.formatCurrencyCompact(product.originalPrice!),
+                          style: AppTextStyles.bodySmall.copyWith(
+                            decoration: TextDecoration.lineThrough,
+                            color: AppColors.textTertiary,
+                            fontSize: 12,
                           ),
                         ),
-                      ],
                     ],
                   ),
                 ],

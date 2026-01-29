@@ -7,6 +7,8 @@
 
 import 'package:flutter/foundation.dart';
 import '../models/product_model.dart';
+import '../models/category_model.dart';
+import '../models/brand_model.dart';
 import '../services/firestore_crud_service.dart';
 
 /// Product state provider
@@ -28,6 +30,8 @@ class ProductProvider extends ChangeNotifier {
   List<ProductModel> _exclusiveProducts = [];
   List<ProductModel> _searchResults = [];
   ProductModel? _selectedProduct;
+  List<CategoryModel> _allCategories = [];
+  List<BrandModel> _allBrands = [];
 
   bool _isLoading = false;
   bool _isFeaturedLoading = false;
@@ -218,6 +222,23 @@ class ProductProvider extends ChangeNotifier {
     }
   }
 
+  /// Loads all categories and brands for filtering
+  Future<void> loadFilters() async {
+    try {
+      final results = await Future.wait([
+        _firestoreService.getCategories(),
+        _firestoreService.getBrands(),
+      ]);
+
+      _allCategories = results[0] as List<CategoryModel>;
+      _allBrands = results[1] as List<BrandModel>;
+
+      notifyListeners();
+    } catch (e) {
+      debugPrint('ProductProvider: Error loading filters - $e');
+    }
+  }
+
   // ===========================================================================
   // GET SINGLE PRODUCT
   // ===========================================================================
@@ -351,6 +372,28 @@ class ProductProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Updates multiple filters at once
+  void updateFilters({
+    List<String>? brands,
+    List<String>? categories,
+    double? minPrice,
+    double? maxPrice,
+  }) {
+    if (brands != null) {
+      _selectedBrands.clear();
+      _selectedBrands.addAll(brands);
+    }
+    if (categories != null) {
+      _selectedCategories.clear();
+      _selectedCategories.addAll(categories);
+    }
+    if (minPrice != null) _minPrice = minPrice;
+    if (maxPrice != null) _maxPrice = maxPrice;
+
+    _applyFilters();
+    notifyListeners();
+  }
+
   /// Applies all current filters
   void _applyFilters() {
     _filteredProducts = List.from(_products);
@@ -418,11 +461,17 @@ class ProductProvider extends ChangeNotifier {
 
   /// Gets unique brands from products
   List<String> get availableBrands {
+    if (_allBrands.isNotEmpty) {
+      return _allBrands.map((b) => b.name).toList();
+    }
     return _products.map((p) => p.brand).toSet().toList()..sort();
   }
 
   /// Gets unique categories from products
   List<String> get availableCategories {
+    if (_allCategories.isNotEmpty) {
+      return _allCategories.map((c) => c.name).toList();
+    }
     return _products.map((p) => p.category).toSet().toList()..sort();
   }
 
@@ -472,6 +521,7 @@ class ProductProvider extends ChangeNotifier {
         _loadFeaturedProductsNoNotify(),
         _loadNewArrivalsNoNotify(),
         _loadExclusiveProductsNoNotify(),
+        loadFilters(),
       ]);
 
       debugPrint('ProductProvider: Refresh complete');

@@ -23,6 +23,7 @@ import 'wishlists/wishlists_screen.dart';
 import 'notifications/notifications_screen.dart';
 import 'profile/admin_profile_screen.dart';
 import 'settings/settings_screen.dart';
+import 'faqs/faqs_screen.dart';
 
 class AdminMainScreen extends StatefulWidget {
   const AdminMainScreen({super.key});
@@ -44,8 +45,9 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
     const FeedbackScreen(), // 8
     const WishlistsScreen(), // 9
     const NotificationsScreen(), // 10
-    const AdminProfileScreen(), // 11
-    const SettingsScreen(), // 12
+    const FaqsScreen(), // 11
+    const AdminProfileScreen(), // 12
+    const SettingsScreen(), // 13
   ];
 
   @override
@@ -73,8 +75,9 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
             children: [
               // Desktop Sidebar
               if (isDesktop)
-                Container(
-                  width: 250,
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  width: nav.isSidebarCollapsed ? 80 : 250,
                   decoration: BoxDecoration(
                     color: Theme.of(context).cardColor,
                     border: Border(
@@ -84,6 +87,7 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
                   ),
                   child: AdminSidebar(
                     selectedIndex: nav.currentIndex,
+                    isCollapsed: nav.isSidebarCollapsed,
                     onItemSelected: (index) {
                       nav.setIndex(index);
                     },

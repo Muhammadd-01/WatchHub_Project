@@ -12,19 +12,184 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../widgets/admin_scaffold.dart';
 
-class NotificationsScreen extends StatelessWidget {
+class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
+
+  @override
+  State<NotificationsScreen> createState() => _NotificationsScreenState();
+}
+
+class _NotificationsScreenState extends State<NotificationsScreen> {
+  bool _isSelectionMode = false;
+  final Set<String> _selectedIds = {};
+
+  void _toggleSelectionMode() {
+    setState(() {
+      _isSelectionMode = !_isSelectionMode;
+      _selectedIds.clear();
+    });
+  }
+
+  void _toggleSelection(String id) {
+    setState(() {
+      if (_selectedIds.contains(id)) {
+        _selectedIds.remove(id);
+      } else {
+        _selectedIds.add(id);
+      }
+      if (_selectedIds.isEmpty) {
+        _isSelectionMode = false;
+      }
+    });
+  }
+
+  void _selectAll(List<QueryDocumentSnapshot> notifications) {
+    setState(() {
+      if (_selectedIds.length == notifications.length) {
+        _selectedIds.clear();
+        _isSelectionMode = false;
+      } else {
+        _selectedIds.clear();
+        for (var doc in notifications) {
+          _selectedIds.add(doc.id);
+        }
+      }
+    });
+  }
+
+  Future<void> _deleteSelected() async {
+    if (_selectedIds.isEmpty) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.cardBackground,
+        title: const Text('Delete Selected',
+            style: TextStyle(color: AppColors.textPrimary)),
+        content: Text(
+            'Are you sure you want to delete ${_selectedIds.length} notifications?',
+            style: const TextStyle(color: AppColors.textSecondary)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      final batch = FirebaseFirestore.instance.batch();
+      for (final id in _selectedIds) {
+        batch.delete(FirebaseFirestore.instance
+            .collection('admin_notifications')
+            .doc(id));
+      }
+      await batch.commit();
+      setState(() {
+        _selectedIds.clear();
+        _isSelectionMode = false;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Notifications deleted')),
+        );
+      }
+    }
+  }
+
+  Future<void> _markSelectedAsRead() async {
+    if (_selectedIds.isEmpty) return;
+
+    final batch = FirebaseFirestore.instance.batch();
+    for (final id in _selectedIds) {
+      batch.update(
+          FirebaseFirestore.instance.collection('admin_notifications').doc(id),
+          {'isRead': true});
+    }
+    await batch.commit();
+    setState(() {
+      _selectedIds.clear();
+      _isSelectionMode = false;
+    });
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Selected notifications marked as read')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return AdminScaffold(
-      title: 'Notifications',
+      title: _isSelectionMode
+          ? '${_selectedIds.length} Selected'
+          : 'Notifications',
       actions: [
-        IconButton(
-          icon: const Icon(Icons.done_all),
-          onPressed: () => _markAllAsRead(context),
-          tooltip: 'Mark all as read',
-        ),
+        if (_isSelectionMode) ...[
+          StreamBuilder<QuerySnapshot>(
+            stream: FirebaseFirestore.instance
+                .collection('admin_notifications')
+                .orderBy('createdAt', descending: true)
+                .limit(100)
+                .snapshots(),
+            builder: (context, snapshot) {
+              final notifications = snapshot.data?.docs ?? [];
+              return IconButton(
+                onPressed: () => _selectAll(notifications),
+                icon: Icon(
+                  _selectedIds.length == notifications.length
+                      ? Icons.deselect
+                      : Icons.select_all,
+                  size: 22,
+                ),
+                tooltip: _selectedIds.length == notifications.length
+                    ? 'Deselect All'
+                    : 'Select All',
+                color: AppColors.primaryGold,
+              );
+            },
+          ),
+          IconButton(
+            onPressed: _selectedIds.isEmpty ? null : _markSelectedAsRead,
+            icon: const Icon(Icons.done, size: 22),
+            tooltip: 'Mark Selected as Read',
+            color: _selectedIds.isEmpty
+                ? AppColors.textSecondary
+                : AppColors.success,
+          ),
+          IconButton(
+            onPressed: _selectedIds.isEmpty ? null : _deleteSelected,
+            icon: const Icon(Icons.delete_sweep, size: 22),
+            tooltip: 'Delete Selected',
+            color: _selectedIds.isEmpty
+                ? AppColors.textSecondary
+                : AppColors.error,
+          ),
+          IconButton(
+            onPressed: _toggleSelectionMode,
+            icon: const Icon(Icons.close, size: 22),
+            tooltip: 'Cancel',
+            color: AppColors.error,
+          ),
+        ] else ...[
+          IconButton(
+            onPressed: _toggleSelectionMode,
+            icon: const Icon(Icons.checklist, size: 20),
+            tooltip: 'Select Multiple',
+            color: AppColors.textPrimary,
+          ),
+          IconButton(
+            icon: const Icon(Icons.done_all),
+            onPressed: () => _markAllAsRead(context),
+            tooltip: 'Mark all as read',
+          ),
+        ],
       ],
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
@@ -74,7 +239,18 @@ class NotificationsScreen extends StatelessWidget {
             itemBuilder: (context, index) {
               final doc = notifications[index];
               final data = doc.data() as Map<String, dynamic>;
-              return _buildNotificationCard(context, doc.id, data);
+              final isSelected = _selectedIds.contains(doc.id);
+              return GestureDetector(
+                onLongPress: () {
+                  if (!_isSelectionMode) {
+                    _toggleSelectionMode();
+                    _toggleSelection(doc.id);
+                  }
+                },
+                onTap: _isSelectionMode ? () => _toggleSelection(doc.id) : null,
+                child:
+                    _buildNotificationCard(context, doc.id, data, isSelected),
+              );
             },
           );
         },
@@ -82,8 +258,8 @@ class NotificationsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildNotificationCard(
-      BuildContext context, String id, Map<String, dynamic> data) {
+  Widget _buildNotificationCard(BuildContext context, String id,
+      Map<String, dynamic> data, bool isSelected) {
     final type = data['type'] ?? 'general';
     final title = data['title'] ?? 'Notification';
     final message = data['message'] ?? '';
@@ -125,60 +301,83 @@ class NotificationsScreen extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: isRead
-            ? AppColors.cardBackground
-            : AppColors.primaryGold.withOpacity(0.1),
+        color: isSelected
+            ? AppColors.primaryGold.withOpacity(0.2)
+            : (isRead
+                ? AppColors.cardBackground
+                : AppColors.primaryGold.withOpacity(0.1)),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isRead
-              ? AppColors.cardBorder
-              : AppColors.primaryGold.withOpacity(0.3),
+          color: isSelected
+              ? AppColors.primaryGold
+              : (isRead
+                  ? AppColors.cardBorder
+                  : AppColors.primaryGold.withOpacity(0.3)),
+          width: isSelected ? 2 : 1,
         ),
       ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(16),
-        leading: Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: iconColor.withOpacity(0.15),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Icon(icon, color: iconColor, size: 24),
-        ),
-        title: Text(
-          title,
-          style: AppTextStyles.titleSmall.copyWith(
-            fontWeight: isRead ? FontWeight.normal : FontWeight.bold,
-          ),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 4),
-            Text(
-              message,
-              style: TextStyle(color: AppColors.textSecondary),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
+      child: Row(
+        children: [
+          if (_isSelectionMode)
+            Padding(
+              padding: const EdgeInsets.only(left: 16),
+              child: Checkbox(
+                value: isSelected,
+                onChanged: (_) => _toggleSelection(id),
+                activeColor: AppColors.primaryGold,
+              ),
             ),
-            const SizedBox(height: 8),
-            Text(
-              dateStr,
-              style: TextStyle(color: AppColors.textTertiary, fontSize: 12),
-            ),
-          ],
-        ),
-        trailing: !isRead
-            ? Container(
-                width: 10,
-                height: 10,
+          Expanded(
+            child: ListTile(
+              contentPadding: const EdgeInsets.all(16),
+              leading: Container(
+                padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: AppColors.primaryGold,
-                  shape: BoxShape.circle,
+                  color: iconColor.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-              )
-            : null,
-        onTap: () => _markAsRead(id),
+                child: Icon(icon, color: iconColor, size: 24),
+              ),
+              title: Text(
+                title,
+                style: AppTextStyles.titleSmall.copyWith(
+                  fontWeight: isRead ? FontWeight.normal : FontWeight.bold,
+                ),
+              ),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 4),
+                  Text(
+                    message,
+                    style: TextStyle(color: AppColors.textSecondary),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    dateStr,
+                    style:
+                        TextStyle(color: AppColors.textTertiary, fontSize: 12),
+                  ),
+                ],
+              ),
+              trailing: !isRead && !isSelected
+                  ? Container(
+                      width: 10,
+                      height: 10,
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryGold,
+                        shape: BoxShape.circle,
+                      ),
+                    )
+                  : null,
+              onTap: _isSelectionMode
+                  ? () => _toggleSelection(id)
+                  : () => _markAsRead(id),
+            ),
+          ),
+        ],
       ),
     );
   }

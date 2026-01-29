@@ -5,8 +5,11 @@
 // =============================================================================
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
+import '../../providers/admin_notification_provider.dart';
+import '../../providers/admin_navigation_provider.dart';
 
 class AdminScaffold extends StatelessWidget {
   final Widget body;
@@ -77,6 +80,21 @@ class AdminScaffold extends StatelessWidget {
                       },
                     ),
                   ),
+                if (isDesktop)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: Consumer<AdminNavigationProvider>(
+                      builder: (context, nav, _) => IconButton(
+                        icon: Icon(nav.isSidebarCollapsed
+                            ? Icons.menu_open
+                            : Icons.menu),
+                        onPressed: () => nav.toggleSidebar(),
+                        tooltip: nav.isSidebarCollapsed
+                            ? 'Expand Sidebar'
+                            : 'Collapse Sidebar',
+                      ),
+                    ),
+                  ),
                 if (Navigator.of(context).canPop())
                   IconButton(
                     icon: const Icon(Icons.arrow_back),
@@ -92,6 +110,30 @@ class AdminScaffold extends StatelessWidget {
                         : AppTextStyles.displaySmall,
                     overflow: TextOverflow.ellipsis,
                   ),
+                ),
+                const SizedBox(width: 12),
+                // Notification Badge
+                Consumer<AdminNotificationProvider>(
+                  builder: (context, notificationProv, _) {
+                    final count = notificationProv.unreadCount;
+                    if (count == 0) return const SizedBox();
+                    return Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppColors.error,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        '$count',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ],
             ),

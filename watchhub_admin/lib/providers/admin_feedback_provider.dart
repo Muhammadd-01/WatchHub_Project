@@ -54,4 +54,15 @@ class AdminFeedbackProvider extends ChangeNotifier {
       return false;
     }
   }
+
+  Future<bool> deleteFeedback(String feedbackId) async {
+    try {
+      await _firestore.collection('feedbacks').doc(feedbackId).delete();
+      await fetchFeedbacks();
+      return true;
+    } catch (e) {
+      debugPrint('Error deleting feedback: $e');
+      return false;
+    }
+  }
 }

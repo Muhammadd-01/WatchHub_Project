@@ -9,7 +9,6 @@ import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
-import '../../core/constants/app_constants.dart';
 import '../../providers/product_provider.dart';
 import '../../widgets/home/product_card.dart';
 import '../../widgets/home/category_chip.dart';
@@ -55,7 +54,10 @@ class _ProductsScreenState extends State<ProductsScreen> {
       return;
     }
 
-    await provider.loadProducts();
+    await Future.wait([
+      provider.loadProducts(),
+      provider.loadFilters(),
+    ]);
   }
 
   void _showSortSheet() {
@@ -235,14 +237,19 @@ class _ProductsScreenState extends State<ProductsScreen> {
   }
 
   Widget _buildFilterSheet() {
+    final provider = context.read<ProductProvider>();
+    List<String> tempSelectedBrands = List.from(provider.selectedBrands);
+    List<String> tempSelectedCategories =
+        List.from(provider.selectedCategories);
+
     return DraggableScrollableSheet(
       initialChildSize: 0.7,
       maxChildSize: 0.9,
       minChildSize: 0.5,
       expand: false,
       builder: (context, scrollController) {
-        return Consumer<ProductProvider>(
-          builder: (context, provider, _) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
             return Container(
               color: Theme.of(context).cardColor,
               padding: const EdgeInsets.all(24),
@@ -259,8 +266,10 @@ class _ProductsScreenState extends State<ProductsScreen> {
                           )),
                       TextButton(
                         onPressed: () {
-                          provider.clearFilters();
-                          Navigator.pop(context);
+                          setSheetState(() {
+                            tempSelectedBrands.clear();
+                            tempSelectedCategories.clear();
+                          });
                         },
                         child: Text('Clear All',
                             style: TextStyle(
@@ -285,14 +294,20 @@ class _ProductsScreenState extends State<ProductsScreen> {
                         Wrap(
                           spacing: 8,
                           runSpacing: 8,
-                          children: AppConstants.watchBrands.map((brand) {
+                          children: provider.availableBrands.map((brand) {
                             final isSelected =
-                                provider.selectedBrands.contains(brand);
+                                tempSelectedBrands.contains(brand);
                             return CategoryChip(
                               label: brand,
                               isSelected: isSelected,
                               onTap: () {
-                                provider.toggleBrand(brand);
+                                setSheetState(() {
+                                  if (isSelected) {
+                                    tempSelectedBrands.remove(brand);
+                                  } else {
+                                    tempSelectedBrands.add(brand);
+                                  }
+                                });
                               },
                             );
                           }).toList(),
@@ -312,14 +327,20 @@ class _ProductsScreenState extends State<ProductsScreen> {
                         Wrap(
                           spacing: 8,
                           runSpacing: 8,
-                          children: AppConstants.watchCategories.map((cat) {
+                          children: provider.availableCategories.map((cat) {
                             final isSelected =
-                                provider.selectedCategories.contains(cat);
+                                tempSelectedCategories.contains(cat);
                             return CategoryChip(
                               label: cat,
                               isSelected: isSelected,
                               onTap: () {
-                                provider.toggleCategory(cat);
+                                setSheetState(() {
+                                  if (isSelected) {
+                                    tempSelectedCategories.remove(cat);
+                                  } else {
+                                    tempSelectedCategories.add(cat);
+                                  }
+                                });
                               },
                             );
                           }).toList(),
@@ -331,7 +352,13 @@ class _ProductsScreenState extends State<ProductsScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: () => Navigator.pop(context),
+                      onPressed: () {
+                        provider.updateFilters(
+                          brands: tempSelectedBrands,
+                          categories: tempSelectedCategories,
+                        );
+                        Navigator.pop(context);
+                      },
                       child: const Text('Apply Filters'),
                     ),
                   ),

@@ -9,6 +9,8 @@ import 'package:flutter/material.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
+import '../providers/auth_provider.dart';
 
 /// Service to handle Push Notifications via OneSignal
 class PushNotificationService {
@@ -85,6 +87,28 @@ class PushNotificationService {
       final data = event.notification.additionalData;
       final type = data?['type'] as String?;
       final productId = data?['productId'] as String?;
+      final notificationId = data?['notificationId'] as String?;
+
+      // Mark as read in Firestore if ID is available and user is logged in
+      if (notificationId != null) {
+        try {
+          final context = navigatorKey.currentContext;
+          if (context != null) {
+            final auth = Provider.of<AuthProvider>(context, listen: false);
+            final uid = auth.uid;
+            if (uid != null) {
+              FirebaseFirestore.instance
+                  .collection('users')
+                  .doc(uid)
+                  .collection('notifications')
+                  .doc(notificationId)
+                  .update({'read': true});
+            }
+          }
+        } catch (e) {
+          debugPrint('OneSignal: Error marking notification as read - $e');
+        }
+      }
 
       // Navigate based on notification type
       if (type == 'review_reply' && productId != null) {

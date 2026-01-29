@@ -144,8 +144,8 @@ class AdminProductProvider extends ChangeNotifier {
               productName = docData?['name'] ?? 'Product';
             } catch (_) {}
           }
-          // Find all users who have this product in their cart (non-blocking)
-          _notifyAndRemoveFromCarts(id, productName);
+          // Find all users who have this product in their cart/wishlist (non-blocking)
+          _cleanupUserCollections(id, productName);
         }
       }
 
@@ -162,46 +162,51 @@ class AdminProductProvider extends ChangeNotifier {
     }
   }
 
-  /// Find users with this product in cart and notify + remove
-  Future<void> _notifyAndRemoveFromCarts(
+  /// Find users with this product in cart/wishlist and cleanup
+  Future<void> _cleanupUserCollections(
       String productId, String productName) async {
     try {
-      // Query all cart items collection group
-      final cartItems = await _firestore
+      // Query all 'items' subcollections (this handles both carts and wishlists as they share the subcollection name)
+      final items = await _firestore
           .collectionGroup('items')
           .where('productId', isEqualTo: productId)
           .get();
 
-      for (final doc in cartItems.docs) {
+      for (final doc in items.docs) {
         try {
-          // Extract userId from path: carts/{userId}/items/{productId}
+          // Path: carts/{userId}/items/{productId} OR wishlists/{userId}/items/{productId}
           final pathParts = doc.reference.path.split('/');
-          if (pathParts.length >= 2 && pathParts[0] == 'carts') {
-            final userId = pathParts[1];
+          if (pathParts.length < 2) continue;
 
+          final collectionType = pathParts[0]; // 'carts' or 'wishlists'
+          final userId = pathParts[1];
+
+          if (collectionType == 'carts') {
             // Create notification for user at users/{userId}/notifications
             await _firestore
                 .collection('users')
                 .doc(userId)
                 .collection('notifications')
                 .add({
-              'title': 'Item Out of Stock',
+              'title': 'Item Unavailable',
               'message':
-                  '$productName in your cart is now out of stock and has been removed.',
+                  'A product ($productName) in your cart is no longer available and has been removed.',
               'read': false,
               'createdAt': FieldValue.serverTimestamp(),
             });
-
-            // Remove from cart
-            await doc.reference.delete();
             debugPrint('Removed $productName from cart for user $userId');
+          } else if (collectionType == 'wishlists') {
+            debugPrint('Removed $productName from wishlist for user $userId');
           }
+
+          // Remove the item regardless of collection type
+          await doc.reference.delete();
         } catch (e) {
-          debugPrint('Error processing cart item: $e');
+          debugPrint('Error processing item for cleanup: $e');
         }
       }
     } catch (e) {
-      debugPrint('Error notifying users of out of stock: $e');
+      debugPrint('Error performing collection cleanup: $e');
     }
   }
 
@@ -221,10 +226,18 @@ class AdminProductProvider extends ChangeNotifier {
       }
 
       // 2. Delete from Firestore first (fast operation)
+      final productName = _products.firstWhere(
+        (p) => p['id'] == id,
+        orElse: () => {'name': 'Product'},
+      )['name'];
+
       await _productCollection.doc(id).delete();
       _products.removeWhere((p) => p['id'] == id);
 
-      // 3. Delete images from Supabase in background (non-blocking)
+      // 3. Cleanup user carts and wishlists (non-blocking)
+      _cleanupUserCollections(id, productName);
+
+      // 4. Delete images from Supabase in background (non-blocking)
       if (imagesToDelete != null && imagesToDelete.isNotEmpty) {
         _deleteImagesInBackground(imagesToDelete);
       }

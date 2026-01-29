@@ -59,6 +59,15 @@ class _OrdersScreenState extends State<OrdersScreen> {
               color: Theme.of(context).textTheme.titleLarge?.color,
             )),
         centerTitle: true,
+        actions: [
+          if (_orders.isNotEmpty)
+            IconButton(
+              icon: const Icon(Icons.delete_sweep_outlined,
+                  color: Colors.redAccent),
+              onPressed: _showClearConfirmation,
+              tooltip: 'Clear Order History',
+            ),
+        ],
       ),
       body: _isLoading
           ? Center(
@@ -112,6 +121,58 @@ class _OrdersScreenState extends State<OrdersScreen> {
         ],
       ),
     );
+  }
+
+  void _showClearConfirmation() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Theme.of(context).cardColor,
+        title: const Text('Clear Order History?'),
+        content: const Text(
+            'This will permanently delete all your order history. This action cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancel',
+                style: TextStyle(color: Theme.of(context).primaryColor)),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _clearOrders();
+            },
+            child: const Text('Clear All',
+                style: TextStyle(color: Colors.redAccent)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _clearOrders() async {
+    final authProvider = context.read<AuthProvider>();
+    if (!authProvider.isAuthenticated) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      await _firestoreService.clearOrders(authProvider.uid!);
+      await _loadOrders();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Order history cleared')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error clearing orders: $e')),
+        );
+      }
+    }
+
+    setState(() => _isLoading = false);
   }
 }
 

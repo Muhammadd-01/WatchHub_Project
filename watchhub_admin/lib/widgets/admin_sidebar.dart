@@ -11,11 +11,13 @@ import '../core/constants/app_text_styles.dart';
 class AdminSidebar extends StatelessWidget {
   final int selectedIndex;
   final Function(int) onItemSelected;
+  final bool isCollapsed;
 
   const AdminSidebar({
     super.key,
     required this.selectedIndex,
     required this.onItemSelected,
+    this.isCollapsed = false,
   });
 
   @override
@@ -28,18 +30,27 @@ class AdminSidebar extends StatelessWidget {
           alignment: Alignment.center,
           padding: const EdgeInsets.all(16),
           child: Row(
+            mainAxisAlignment: isCollapsed
+                ? MainAxisAlignment.center
+                : MainAxisAlignment.start,
             children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Image.asset(
-                  'assets/images/watchhub_logo.png',
-                  width: 48,
-                  height: 48,
-                  fit: BoxFit.contain,
-                ),
+              Image.asset(
+                'assets/images/watchhub_logo.png',
+                width: isCollapsed ? 40 : 48,
+                height: isCollapsed ? 40 : 48,
+                fit: BoxFit.contain,
               ),
-              const SizedBox(width: 12),
-              Text('WatchHub', style: AppTextStyles.headlineSmall),
+              if (!isCollapsed) ...[
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'WatchHub',
+                    style: AppTextStyles.headlineSmall,
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                  ),
+                ),
+              ],
             ],
           ),
         ),
@@ -64,10 +75,12 @@ class AdminSidebar extends StatelessWidget {
               _buildNavItem(context, 'Wishlists', Icons.favorite_outline, 9),
               _buildNavItem(
                   context, 'Notifications', Icons.notifications_outlined, 10),
+              _buildNavItem(
+                  context, 'FAQs', Icons.question_answer_outlined, 11),
               const Divider(color: AppColors.divider, height: 32),
               _buildNavItem(
-                  context, 'Profile', Icons.account_circle_outlined, 11),
-              _buildNavItem(context, 'Settings', Icons.settings_outlined, 12),
+                  context, 'Profile', Icons.account_circle_outlined, 12),
+              _buildNavItem(context, 'Settings', Icons.settings_outlined, 13),
             ],
           ),
         ),
@@ -81,22 +94,51 @@ class AdminSidebar extends StatelessWidget {
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
-      child: ListTile(
-        leading: Icon(
-          icon,
-          color: isSelected ? AppColors.primaryGold : AppColors.textSecondary,
+      child: Tooltip(
+        message: isCollapsed ? title : '',
+        child: InkWell(
+          onTap: () => onItemSelected(index),
+          borderRadius: BorderRadius.circular(10),
+          child: Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: isCollapsed ? 0 : 16,
+              vertical: 12,
+            ),
+            decoration: BoxDecoration(
+              color: isSelected
+                  ? AppColors.primaryGold.withOpacity(0.1)
+                  : Colors.transparent,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(
+              mainAxisAlignment: isCollapsed
+                  ? MainAxisAlignment.center
+                  : MainAxisAlignment.start,
+              children: [
+                Icon(
+                  icon,
+                  color: isSelected
+                      ? AppColors.primaryGold
+                      : AppColors.textSecondary,
+                  size: 24,
+                ),
+                if (!isCollapsed) ...[
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: isSelected
+                          ? AppTextStyles.titleSmall
+                              .copyWith(color: AppColors.primaryGold)
+                          : AppTextStyles.bodyMedium,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
         ),
-        title: Text(
-          title,
-          style: isSelected
-              ? AppTextStyles.titleSmall.copyWith(color: AppColors.primaryGold)
-              : AppTextStyles.bodyMedium,
-        ),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        tileColor: isSelected
-            ? AppColors.primaryGold.withOpacity(0.1)
-            : Colors.transparent,
-        onTap: () => onItemSelected(index),
       ),
     );
   }

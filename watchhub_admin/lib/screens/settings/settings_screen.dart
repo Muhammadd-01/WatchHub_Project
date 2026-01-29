@@ -8,7 +8,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
-import '../../core/utils/admin_helpers.dart';
 import '../../widgets/admin_scaffold.dart';
 import '../../providers/admin_auth_provider.dart';
 import '../../providers/admin_theme_provider.dart';
@@ -60,14 +59,6 @@ class SettingsScreen extends StatelessWidget {
                         subtitle: auth.isAdmin ? 'Super Admin' : 'Admin',
                         icon: Icons.security,
                       ),
-                      _buildSettingItem(
-                          title: 'Change Password',
-                          subtitle: 'Update your login password',
-                          icon: Icons.lock_outline,
-                          onTap: () {
-                            AdminHelpers.showInfoSnackbar(
-                                context, 'Password change coming soon');
-                          }),
                     ],
                   );
                 },

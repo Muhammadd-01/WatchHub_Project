@@ -91,4 +91,24 @@ class AdminCartProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  Future<bool> clearUserCart(String uid) async {
+    try {
+      final snapshot = await _firestore
+          .collection('carts')
+          .doc(uid)
+          .collection('items')
+          .get();
+      final batch = _firestore.batch();
+      for (var doc in snapshot.docs) {
+        batch.delete(doc.reference);
+      }
+      await batch.commit();
+      await fetchActiveCarts();
+      return true;
+    } catch (e) {
+      debugPrint('Error clearing cart for $uid: $e');
+      return false;
+    }
+  }
 }

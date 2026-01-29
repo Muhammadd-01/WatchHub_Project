@@ -19,6 +19,8 @@ import '../models/order_model.dart';
 import '../models/review_model.dart';
 import '../models/feedback_model.dart';
 import '../models/category_model.dart';
+import '../models/brand_model.dart';
+import '../models/faq_model.dart';
 
 /// Centralized Firestore CRUD Service
 ///
@@ -720,6 +722,24 @@ class FirestoreCrudService {
     }
   }
 
+  /// Clears all orders for a user
+  Future<void> clearOrders(String uid) async {
+    try {
+      final snapshot =
+          await _ordersCollection.where('userId', isEqualTo: uid).get();
+
+      final batch = _firestore.batch();
+      for (final doc in snapshot.docs) {
+        batch.delete(doc.reference);
+      }
+      await batch.commit();
+      debugPrint('FirestoreCrudService: All orders cleared for $uid');
+    } catch (e) {
+      debugPrint('FirestoreCrudService: Error clearing orders - $e');
+      rethrow;
+    }
+  }
+
   /// Gets a single order
   Future<OrderModel?> getOrder(String orderId) async {
     try {
@@ -852,6 +872,27 @@ class FirestoreCrudService {
         .collection('notifications')
         .doc(notificationId)
         .update({'read': true});
+  }
+
+  /// Mark all notifications as read for a user
+  Future<void> markAllNotificationsRead(String uid) async {
+    try {
+      final snapshot = await _usersCollection
+          .doc(uid)
+          .collection('notifications')
+          .where('read', isEqualTo: false)
+          .get();
+
+      final batch = _firestore.batch();
+      for (final doc in snapshot.docs) {
+        batch.update(doc.reference, {'read': true});
+      }
+      await batch.commit();
+      debugPrint('FirestoreCrudService: All notifications marked as read');
+    } catch (e) {
+      debugPrint('FirestoreCrudService: Error marking all read - $e');
+      rethrow;
+    }
   }
 
   /// Clear all notifications for a user
@@ -1127,6 +1168,50 @@ class FirestoreCrudService {
               .map((doc) => ReviewModel.fromFirestore(doc, productId))
               .toList(),
         );
+  }
+
+  // ===========================================================================
+  // BRAND OPERATIONS
+  // ===========================================================================
+
+  /// Gets all brands from Firestore
+  Future<List<BrandModel>> getBrands() async {
+    try {
+      final snapshot = await _firestore
+          .collection(AppConstants.brandsCollection)
+          .orderBy('name')
+          .get();
+
+      return snapshot.docs.map((doc) => BrandModel.fromFirestore(doc)).toList();
+    } catch (e) {
+      debugPrint('FirestoreCrudService: Error getting brands - $e');
+      // Simple fallback without ordering
+      final snapshot =
+          await _firestore.collection(AppConstants.brandsCollection).get();
+      return snapshot.docs.map((doc) => BrandModel.fromFirestore(doc)).toList();
+    }
+  }
+
+  // ===========================================================================
+  // FAQ OPERATIONS
+  // ===========================================================================
+
+  /// Gets all FAQs from Firestore
+  Future<List<FAQModel>> getFaqs() async {
+    try {
+      final snapshot = await _firestore
+          .collection(AppConstants.faqsCollection)
+          .orderBy('order')
+          .get();
+
+      return snapshot.docs.map((doc) => FAQModel.fromFirestore(doc)).toList();
+    } catch (e) {
+      debugPrint('FirestoreCrudService: Error getting FAQs - $e');
+      // Fallback without ordering
+      final snapshot =
+          await _firestore.collection(AppConstants.faqsCollection).get();
+      return snapshot.docs.map((doc) => FAQModel.fromFirestore(doc)).toList();
+    }
   }
 
   // ===========================================================================

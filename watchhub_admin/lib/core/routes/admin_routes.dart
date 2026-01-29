@@ -6,6 +6,7 @@
 
 import 'package:flutter/material.dart';
 import '../../screens/auth/admin_login_screen.dart';
+import '../../screens/auth/admin_forgot_password_screen.dart';
 import '../../screens/admin_main_screen.dart';
 // Sub-pages that are PUSHED on top of the shell:
 // (Currently none, as Add/Edit Product is a dialog. If we have Detail pages, import them here)
@@ -16,6 +17,7 @@ class AdminRoutes {
 
   // Route names
   static const String login = '/';
+  static const String forgotPassword = '/forgot-password';
   static const String dashboard =
       '/dashboard'; // Used for redirection after login
 
@@ -27,6 +29,10 @@ class AdminRoutes {
     switch (routeSettings.name) {
       case login:
         return MaterialPageRoute(builder: (_) => const AdminLoginScreen());
+
+      case forgotPassword:
+        return MaterialPageRoute(
+            builder: (_) => const AdminForgotPasswordScreen());
 
       case dashboard:
         // This is now the "Main App Shell"

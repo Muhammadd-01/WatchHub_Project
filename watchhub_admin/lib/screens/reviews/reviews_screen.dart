@@ -27,6 +27,8 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
   List<Map<String, dynamic>> _reviews = [];
   bool _isLoading = true;
   String? _error;
+  bool _isSelectionMode = false;
+  final Set<String> _selectedIds = {};
 
   @override
   void initState() {
@@ -35,6 +37,7 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
   }
 
   Future<void> _fetchAllReviews() async {
+    if (!mounted) return;
     setState(() {
       _isLoading = true;
       _error = null;
@@ -45,6 +48,7 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
       final reviewsSnapshot = await _firestore.collectionGroup('reviews').get();
 
       if (reviewsSnapshot.docs.isEmpty) {
+        if (!mounted) return;
         setState(() {
           _reviews = [];
           _isLoading = false;
@@ -99,15 +103,149 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
         return dateB.compareTo(dateA);
       });
 
+      if (!mounted) return;
       setState(() {
         _reviews = allReviews;
         _isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _error = 'Failed to load reviews: $e';
         _isLoading = false;
       });
+    }
+  }
+
+  void _toggleSelectionMode() {
+    setState(() {
+      _isSelectionMode = !_isSelectionMode;
+      _selectedIds.clear();
+    });
+  }
+
+  void _toggleSelection(String id) {
+    setState(() {
+      if (_selectedIds.contains(id)) {
+        _selectedIds.remove(id);
+      } else {
+        _selectedIds.add(id);
+      }
+      if (_selectedIds.isEmpty) {
+        _isSelectionMode = false;
+      }
+    });
+  }
+
+  void _selectAll() {
+    setState(() {
+      if (_selectedIds.length == _reviews.length) {
+        _selectedIds.clear();
+        _isSelectionMode = false;
+      } else {
+        _selectedIds.clear();
+        for (var review in _reviews) {
+          _selectedIds.add(review['id']);
+        }
+      }
+    });
+  }
+
+  Future<void> _deleteSelected() async {
+    if (_selectedIds.isEmpty) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.cardBackground,
+        title: const Text('Delete Selected',
+            style: TextStyle(color: AppColors.textPrimary)),
+        content: Text(
+            'Are you sure you want to delete ${_selectedIds.length} reviews? This action cannot be undone.',
+            style: const TextStyle(color: AppColors.textSecondary)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      int successCount = 0;
+      for (final id in _selectedIds.toList()) {
+        final review = _reviews.firstWhere((r) => r['id'] == id);
+        try {
+          await _firestore
+              .collection('products')
+              .doc(review['productId'])
+              .collection('reviews')
+              .doc(id)
+              .delete();
+          successCount++;
+        } catch (e) {
+          debugPrint('Error deleting review $id: $e');
+        }
+      }
+
+      setState(() {
+        _selectedIds.clear();
+        _isSelectionMode = false;
+      });
+      if (mounted) {
+        AdminHelpers.showSuccessSnackbar(
+            context, '$successCount reviews deleted');
+        _fetchAllReviews();
+      }
+    }
+  }
+
+  Future<void> _deleteReview(Map<String, dynamic> review) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.cardBackground,
+        title: const Text('Delete Review',
+            style: TextStyle(color: AppColors.textPrimary)),
+        content: const Text('Are you sure you want to delete this review?',
+            style: TextStyle(color: AppColors.textSecondary)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      try {
+        await _firestore
+            .collection('products')
+            .doc(review['productId'])
+            .collection('reviews')
+            .doc(review['id'])
+            .delete();
+        if (mounted) {
+          AdminHelpers.showSuccessSnackbar(context, 'Review deleted');
+          _fetchAllReviews();
+        }
+      } catch (e) {
+        if (mounted) {
+          AdminHelpers.showErrorSnackbar(context, 'Failed to delete review');
+        }
+      }
     }
   }
 
@@ -289,12 +427,48 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
   @override
   Widget build(BuildContext context) {
     return AdminScaffold(
-      title: 'Reviews',
+      title: _isSelectionMode ? '${_selectedIds.length} Selected' : 'Reviews',
       actions: [
-        IconButton(
-          icon: const Icon(Icons.refresh, color: AppColors.primaryGold),
-          onPressed: _fetchAllReviews,
-        ),
+        if (_isSelectionMode) ...[
+          IconButton(
+            onPressed: _selectAll,
+            icon: Icon(
+              _selectedIds.length == _reviews.length
+                  ? Icons.deselect
+                  : Icons.select_all,
+              size: 22,
+            ),
+            tooltip: _selectedIds.length == _reviews.length
+                ? 'Deselect All'
+                : 'Select All',
+            color: AppColors.primaryGold,
+          ),
+          IconButton(
+            onPressed: _selectedIds.isEmpty ? null : _deleteSelected,
+            icon: const Icon(Icons.delete_sweep, size: 22),
+            tooltip: 'Delete Selected',
+            color: _selectedIds.isEmpty
+                ? AppColors.textSecondary
+                : AppColors.error,
+          ),
+          IconButton(
+            onPressed: _toggleSelectionMode,
+            icon: const Icon(Icons.close, size: 22),
+            tooltip: 'Cancel',
+            color: AppColors.error,
+          ),
+        ] else ...[
+          IconButton(
+            onPressed: _toggleSelectionMode,
+            icon: const Icon(Icons.checklist, size: 22),
+            tooltip: 'Select Multiple',
+            color: AppColors.textSecondary,
+          ),
+          IconButton(
+            icon: const Icon(Icons.refresh, color: AppColors.primaryGold),
+            onPressed: _fetchAllReviews,
+          ),
+        ],
       ],
       body: _buildBody(),
     );
@@ -330,12 +504,22 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
       itemCount: _reviews.length,
       itemBuilder: (context, index) {
         final review = _reviews[index];
-        return _buildReviewCard(review);
+        final isSelected = _selectedIds.contains(review['id']);
+        return GestureDetector(
+          onLongPress: () {
+            if (!_isSelectionMode) {
+              _toggleSelectionMode();
+              _toggleSelection(review['id']);
+            }
+          },
+          onTap: _isSelectionMode ? () => _toggleSelection(review['id']) : null,
+          child: _buildReviewCard(review, isSelected),
+        );
       },
     );
   }
 
-  Widget _buildReviewCard(Map<String, dynamic> review) {
+  Widget _buildReviewCard(Map<String, dynamic> review, bool isSelected) {
     final date = review['createdAt'] as DateTime?;
     final hasReply = (review['adminReply'] as String?)?.isNotEmpty ?? false;
 
@@ -343,114 +527,146 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.cardBackground,
+        color: isSelected
+            ? AppColors.primaryGold.withOpacity(0.1)
+            : AppColors.cardBackground,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.divider),
+        border: Border.all(
+          color: isSelected ? AppColors.primaryGold : AppColors.divider,
+          width: isSelected ? 2 : 1,
+        ),
       ),
-      child: Column(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
-          Row(
-            children: [
-              // Product name
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          if (_isSelectionMode)
+            Padding(
+              padding: const EdgeInsets.only(right: 16, top: 2),
+              child: Checkbox(
+                value: isSelected,
+                onChanged: (_) => _toggleSelection(review['id']),
+                activeColor: AppColors.primaryGold,
+              ),
+            ),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header
+                Row(
                   children: [
-                    Text(
-                      review['productName'] ?? 'Unknown Product',
-                      style: AppTextStyles.titleSmall
-                          .copyWith(color: AppColors.primaryGold),
+                    // Product name
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            review['productName'] ?? 'Unknown Product',
+                            style: AppTextStyles.titleSmall
+                                .copyWith(color: AppColors.primaryGold),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'by ${review['userName'] ?? 'Anonymous'}',
+                            style: AppTextStyles.bodySmall
+                                .copyWith(color: AppColors.textSecondary),
+                          ),
+                        ],
+                      ),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'by ${review['userName'] ?? 'Anonymous'}',
-                      style: AppTextStyles.bodySmall
-                          .copyWith(color: AppColors.textSecondary),
-                    ),
+                    // Rating
+                    _buildRatingStars(
+                        (review['rating'] as num?)?.toDouble() ?? 0),
                   ],
                 ),
-              ),
-              // Rating
-              _buildRatingStars((review['rating'] as num?)?.toDouble() ?? 0),
-            ],
-          ),
-          const SizedBox(height: 12),
+                const SizedBox(height: 12),
 
-          // Comment
-          Text(
-            review['comment'] ?? '',
-            style: AppTextStyles.bodyMedium,
-          ),
-          const SizedBox(height: 8),
+                // Comment
+                Text(
+                  review['comment'] ?? '',
+                  style: AppTextStyles.bodyMedium,
+                ),
+                const SizedBox(height: 8),
 
-          // Date
-          Text(
-            date != null
-                ? DateFormat('MMM d, yyyy').format(date)
-                : 'Unknown date',
-            style: AppTextStyles.labelSmall
-                .copyWith(color: AppColors.textSecondary),
-          ),
+                // Date
+                Text(
+                  date != null
+                      ? DateFormat('MMM d, yyyy').format(date)
+                      : 'Unknown date',
+                  style: AppTextStyles.labelSmall
+                      .copyWith(color: AppColors.textSecondary),
+                ),
 
-          // Admin reply
-          if (hasReply) ...[
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppColors.primaryGold.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-                border:
-                    Border.all(color: AppColors.primaryGold.withOpacity(0.3)),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Icon(Icons.reply,
-                      color: AppColors.primaryGold, size: 18),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Column(
+                // Admin reply
+                if (hasReply) ...[
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryGold.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                          color: AppColors.primaryGold.withOpacity(0.3)),
+                    ),
+                    child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Admin Reply',
-                            style: AppTextStyles.labelSmall
-                                .copyWith(color: AppColors.primaryGold)),
-                        const SizedBox(height: 4),
-                        Text(review['adminReply'],
-                            style: AppTextStyles.bodySmall),
+                        const Icon(Icons.reply,
+                            color: AppColors.primaryGold, size: 18),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Admin Reply',
+                                  style: AppTextStyles.labelSmall
+                                      .copyWith(color: AppColors.primaryGold)),
+                              const SizedBox(height: 4),
+                              Text(review['adminReply'],
+                                  style: AppTextStyles.bodySmall),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
                   ),
                 ],
-              ),
-            ),
-          ],
 
-          // Actions
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              TextButton.icon(
-                onPressed: () => _replyToReview(review),
-                icon: Icon(
-                  hasReply ? Icons.edit : Icons.reply,
-                  size: 18,
-                  color: AppColors.primaryGold,
-                ),
-                label: Text(
-                  hasReply ? 'Edit Reply' : 'Reply',
-                  style: const TextStyle(color: AppColors.primaryGold),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
+                // Actions
+                if (!_isSelectionMode) ...[
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton.icon(
+                        onPressed: () => _deleteReview(review),
+                        icon: const Icon(Icons.delete_outline,
+                            size: 18, color: AppColors.error),
+                        label: const Text('Delete',
+                            style: TextStyle(color: AppColors.error)),
+                      ),
+                      const SizedBox(width: 8),
+                      TextButton.icon(
+                        onPressed: () => _replyToReview(review),
+                        icon: Icon(
+                          hasReply ? Icons.edit : Icons.reply,
+                          size: 18,
+                          color: AppColors.primaryGold,
+                        ),
+                        label: Text(
+                          hasReply ? 'Edit Reply' : 'Reply',
+                          style: const TextStyle(color: AppColors.primaryGold),
+                        ),
+                      ),
+                    ],
+                  ),
+                ], // if (!_isSelectionMode) ...[
+              ], // Column children
+            ), // Column
+          ), // Expanded
+        ], // Row (main) children
+      ), // Row (main)
+    ); // Container
   }
 
   Widget _buildRatingStars(double rating) {

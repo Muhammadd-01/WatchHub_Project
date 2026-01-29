@@ -16,11 +16,11 @@ import '../../core/constants/app_constants.dart';
 import '../../core/routes/app_routes.dart';
 import '../../providers/product_provider.dart';
 import '../../providers/category_provider.dart';
-import '../../providers/notification_provider.dart';
 import '../../widgets/common/glass_container.dart';
 import '../../models/product_model.dart';
 import '../../widgets/common/cart_badge.dart';
 import '../../widgets/home/auto_looping_product_card.dart';
+import '../../widgets/common/notification_badge.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -109,23 +109,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       actions: [
         const CartBadge(),
-        IconButton(
-          onPressed: () {
-            Navigator.pushNamed(context, AppRoutes.notifications);
-          },
-          icon: Consumer<NotificationProvider>(
-            builder: (context, notifProvider, child) {
-              return Badge(
-                label: Text('${notifProvider.unreadCount}'),
-                isLabelVisible: notifProvider.unreadCount > 0,
-                backgroundColor: AppColors.primaryGold,
-                textColor: Colors.white,
-                child: Icon(Icons.notifications_outlined,
-                    color: theme.iconTheme.color),
-              );
-            },
-          ),
-        ),
+        const NotificationBadge(),
       ],
     );
   }
@@ -366,10 +350,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     }
                   }
 
-                  // Handle single product case
-                  if (list2.isEmpty && list1.isNotEmpty) {
-                    list2.add(list1[0]);
-                  }
+                  // If only one product, list2 will remain empty and we handle it in the UI
 
                   return Row(
                     children: [
@@ -381,13 +362,16 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                       const SizedBox(width: 16),
-                      Expanded(
-                        child: AutoLoopingProductCard(
-                          products: list2,
-                          interval: const Duration(seconds: 4),
-                          height: 300,
-                        ),
-                      ),
+                      if (list2.isNotEmpty)
+                        Expanded(
+                          child: AutoLoopingProductCard(
+                            products: list2,
+                            interval: const Duration(seconds: 4),
+                            height: 300,
+                          ),
+                        )
+                      else
+                        const Spacer(), // Keeps the first card half-screen width
                     ],
                   );
                 }),
@@ -481,10 +465,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     }
                   }
 
-                  // Handle single product case
-                  if (list2.isEmpty && list1.isNotEmpty) {
-                    list2.add(list1[0]);
-                  }
+                  // If only one product, list2 will remain empty and we handle it in the UI
 
                   return Row(
                     children: [
@@ -496,13 +477,16 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                       const SizedBox(width: 16),
-                      Expanded(
-                        child: AutoLoopingProductCard(
-                          products: list2,
-                          interval: const Duration(seconds: 7),
-                          height: 300,
-                        ),
-                      ),
+                      if (list2.isNotEmpty)
+                        Expanded(
+                          child: AutoLoopingProductCard(
+                            products: list2,
+                            interval: const Duration(seconds: 7),
+                            height: 300,
+                          ),
+                        )
+                      else
+                        const Spacer(), // Keeps the first card half-screen width
                     ],
                   );
                 }),
@@ -596,11 +580,13 @@ class _HomeScreenState extends State<HomeScreen> {
                     }
                   }
 
-                  // Handle single product case - show single centered card
+                  // Handle single product case - show single card on the left
                   if (newArrivals.length == 1) {
-                    return Center(
+                    return Align(
+                      alignment: Alignment.centerLeft,
                       child: SizedBox(
-                        width: MediaQuery.of(context).size.width * 0.5,
+                        width: (MediaQuery.of(context).size.width - 48) /
+                            2, // Half width adjusted for padding
                         child: AutoLoopingProductCard(
                           products: list1,
                           interval: const Duration(seconds: 6),

@@ -117,6 +117,30 @@ class AdminAuthProvider extends ChangeNotifier {
     }
   }
 
+  /// Send password reset email
+  Future<bool> sendPasswordReset(String email) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      await _auth.sendPasswordResetEmail(email: email);
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } on FirebaseAuthException catch (e) {
+      _errorMessage = e.message ?? 'Failed to send reset email';
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    } catch (e) {
+      _errorMessage = 'An error occurred';
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
   /// Sign out
   Future<void> signOut() async {
     await _auth.signOut();

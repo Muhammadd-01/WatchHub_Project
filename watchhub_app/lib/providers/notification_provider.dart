@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../services/firestore_crud_service.dart';
+import 'dart:async';
 
 class NotificationProvider extends ChangeNotifier {
   static const String _pushKey = 'push_notifications_enabled';
@@ -9,6 +11,8 @@ class NotificationProvider extends ChangeNotifier {
   bool _isPushEnabled = true;
   bool _isOrderEnabled = true;
   int _unreadCount = 0;
+  StreamSubscription? _unreadSubscription;
+  final FirestoreCrudService _firestoreService = FirestoreCrudService();
 
   String? _userId;
 
@@ -21,9 +25,15 @@ class NotificationProvider extends ChangeNotifier {
   }
 
   void init(String userId) {
+    if (_userId == userId) return; // Already initialized for this user
+
     _userId = userId;
     _loadRemoteSettings();
-    FirebaseFirestore.instance
+
+    // Cancel existing subscription if any
+    _unreadSubscription?.cancel();
+
+    _unreadSubscription = FirebaseFirestore.instance
         .collection('users')
         .doc(userId)
         .collection('notifications')
@@ -33,6 +43,22 @@ class NotificationProvider extends ChangeNotifier {
       _unreadCount = snapshot.docs.length;
       notifyListeners();
     });
+  }
+
+  Future<void> markAllAsRead() async {
+    if (_userId == null) return;
+    try {
+      await _firestoreService.markAllNotificationsRead(_userId!);
+      // Count will be updated automatically by the stream listener
+    } catch (e) {
+      debugPrint('Error marking notifications as read: $e');
+    }
+  }
+
+  @override
+  void dispose() {
+    _unreadSubscription?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadSettings() async {

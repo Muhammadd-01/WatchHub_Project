@@ -149,7 +149,22 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 32),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () {
+                      Navigator.pushNamed(context, AdminRoutes.forgotPassword);
+                    },
+                    child: Text(
+                      'Forgot Password?',
+                      style: TextStyle(
+                        color: AppColors.primaryGold.withOpacity(0.8),
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
 
                 // Login Button
                 Consumer<AdminAuthProvider>(

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
+import '../../models/faq_model.dart';
+import '../../services/firestore_crud_service.dart';
 
 class HelpSupportScreen extends StatefulWidget {
   const HelpSupportScreen({super.key});
@@ -12,56 +14,40 @@ class HelpSupportScreen extends StatefulWidget {
 
 class _HelpSupportScreenState extends State<HelpSupportScreen> {
   final TextEditingController _searchController = TextEditingController();
-  List<Map<String, String>> _filteredFAQs = [];
-
-  final List<Map<String, String>> _allFAQs = [
-    {
-      'question': 'How do I track my order?',
-      'answer':
-          'You can track your order in the "Orders" section of your profile.'
-    },
-    {
-      'question': 'What is the return policy?',
-      'answer':
-          'We offer a 30-day return policy for all unworn watches in original packaging.'
-    },
-    {
-      'question': 'Are the watches authentic?',
-      'answer':
-          'Yes, all watches sold on WatchHub are 100% authentic and come with original warranty cards.'
-    },
-    {
-      'question': 'How long does shipping take?',
-      'answer':
-          'Standard shipping takes 3-5 business days. Express shipping is 1-2 business days.'
-    },
-    {
-      'question': 'Do you offer warranty?',
-      'answer':
-          'Yes, all watches come with manufacturer warranty. Extended warranty options are available.'
-    },
-    {
-      'question': 'How do I cancel my order?',
-      'answer':
-          'You can cancel your order within 24 hours of placing it from the Orders section.'
-    },
-  ];
+  final FirestoreCrudService _firestoreService = FirestoreCrudService();
+  List<FAQModel> _allFAQs = [];
+  List<FAQModel> _filteredFAQs = [];
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _filteredFAQs = _allFAQs;
+    _loadFAQs();
+  }
+
+  Future<void> _loadFAQs() async {
+    setState(() => _isLoading = true);
+    try {
+      _allFAQs = await _firestoreService.getFaqs();
+      // Show only first 5 initially
+      _filteredFAQs = _allFAQs.take(5).toList();
+    } catch (e) {
+      debugPrint('Error loading FAQs: $e');
+    }
+    setState(() => _isLoading = false);
   }
 
   void _filterFAQs(String query) {
     setState(() {
       if (query.isEmpty) {
-        _filteredFAQs = _allFAQs;
+        // Show only first 5 when search is cleared
+        _filteredFAQs = _allFAQs.take(5).toList();
       } else {
+        // Show all matches when searching
         _filteredFAQs = _allFAQs
             .where((faq) =>
-                faq['question']!.toLowerCase().contains(query.toLowerCase()) ||
-                faq['answer']!.toLowerCase().contains(query.toLowerCase()))
+                faq.question.toLowerCase().contains(query.toLowerCase()) ||
+                faq.answer.toLowerCase().contains(query.toLowerCase()))
             .toList();
       }
     });
@@ -137,7 +123,9 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
           _buildSearchHeader(context),
           const SizedBox(height: 24),
           _buildSectionTitle(context, 'Common Questions'),
-          if (_filteredFAQs.isEmpty)
+          if (_isLoading)
+            const Center(child: CircularProgressIndicator())
+          else if (_filteredFAQs.isEmpty)
             Padding(
               padding: const EdgeInsets.all(16),
               child: Text(
@@ -148,8 +136,8 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
               ),
             )
           else
-            ..._filteredFAQs.map((faq) =>
-                _buildFAQItem(context, faq['question']!, faq['answer']!)),
+            ..._filteredFAQs
+                .map((faq) => _buildFAQItem(context, faq.question, faq.answer)),
           const SizedBox(height: 24),
           _buildSectionTitle(context, 'Contact Us'),
           _buildContactItem(

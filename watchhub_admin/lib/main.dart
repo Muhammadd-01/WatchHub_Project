@@ -30,6 +30,7 @@ import 'providers/admin_feedback_provider.dart';
 import 'providers/admin_cart_provider.dart';
 import 'providers/admin_dashboard_provider.dart';
 import 'providers/admin_navigation_provider.dart';
+import 'providers/admin_notification_provider.dart';
 import 'providers/admin_theme_provider.dart';
 
 import 'firebase_options.dart';
@@ -72,6 +73,7 @@ class WatchHubAdminApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AdminCartProvider()),
         ChangeNotifierProvider(create: (_) => AdminDashboardProvider()),
         ChangeNotifierProvider(create: (_) => AdminNavigationProvider()),
+        ChangeNotifierProvider(create: (_) => AdminNotificationProvider()),
         ChangeNotifierProvider(create: (_) => AdminThemeProvider()),
       ],
       child: Consumer<AdminThemeProvider>(

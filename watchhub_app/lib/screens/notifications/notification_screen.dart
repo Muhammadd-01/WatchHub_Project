@@ -4,6 +4,7 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../core/utils/helpers.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/notification_provider.dart';
 import '../../services/firestore_crud_service.dart';
 import 'notification_detail_screen.dart';
 
@@ -44,6 +45,12 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
   Future<void> _onNotificationTap(
       String uid, Map<String, dynamic> notification) async {
+    // Mark as read immediately
+    final notificationId = notification['id'] as String?;
+    if (notificationId != null) {
+      _firestoreService.markNotificationRead(uid, notificationId);
+    }
+
     // Navigate to detail screen
     await Navigator.push(
       context,
@@ -52,12 +59,6 @@ class _NotificationScreenState extends State<NotificationScreen> {
             NotificationDetailScreen(notification: notification),
       ),
     );
-
-    // Mark as read after returning
-    final notificationId = notification['id'] as String?;
-    if (notificationId != null) {
-      await _firestoreService.markNotificationRead(uid, notificationId);
-    }
   }
 
   @override
@@ -82,6 +83,14 @@ class _NotificationScreenState extends State<NotificationScreen> {
             tooltip: 'Refresh',
             onPressed: () {
               _refreshKey.currentState?.show();
+            },
+          ),
+          // Mark all read button
+          IconButton(
+            icon: const Icon(Icons.done_all),
+            tooltip: 'Mark all as read',
+            onPressed: () {
+              context.read<NotificationProvider>().markAllAsRead();
             },
           ),
           // Clear all button
