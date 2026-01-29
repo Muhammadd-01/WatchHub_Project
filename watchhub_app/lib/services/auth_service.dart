@@ -273,9 +273,18 @@ class AuthService {
       }
 
       return _syncUserToFirestore(firebaseUser);
+    } on FirebaseAuthException catch (e) {
+      debugPrint(
+          'AuthService: Firebase Google Sign In Error - ${e.code}: ${e.message}');
+      throw AuthException(_getAuthErrorMessage(e.code));
     } catch (e) {
       debugPrint('AuthService: Google Sign In Error - $e');
-      throw AuthException('Failed to sign in with Google');
+      if (e.toString().contains('Canceled') ||
+          e.toString().contains('canceled')) {
+        throw AuthException('Google sign-in canceled');
+      }
+      throw AuthException(
+          'Failed to sign in with Google. Please check your internet connection and try again.');
     }
   }
 

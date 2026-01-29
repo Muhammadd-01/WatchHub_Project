@@ -19,6 +19,8 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
   List<FAQModel> _filteredFAQs = [];
   bool _isLoading = true;
 
+  static const int _visibilityThreshold = 20;
+
   @override
   void initState() {
     super.initState();
@@ -29,8 +31,9 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
     setState(() => _isLoading = true);
     try {
       _allFAQs = await _firestoreService.getFaqs();
-      // Show only first 5 initially
-      _filteredFAQs = _allFAQs.take(5).toList();
+      // Show only FAQs with order < threshold initially
+      _filteredFAQs =
+          _allFAQs.where((faq) => faq.order < _visibilityThreshold).toList();
     } catch (e) {
       debugPrint('Error loading FAQs: $e');
     }
@@ -40,10 +43,11 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
   void _filterFAQs(String query) {
     setState(() {
       if (query.isEmpty) {
-        // Show only first 5 when search is cleared
-        _filteredFAQs = _allFAQs.take(5).toList();
+        // Show only FAQs with order < threshold when search is cleared
+        _filteredFAQs =
+            _allFAQs.where((faq) => faq.order < _visibilityThreshold).toList();
       } else {
-        // Show all matches when searching
+        // Show all matches when searching, regardless of order
         _filteredFAQs = _allFAQs
             .where((faq) =>
                 faq.question.toLowerCase().contains(query.toLowerCase()) ||

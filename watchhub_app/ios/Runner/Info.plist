@@ -51,9 +51,12 @@
 	    <key>CFBundleURLSchemes</key>
 	    <array>
 	      <string>fbYOUR_APP_ID</string>
+	      <string>com.googleusercontent.apps.495177119332-1v1kiko0kohsu7ammip639klso8v2cbh</string>
 	    </array>
 	  </dict>
 	</array>
+	<key>GIDClientID</key>
+	<string>495177119332-1v1kiko0kohsu7ammip639klso8v2cbh.apps.googleusercontent.com</string>
 	<key>FacebookAppID</key>
 	<string>YOUR_APP_ID</string>
 	<key>FacebookClientToken</key>
