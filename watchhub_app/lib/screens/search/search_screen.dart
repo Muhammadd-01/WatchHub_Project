@@ -47,11 +47,11 @@ class _SearchScreenState extends State<SearchScreen> {
 
     final productProvider = context.read<ProductProvider>();
     // Ensure products are loaded
-    if (productProvider.products.isEmpty) {
+    if (productProvider.allProducts.isEmpty) {
       productProvider.refresh();
     }
 
-    final results = productProvider.products.where((product) {
+    final results = productProvider.allProducts.where((product) {
       final titleLower = product.name.toLowerCase();
       final brandLower = product.brand.toLowerCase();
       final queryLower = query.toLowerCase();

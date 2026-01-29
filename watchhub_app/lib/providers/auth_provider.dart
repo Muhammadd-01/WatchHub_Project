@@ -61,6 +61,10 @@ class AuthProvider extends ChangeNotifier {
   /// Constructor - starts listening to auth state changes
   AuthProvider() {
     _initAuthListener();
+    if (!kIsWeb) {
+      // Ensure Google session is refreshed if already signed in
+      _authService.signInSilently();
+    }
   }
 
   // ===========================================================================
@@ -83,7 +87,21 @@ class AuthProvider extends ChangeNotifier {
     debugPrint('AuthProvider: Auth state changed - ${firebaseUser?.uid}');
 
     if (firebaseUser == null) {
-      // User signed out
+      // User signed out or not yet authenticated
+      // On some platforms (iOS), the initial stream value might be null before the actual state is determined
+      if (_state == AuthState.initial) {
+        // Wait a small bit to see if a user appears, to avoid "Login Screen Flickering"
+        await Future.delayed(const Duration(milliseconds: 500));
+        // Check current user directly from Firebase to be sure
+        final currentUser = _authService.currentUser;
+        if (currentUser != null) {
+          debugPrint(
+              'AuthProvider: Found user after delay: ${currentUser.uid}');
+          _handleAuthStateChange(currentUser);
+          return;
+        }
+      }
+
       _user = null;
       _state = AuthState.unauthenticated;
       notifyListeners();

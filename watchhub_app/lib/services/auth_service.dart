@@ -246,6 +246,9 @@ class AuthService {
     try {
       debugPrint('AuthService: Starting Google Sign In...');
 
+      // Force account selector by signing out of previous session
+      await _googleSignIn.signOut();
+
       // 1. Trigger Google Sign-In flow
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
 
@@ -285,6 +288,16 @@ class AuthService {
       }
       throw AuthException(
           'Failed to sign in with Google. Please check your internet connection and try again.');
+    }
+  }
+
+  /// Silently signs in the last Google user
+  Future<GoogleSignInAccount?> signInSilently() async {
+    try {
+      return await _googleSignIn.signInSilently();
+    } catch (e) {
+      debugPrint('AuthService: Google silent sign in error - $e');
+      return null;
     }
   }
 

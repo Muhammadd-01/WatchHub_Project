@@ -151,13 +151,27 @@ class AuthWrapper extends StatelessWidget {
   Widget _buildAuthScreen(BuildContext context, AuthProvider auth) {
     switch (auth.state) {
       case AuthState.authenticated:
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (auth.user != null) {
+        // Initialize notifications when user is authenticated
+        if (auth.user != null) {
+          Future.microtask(() async {
+            if (!context.mounted) return;
+
+            // 1. Initialize Notification Provider
             final notifProvider =
                 Provider.of<NotificationProvider>(context, listen: false);
             notifProvider.init(auth.user!.uid);
-          }
-        });
+
+            // 2. Initialize Push Notification Service (OneSignal) if on device
+            if (!kIsWeb) {
+              try {
+                final pushService = PushNotificationService();
+                await pushService.initialize(navigatorKey, uid: auth.user!.uid);
+              } catch (e) {
+                debugPrint('AuthWrapper: Error initializing OneSignal - $e');
+              }
+            }
+          });
+        }
         return const MainScreen(key: ValueKey('main_screen'));
       case AuthState.unauthenticated:
         return const LoginScreen(key: ValueKey('login_screen'));

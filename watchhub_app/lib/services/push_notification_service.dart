@@ -111,7 +111,11 @@ class PushNotificationService {
       }
 
       // Navigate based on notification type
-      if (type == 'review_reply' && productId != null) {
+      if (type == 'new_product' && productId != null) {
+        // Navigate to product details
+        navigatorKey.currentState
+            ?.pushNamed('/product_details', arguments: productId);
+      } else if (type == 'review_reply' && productId != null) {
         // Navigate to reviews screen for this product
         navigatorKey.currentState?.pushNamed('/reviews', arguments: productId);
       } else if (type == 'order_update') {

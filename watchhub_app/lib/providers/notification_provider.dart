@@ -25,14 +25,22 @@ class NotificationProvider extends ChangeNotifier {
   }
 
   void init(String userId) {
-    if (_userId == userId) return; // Already initialized for this user
+    debugPrint('NotificationProvider: Initializing for user: $userId');
+    if (_userId == userId) {
+      debugPrint(
+          'NotificationProvider: Already initialized for this user, skipping.');
+      return;
+    }
 
     _userId = userId;
+    _unreadCount = 0; // Reset count for new user
     _loadRemoteSettings();
 
     // Cancel existing subscription if any
     _unreadSubscription?.cancel();
 
+    debugPrint(
+        'NotificationProvider: Setting up Firestore listener for notifications...');
     _unreadSubscription = FirebaseFirestore.instance
         .collection('users')
         .doc(userId)
@@ -41,7 +49,11 @@ class NotificationProvider extends ChangeNotifier {
         .snapshots()
         .listen((snapshot) {
       _unreadCount = snapshot.docs.length;
+      debugPrint(
+          'NotificationProvider: Received snapshot. Unread count: $_unreadCount');
       notifyListeners();
+    }, onError: (error) {
+      debugPrint('NotificationProvider: Firestore listener error - $error');
     });
   }
 
