@@ -11,7 +11,6 @@ import '../../core/constants/app_text_styles.dart';
 import '../../widgets/admin_scaffold.dart';
 import '../../providers/admin_auth_provider.dart';
 import '../../providers/admin_theme_provider.dart';
-import '../../core/routes/admin_routes.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -26,7 +25,6 @@ class SettingsScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildSectionHeader('Appearance'),
               _buildSectionHeader('Appearance'),
               Consumer<AdminThemeProvider>(
                 builder: (context, themeProvider, _) {
@@ -62,53 +60,6 @@ class SettingsScreen extends StatelessWidget {
                     ],
                   );
                 },
-              ),
-              const SizedBox(height: 32),
-              _buildSectionHeader('Session'),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () async {
-                    final shouldLogout = await showDialog<bool>(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                        backgroundColor: AppColors.cardBackground,
-                        title: const Text('Confirm Logout',
-                            style: TextStyle(color: AppColors.textPrimary)),
-                        content: const Text(
-                            'Are you sure you want to end your session?',
-                            style: TextStyle(color: AppColors.textSecondary)),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(context, false),
-                            child: const Text('Cancel'),
-                          ),
-                          ElevatedButton(
-                            onPressed: () => Navigator.pop(context, true),
-                            style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.error),
-                            child: const Text('Logout'),
-                          ),
-                        ],
-                      ),
-                    );
-
-                    if (shouldLogout == true && context.mounted) {
-                      await context.read<AdminAuthProvider>().signOut();
-                      // Wrapper will handle redirect, but we can also pop to be sure
-                      Navigator.pushNamedAndRemoveUntil(
-                          context, AdminRoutes.login, (route) => false);
-                    }
-                  },
-                  icon: const Icon(Icons.logout),
-                  label: const Text('Sign Out'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.error,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                  ),
-                ),
               ),
               const SizedBox(height: 32),
               Center(

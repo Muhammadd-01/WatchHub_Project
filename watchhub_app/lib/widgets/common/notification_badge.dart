@@ -38,7 +38,7 @@ class NotificationBadge extends StatelessWidget {
               return Container(
                 padding: const EdgeInsets.all(2),
                 decoration: BoxDecoration(
-                  color: AppColors.error, // Use red for better visibility
+                  color: AppColors.primaryGold,
                   shape: BoxShape.circle,
                   border: Border.all(color: Colors.white, width: 1.5),
                   boxShadow: [

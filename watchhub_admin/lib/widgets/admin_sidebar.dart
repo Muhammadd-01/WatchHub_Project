@@ -5,8 +5,10 @@
 // =============================================================================
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../core/constants/app_colors.dart';
 import '../core/constants/app_text_styles.dart';
+import '../providers/admin_notification_provider.dart';
 
 class AdminSidebar extends StatelessWidget {
   final int selectedIndex;
@@ -27,30 +29,35 @@ class AdminSidebar extends StatelessWidget {
         // Logo
         Container(
           height: 100,
-          alignment: Alignment.center,
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            mainAxisAlignment: isCollapsed
-                ? MainAxisAlignment.center
-                : MainAxisAlignment.start,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Stack(
             children: [
-              Image.asset(
-                'assets/images/watchhub_logo.png',
-                width: isCollapsed ? 40 : 48,
-                height: isCollapsed ? 40 : 48,
-                fit: BoxFit.contain,
+              Align(
+                alignment:
+                    isCollapsed ? Alignment.center : Alignment.centerLeft,
+                child: Image.asset(
+                  'assets/images/watchhub_logo.png',
+                  width: isCollapsed ? 40 : 48,
+                  height: isCollapsed ? 40 : 48,
+                  fit: BoxFit.contain,
+                ),
               ),
-              if (!isCollapsed) ...[
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'WatchHub',
-                    style: AppTextStyles.headlineSmall,
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
+              if (!isCollapsed)
+                Positioned(
+                  left: 60,
+                  top: 0,
+                  bottom: 0,
+                  right: 0,
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'WatchHub',
+                      style: AppTextStyles.headlineSmall,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 ),
-              ],
             ],
           ),
         ),
@@ -100,41 +107,85 @@ class AdminSidebar extends StatelessWidget {
           onTap: () => onItemSelected(index),
           borderRadius: BorderRadius.circular(10),
           child: Container(
-            padding: EdgeInsets.symmetric(
-              horizontal: isCollapsed ? 0 : 16,
-              vertical: 12,
-            ),
+            height: 48,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
             decoration: BoxDecoration(
               color: isSelected
                   ? AppColors.primaryGold.withOpacity(0.1)
                   : Colors.transparent,
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Row(
-              mainAxisAlignment: isCollapsed
-                  ? MainAxisAlignment.center
-                  : MainAxisAlignment.start,
+            child: Stack(
               children: [
-                Icon(
-                  icon,
-                  color: isSelected
-                      ? AppColors.primaryGold
-                      : AppColors.textSecondary,
-                  size: 24,
+                // Icon
+                Align(
+                  alignment:
+                      isCollapsed ? Alignment.center : Alignment.centerLeft,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Icon(
+                        icon,
+                        color: isSelected
+                            ? AppColors.primaryGold
+                            : AppColors.textSecondary,
+                        size: 24,
+                      ),
+                      if (title == 'Notifications')
+                        Consumer<AdminNotificationProvider>(
+                          builder: (context, notificationProv, _) {
+                            final count = notificationProv.unreadCount;
+                            if (count == 0) return const SizedBox.shrink();
+                            return Positioned(
+                              right: -6,
+                              top: -6,
+                              child: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: const BoxDecoration(
+                                  color: AppColors.error,
+                                  shape: BoxShape.circle,
+                                ),
+                                constraints: const BoxConstraints(
+                                  minWidth: 16,
+                                  minHeight: 16,
+                                ),
+                                child: Text(
+                                  '$count',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                    ],
+                  ),
                 ),
-                if (!isCollapsed) ...[
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      title,
-                      style: isSelected
-                          ? AppTextStyles.titleSmall
-                              .copyWith(color: AppColors.primaryGold)
-                          : AppTextStyles.bodyMedium,
-                      overflow: TextOverflow.ellipsis,
+
+                // Text
+                if (!isCollapsed)
+                  Positioned(
+                    left: 36,
+                    top: 0,
+                    bottom: 0,
+                    right: 0,
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        title,
+                        style: isSelected
+                            ? AppTextStyles.titleSmall
+                                .copyWith(color: AppColors.primaryGold)
+                            : AppTextStyles.bodyMedium,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ),
-                ],
               ],
             ),
           ),

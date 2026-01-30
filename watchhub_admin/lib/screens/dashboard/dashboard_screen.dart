@@ -6,6 +6,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:fl_chart/fl_chart.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../widgets/admin_scaffold.dart';
@@ -56,7 +57,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 const SizedBox(height: 16),
 
-                // Stats Row
+                // Stats Row 1
                 Wrap(
                   spacing: 16,
                   runSpacing: 16,
@@ -86,6 +87,132 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         Icons.inventory,
                         AppColors.primaryGold),
                   ],
+                ),
+                const SizedBox(height: 16),
+                // Stats Row 2
+                Wrap(
+                  spacing: 16,
+                  runSpacing: 16,
+                  children: [
+                    _buildStatCard(
+                        context,
+                        'Categories',
+                        '${provider.categoryCount}',
+                        Icons.category,
+                        Colors.purple),
+                    _buildStatCard(context, 'Brands', '${provider.brandCount}',
+                        Icons.branding_watermark, Colors.orange),
+                    _buildStatCard(
+                        context,
+                        'Reviews',
+                        '${provider.reviewCount}',
+                        Icons.rate_review,
+                        Colors.teal),
+                    _buildStatCard(
+                        context,
+                        'Feedback',
+                        '${provider.feedbackCount}',
+                        Icons.feedback,
+                        Colors.pink),
+                  ],
+                ),
+                const SizedBox(height: 32),
+
+                // Analytics Graph
+                Text('Sales Analytics', style: AppTextStyles.titleLarge),
+                const SizedBox(height: 16),
+                Container(
+                  height: 300,
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardColor,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Theme.of(context).dividerColor),
+                  ),
+                  child: LineChart(
+                    LineChartData(
+                      gridData: FlGridData(
+                        show: true,
+                        drawVerticalLine: false,
+                        getDrawingHorizontalLine: (value) => FlLine(
+                          color:
+                              Theme.of(context).dividerColor.withOpacity(0.1),
+                          strokeWidth: 1,
+                        ),
+                      ),
+                      titlesData: FlTitlesData(
+                        show: true,
+                        rightTitles: const AxisTitles(
+                            sideTitles: SideTitles(showTitles: false)),
+                        topTitles: const AxisTitles(
+                            sideTitles: SideTitles(showTitles: false)),
+                        bottomTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            reservedSize: 30,
+                            getTitlesWidget: (value, meta) {
+                              const days = [
+                                'Mon',
+                                'Tue',
+                                'Wed',
+                                'Thu',
+                                'Fri',
+                                'Sat',
+                                'Sun'
+                              ];
+                              if (value.toInt() >= 0 && value.toInt() < 7) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(top: 8.0),
+                                  child: Text(days[value.toInt()],
+                                      style: AppTextStyles.bodySmall),
+                                );
+                              }
+                              return const SizedBox();
+                            },
+                          ),
+                        ),
+                      ),
+                      borderData: FlBorderData(show: false),
+                      lineBarsData: [
+                        LineChartBarData(
+                          spots: provider.dailyRevenue.isEmpty
+                              ? [
+                                  const FlSpot(0, 0),
+                                  const FlSpot(6, 0),
+                                ]
+                              : provider.dailyRevenue.asMap().entries.map((e) {
+                                  return FlSpot(e.key.toDouble(), e.value);
+                                }).toList(),
+                          isCurved: true,
+                          curveSmoothness: 0.35,
+                          color: AppColors.primaryGold,
+                          barWidth: 4,
+                          isStrokeCapRound: true,
+                          dotData: FlDotData(
+                            show: true,
+                            getDotPainter: (spot, percent, barData, index) =>
+                                FlDotCirclePainter(
+                              radius: 4,
+                              color: Colors.white,
+                              strokeWidth: 2,
+                              strokeColor: AppColors.primaryGold,
+                            ),
+                          ),
+                          belowBarData: BarAreaData(
+                            show: true,
+                            gradient: LinearGradient(
+                              colors: [
+                                AppColors.primaryGold.withOpacity(0.3),
+                                AppColors.primaryGold.withOpacity(0.0),
+                              ],
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 32),
 
@@ -145,7 +272,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             onTap: () {
                               context
                                   .read<AdminNavigationProvider>()
-                                  .setIndex(3);
+                                  .setIndex(4); // Changed from 3 to 4 (Orders)
                             },
                             child: Container(
                               width: double.infinity,
