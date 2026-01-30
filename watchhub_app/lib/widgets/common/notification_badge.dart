@@ -15,60 +15,26 @@ class NotificationBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        IconButton(
-          icon: Icon(
-            Icons.notifications_outlined,
-            color: iconColor ?? Theme.of(context).iconTheme.color,
+    return Consumer<NotificationProvider>(
+      builder: (context, notifProvider, child) {
+        final count = notifProvider.unreadCount;
+
+        return IconButton(
+          icon: Badge(
+            label: Text(count > 9 ? '9+' : count.toString()),
+            isLabelVisible: count > 0,
+            backgroundColor: AppColors.primaryGold,
+            textColor: Colors.white,
+            child: Icon(
+              Icons.notifications_outlined,
+              color: iconColor ?? Theme.of(context).iconTheme.color,
+            ),
           ),
           onPressed: () {
             Navigator.pushNamed(context, AppRoutes.notifications);
           },
-        ),
-        Positioned(
-          top: 10,
-          right: 10,
-          child: Consumer<NotificationProvider>(
-            builder: (context, notifProvider, child) {
-              final count = notifProvider.unreadCount;
-              if (count == 0) return const SizedBox.shrink();
-
-              return Container(
-                padding: const EdgeInsets.all(2),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryGold,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 1.5),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.2),
-                      blurRadius: 2,
-                      offset: const Offset(0, 1),
-                    ),
-                  ],
-                ),
-                constraints: const BoxConstraints(
-                  minWidth: 14,
-                  minHeight: 14,
-                ),
-                child: Center(
-                  child: Text(
-                    count > 9 ? '9+' : count.toString(),
-                    style: AppTextStyles.labelSmall.copyWith(
-                      color: Colors.white,
-                      fontSize: 8,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-      ],
+        );
+      },
     );
   }
 }
